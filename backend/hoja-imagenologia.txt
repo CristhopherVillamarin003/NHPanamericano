@@ -1,0 +1,208 @@
+He creado 15 bloques repetidos en mi hoja de imagenología de la plantilla-historiaclinica.tsx (cada bloque tiene de la sección A a la G)
+Los campos que tenemos son:
+
+// ─────────────────────────────────────────────────────────────────────────
+  // BLOQUE 1
+  // ─────────────────────────────────────────────────────────────────────────
+  
+  SECCION A
+
+  img1_institucion                : { sheet: 'IMAGENOLOGIA', cell: 'A3'  },
+  img1_unicodigo                  : { sheet: 'IMAGENOLOGIA', cell: 'P3'  },
+  img1_establecimiento            : { sheet: 'IMAGENOLOGIA', cell: 'V3'  },
+  img1_numero_historia_clinica    : { sheet: 'IMAGENOLOGIA', cell: 'AN3' },
+  img1_numero_archivo             : { sheet: 'IMAGENOLOGIA', cell: 'BF3' },
+
+  img1_primer_apellido            : { sheet: 'IMAGENOLOGIA', cell: 'A6'  },
+  img1_segundo_apellido           : { sheet: 'IMAGENOLOGIA', cell: 'P6'  },
+  img1_primer_nombre              : { sheet: 'IMAGENOLOGIA', cell: 'AC6' },
+  img1_segundo_nombre             : { sheet: 'IMAGENOLOGIA', cell: 'AP6' },
+  img1_sexo                       : { sheet: 'IMAGENOLOGIA', cell: 'AZ6' },
+  img1_fecha_nacimiento           : { sheet: 'IMAGENOLOGIA', cell: 'BC6' },
+  img1_edad                       : { sheet: 'IMAGENOLOGIA', cell: 'BI6' },
+
+  img1_condicion_edad_h           : { sheet: 'IMAGENOLOGIA', cell: 'BL6' },
+  img1_condicion_edad_d           : { sheet: 'IMAGENOLOGIA', cell: 'BN6' },
+  img1_condicion_edad_m           : { sheet: 'IMAGENOLOGIA', cell: 'BP6' },
+  img1_condicion_edad_a           : { sheet: 'IMAGENOLOGIA', cell: 'BR6' },
+
+  // B. SERVICIO Y PRIORIDAD DE ATENCIÓN
+  img1_servicio_emergencia        : { sheet: 'IMAGENOLOGIA', cell: 'F10' },
+  img1_servicio_consulta          : { sheet: 'IMAGENOLOGIA', cell: 'O10' },
+  img1_servicio_hospitalizacion   : { sheet: 'IMAGENOLOGIA', cell: 'X10' },
+  img1_servicio_especialidad      : { sheet: 'IMAGENOLOGIA', cell: 'Z10' },
+  img1_servicio_cama              : { sheet: 'IMAGENOLOGIA', cell: 'AQ10' },
+  img1_servicio_sala              : { sheet: 'IMAGENOLOGIA', cell: 'AW10' },
+  img1_prioridad_urgente          : { sheet: 'IMAGENOLOGIA', cell: 'BG10' },
+  img1_prioridad_rutina           : { sheet: 'IMAGENOLOGIA', cell: 'BL10' },
+  img1_prioridad_control          : { sheet: 'IMAGENOLOGIA', cell: 'BR10' },
+
+  // C. ESTUDIO DE IMAGENOLOGÍA SOLICITADO
+  img1_rx_convencional            : { sheet: 'IMAGENOLOGIA', cell: 'G13' },
+  img1_rx_portatil                : { sheet: 'IMAGENOLOGIA', cell: 'M13' },
+  img1_tomografia                 : { sheet: 'IMAGENOLOGIA', cell: 'U13' },
+  img1_resonancia                 : { sheet: 'IMAGENOLOGIA', cell: 'AB13' },
+  img1_ecografia                  : { sheet: 'IMAGENOLOGIA', cell: 'AI13' },
+  img1_mamografia                 : { sheet: 'IMAGENOLOGIA', cell: 'AQ13' },
+  img1_procedimiento              : { sheet: 'IMAGENOLOGIA', cell: 'AZ13' },
+  img1_otro                       : { sheet: 'IMAGENOLOGIA', cell: 'BE13' },
+  img1_sedacion_si                : { sheet: 'IMAGENOLOGIA', cell: 'BN13' },
+  img1_sedacion_no                : { sheet: 'IMAGENOLOGIA', cell: 'BR13' },
+
+  img1_descripcion_estudio        : { sheet: 'IMAGENOLOGIA', cell: 'I14' },
+
+  // D. MOTIVO DE LA SOLICITUD
+  img1_fum                        : { sheet: 'IMAGENOLOGIA', cell: 'K19' },
+  img1_paciente_contaminado_si    : { sheet: 'IMAGENOLOGIA', cell: 'AM19' },
+  img1_paciente_contaminado_no    : { sheet: 'IMAGENOLOGIA', cell: 'AQ19' },
+  img1_paciente_contaminado_desc  : { sheet: 'IMAGENOLOGIA', cell: 'A20' },
+
+  // E. RESUMEN CLÍNICO ACTUAL
+  img1_resumen_clinico            : { sheet: 'IMAGENOLOGIA', cell: 'A25' },
+
+  // F. DIAGNÓSTICO
+  img1_diagnostico_1              : { sheet: 'IMAGENOLOGIA', cell: 'B33' },
+  img1_diagnostico_1_cie          : { sheet: 'IMAGENOLOGIA', cell: 'AC33' },
+  img1_diagnostico_1_pre          : { sheet: 'IMAGENOLOGIA', cell: 'AG33' },
+  img1_diagnostico_1_def          : { sheet: 'IMAGENOLOGIA', cell: 'AI33' },
+
+  img1_diagnostico_2              : { sheet: 'IMAGENOLOGIA', cell: 'B34' },
+  img1_diagnostico_2_cie          : { sheet: 'IMAGENOLOGIA', cell: 'AC34' },
+  img1_diagnostico_2_pre          : { sheet: 'IMAGENOLOGIA', cell: 'AG34' },
+  img1_diagnostico_2_def          : { sheet: 'IMAGENOLOGIA', cell: 'AI34' },
+
+  img1_diagnostico_3              : { sheet: 'IMAGENOLOGIA', cell: 'B35' },
+  img1_diagnostico_3_cie          : { sheet: 'IMAGENOLOGIA', cell: 'AC35' },
+  img1_diagnostico_3_pre          : { sheet: 'IMAGENOLOGIA', cell: 'AG35' },
+  img1_diagnostico_3_def          : { sheet: 'IMAGENOLOGIA', cell: 'AI35' },
+
+  img1_diagnostico_4              : { sheet: 'IMAGENOLOGIA', cell: 'AL33' },
+  img1_diagnostico_4_cie          : { sheet: 'IMAGENOLOGIA', cell: 'BL33' },
+  img1_diagnostico_4_pre          : { sheet: 'IMAGENOLOGIA', cell: 'BP33' },
+  img1_diagnostico_4_def          : { sheet: 'IMAGENOLOGIA', cell: 'BR33' },
+
+  img1_diagnostico_5              : { sheet: 'IMAGENOLOGIA', cell: 'AL34' },
+  img1_diagnostico_5_cie          : { sheet: 'IMAGENOLOGIA', cell: 'BL34' },
+  img1_diagnostico_5_pre          : { sheet: 'IMAGENOLOGIA', cell: 'BP34' },
+  img1_diagnostico_5_def          : { sheet: 'IMAGENOLOGIA', cell: 'BR34' },
+
+  img1_diagnostico_6              : { sheet: 'IMAGENOLOGIA', cell: 'AL35' },
+  img1_diagnostico_6_cie          : { sheet: 'IMAGENOLOGIA', cell: 'BL35' },
+  img1_diagnostico_6_pre          : { sheet: 'IMAGENOLOGIA', cell: 'BP35' },
+  img1_diagnostico_6_def          : { sheet: 'IMAGENOLOGIA', cell: 'BR35' },
+
+  // G. DATOS DEL PROFESIONAL RESPONSABLE
+  img1_fecha                      : { sheet: 'IMAGENOLOGIA', cell: 'A39' },
+  img1_hora                       : { sheet: 'IMAGENOLOGIA', cell: 'I39' },
+  img1_prof_primer_nombre         : { sheet: 'IMAGENOLOGIA', cell: 'P39' },
+  img1_prof_primer_apellido       : { sheet: 'IMAGENOLOGIA', cell: 'AK39' },
+  img1_prof_segundo_apellido      : { sheet: 'IMAGENOLOGIA', cell: 'BD39' },
+
+  img1_prof_documento             : { sheet: 'IMAGENOLOGIA', cell: 'A41' },
+
+EN LA CELDA A43 Y AG43 ESTÁ COLOCADO UN PIE DE NOTA (ESTO SOLO ES LABEL) 
+A43 SNS-MSP/HCU-form.012A/2021																																					
+AG43 IMAGENOLOGÍA - SOLICITUD															
+
+LUEGO EXISTE UN SALTO DE UNA CELDA Y EMPIEZA EL BLOQUE 2
+
+// ─────────────────────────────────────────────────────────────────────────
+  // BLOQUE 2
+  // ─────────────────────────────────────────────────────────────────────────
+
+SECCION A
+
+  img2_institucion                : { sheet: 'IMAGENOLOGIA', cell: 'A47'  },
+  img2_unicodigo                  : { sheet: 'IMAGENOLOGIA', cell: 'P47'  },
+  img2_establecimiento            : { sheet: 'IMAGENOLOGIA', cell: 'V47'  },
+  img2_numero_historia_clinica    : { sheet: 'IMAGENOLOGIA', cell: 'AN47' },
+  img2_numero_archivo             : { sheet: 'IMAGENOLOGIA', cell: 'BF47' },
+
+  img2_primer_apellido            : { sheet: 'IMAGENOLOGIA', cell: 'A50'  },
+  img2_segundo_apellido           : { sheet: 'IMAGENOLOGIA', cell: 'P50'  },
+  img2_primer_nombre              : { sheet: 'IMAGENOLOGIA', cell: 'AC50' },
+  img2_segundo_nombre             : { sheet: 'IMAGENOLOGIA', cell: 'AP50' },
+  img2_sexo                       : { sheet: 'IMAGENOLOGIA', cell: 'AZ50' },
+  img2_fecha_nacimiento           : { sheet: 'IMAGENOLOGIA', cell: 'BC50' },
+  img2_edad                       : { sheet: 'IMAGENOLOGIA', cell: 'BI50' },
+
+  img2_condicion_edad_h           : { sheet: 'IMAGENOLOGIA', cell: 'BL50' },
+  img2_condicion_edad_d           : { sheet: 'IMAGENOLOGIA', cell: 'BN50' },
+  img2_condicion_edad_m           : { sheet: 'IMAGENOLOGIA', cell: 'BP50' },
+  img2_condicion_edad_a           : { sheet: 'IMAGENOLOGIA', cell: 'BR50' },
+
+  // B. SERVICIO Y PRIORIDAD DE ATENCIÓN
+  img2_servicio_emergencia        : { sheet: 'IMAGENOLOGIA', cell: 'F54' },
+  img2_servicio_consulta          : { sheet: 'IMAGENOLOGIA', cell: 'O54' },
+  img2_servicio_hospitalizacion   : { sheet: 'IMAGENOLOGIA', cell: 'X54' },
+  img2_servicio_especialidad      : { sheet: 'IMAGENOLOGIA', cell: 'Z54' },
+  img2_servicio_cama              : { sheet: 'IMAGENOLOGIA', cell: 'AQ54' },
+  img2_servicio_sala              : { sheet: 'IMAGENOLOGIA', cell: 'AW54' },
+  img2_prioridad_urgente          : { sheet: 'IMAGENOLOGIA', cell: 'BG54' },
+  img2_prioridad_rutina           : { sheet: 'IMAGENOLOGIA', cell: 'BL54' },
+  img2_prioridad_control          : { sheet: 'IMAGENOLOGIA', cell: 'BR54' },
+
+  // C. ESTUDIO DE IMAGENOLOGÍA SOLICITADO
+  img2_rx_convencional            : { sheet: 'IMAGENOLOGIA', cell: 'G57' },
+  img2_rx_portatil                : { sheet: 'IMAGENOLOGIA', cell: 'M57' },
+  img2_tomografia                 : { sheet: 'IMAGENOLOGIA', cell: 'U57' },
+  img2_resonancia                 : { sheet: 'IMAGENOLOGIA', cell: 'AB57' },
+  img2_ecografia                  : { sheet: 'IMAGENOLOGIA', cell: 'AI57' },
+  img2_mamografia                 : { sheet: 'IMAGENOLOGIA', cell: 'AQ57' },
+  img2_procedimiento              : { sheet: 'IMAGENOLOGIA', cell: 'AZ57' },
+  img2_otro                       : { sheet: 'IMAGENOLOGIA', cell: 'BE57' },
+  img2_sedacion_si                : { sheet: 'IMAGENOLOGIA', cell: 'BN57' },
+  img2_sedacion_no                : { sheet: 'IMAGENOLOGIA', cell: 'BR57' },
+
+  img2_descripcion_estudio        : { sheet: 'IMAGENOLOGIA', cell: 'I58' },
+
+  // D. MOTIVO DE LA SOLICITUD
+  img2_fum                        : { sheet: 'IMAGENOLOGIA', cell: 'K63' },
+  img2_paciente_contaminado_si    : { sheet: 'IMAGENOLOGIA', cell: 'AM63' },
+  img2_paciente_contaminado_no    : { sheet: 'IMAGENOLOGIA', cell: 'AQ63' },
+  img2_paciente_contaminado_desc  : { sheet: 'IMAGENOLOGIA', cell: 'A64' },
+
+  // E. RESUMEN CLÍNICO ACTUAL
+  img2_resumen_clinico            : { sheet: 'IMAGENOLOGIA', cell: 'A69' },
+
+  // F. DIAGNÓSTICO
+  img2_diagnostico_1              : { sheet: 'IMAGENOLOGIA', cell: 'B77' },
+  img2_diagnostico_1_cie          : { sheet: 'IMAGENOLOGIA', cell: 'AC77' },
+  img2_diagnostico_1_pre          : { sheet: 'IMAGENOLOGIA', cell: 'AG77' },
+  img2_diagnostico_1_def          : { sheet: 'IMAGENOLOGIA', cell: 'AI77' },
+
+  img2_diagnostico_2              : { sheet: 'IMAGENOLOGIA', cell: 'B78' },
+  img2_diagnostico_2_cie          : { sheet: 'IMAGENOLOGIA', cell: 'AC78' },
+  img2_diagnostico_2_pre          : { sheet: 'IMAGENOLOGIA', cell: 'AG78' },
+  img2_diagnostico_2_def          : { sheet: 'IMAGENOLOGIA', cell: 'AI78' },
+
+  img2_diagnostico_3              : { sheet: 'IMAGENOLOGIA', cell: 'B79' },
+  img2_diagnostico_3_cie          : { sheet: 'IMAGENOLOGIA', cell: 'AC79' },
+  img2_diagnostico_3_pre          : { sheet: 'IMAGENOLOGIA', cell: 'AG79' },
+  img2_diagnostico_3_def          : { sheet: 'IMAGENOLOGIA', cell: 'AI79' },
+
+  img2_diagnostico_4              : { sheet: 'IMAGENOLOGIA', cell: 'AL77' },
+  img2_diagnostico_4_cie          : { sheet: 'IMAGENOLOGIA', cell: 'BL77' },
+  img2_diagnostico_4_pre          : { sheet: 'IMAGENOLOGIA', cell: 'BP77' },
+  img2_diagnostico_4_def          : { sheet: 'IMAGENOLOGIA', cell: 'BR77' },
+
+  img2_diagnostico_5              : { sheet: 'IMAGENOLOGIA', cell: 'AL78' },
+  img2_diagnostico_5_cie          : { sheet: 'IMAGENOLOGIA', cell: 'BL78' },
+  img2_diagnostico_5_pre          : { sheet: 'IMAGENOLOGIA', cell: 'BP78' },
+  img2_diagnostico_5_def          : { sheet: 'IMAGENOLOGIA', cell: 'BR78' },
+
+  img2_diagnostico_6              : { sheet: 'IMAGENOLOGIA', cell: 'AL79' },
+  img2_diagnostico_6_cie          : { sheet: 'IMAGENOLOGIA', cell: 'BL79' },
+  img2_diagnostico_6_pre          : { sheet: 'IMAGENOLOGIA', cell: 'BP79' },
+  img2_diagnostico_6_def          : { sheet: 'IMAGENOLOGIA', cell: 'BR79' },
+
+  // G. DATOS DEL PROFESIONAL RESPONSABLE
+  img2_fecha                      : { sheet: 'IMAGENOLOGIA', cell: 'A83' },
+  img2_hora                       : { sheet: 'IMAGENOLOGIA', cell: 'I83' },
+  img2_prof_primer_nombre         : { sheet: 'IMAGENOLOGIA', cell: 'P83' },
+  img2_prof_primer_apellido       : { sheet: 'IMAGENOLOGIA', cell: 'AK83' },
+  img2_prof_segundo_apellido      : { sheet: 'IMAGENOLOGIA', cell: 'BD83' },
+
+  img2_prof_documento             : { sheet: 'IMAGENOLOGIA', cell: 'A85' },
+
+Y ASI SUCESIVAMENTE CON LOS 15 BLOQUES. ME PARECE QUE EL PATRON ES DE 44 CELDAS 

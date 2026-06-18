@@ -1,0 +1,328 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["seguridad", "hospital"]
+}
+
+model Usuario {
+  id                Int      @id @default(autoincrement())
+  email             String   @unique
+  password          String
+  nombres           String?
+  apellidos         String?
+  activo            Boolean  @default(true)
+  emailVerificado   Boolean  @default(false) @map("email_verificado")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  roles             UsuarioRol[]
+  refreshTokens     RefreshToken[]
+  recuperaciones    RecuperacionPassword[]
+  categorias         Categoria[]
+
+  @@map("usuario")
+  @@schema("seguridad")
+}
+
+model Rol {
+  id          Int     @id @default(autoincrement())
+  nombre      String  @unique
+  descripcion String?
+
+  usuarios    UsuarioRol[]
+  permisos    RolPermiso[]
+
+  @@map("rol")
+  @@schema("seguridad")
+}
+
+model Permiso {
+  id          Int     @id @default(autoincrement())
+  codigo      String  @unique
+  descripcion String?
+
+  roles       RolPermiso[]
+
+  @@map("permiso")
+  @@schema("seguridad")
+}
+
+model UsuarioRol {
+  usuarioId Int @map("usuario_id")
+  rolId     Int @map("rol_id")
+
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  rol       Rol     @relation(fields: [rolId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, rolId])
+  @@map("usuario_rol")
+  @@schema("seguridad")
+}
+
+model RolPermiso {
+  rolId     Int @map("rol_id")
+  permisoId Int @map("permiso_id")
+
+  rol       Rol     @relation(fields: [rolId], references: [id], onDelete: Cascade)
+  permiso   Permiso @relation(fields: [permisoId], references: [id], onDelete: Cascade)
+
+  @@id([rolId, permisoId])
+  @@map("rol_permiso")
+  @@schema("seguridad")
+}
+
+model RefreshToken {
+  id         Int      @id @default(autoincrement())
+  usuarioId  Int      @map("usuario_id")
+  token      String
+  expiracion DateTime
+  creadoEn   DateTime @default(now()) @map("creado_en")
+
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_token")
+  @@schema("seguridad")
+}
+
+model RecuperacionPassword {
+  id         Int      @id @default(autoincrement())
+  usuarioId  Int      @map("usuario_id")
+  token      String
+  expiracion DateTime
+  usado      Boolean  @default(false)
+  creadoEn   DateTime @default(now()) @map("creado_en")
+
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("recuperacion_password")
+  @@schema("seguridad")
+}
+
+model Categoria {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  descripcion String?
+  usuarioId   Int      @map("usuario_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  pacientes   CategoriaPaciente[]
+
+  @@map("categoria")
+  @@schema("hospital")
+}
+
+model Paciente {
+  id             Int      @id @default(autoincrement())
+  primerNombre   String   @map("primer_nombre")
+  segundoNombre  String?  @map("segundo_nombre")
+  primerApellido String   @map("primer_apellido")
+  segundoApellido String? @map("segundo_apellido")
+
+  cedula         String?  @unique
+  fechaNacimiento DateTime? @db.Date @map("fecha_nacimiento")
+  edad           Int?
+
+  tipoPaciente   String?  @map("tipo_paciente")
+
+  sexo           String?
+  telefono       String?
+  direccion      String?
+
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  categorias     CategoriaPaciente[]
+
+  @@map("paciente")
+  @@schema("hospital")
+}
+
+model CategoriaPaciente {
+  id          Int      @id @default(autoincrement())
+  categoriaId Int      @map("categoria_id")
+  pacienteId  Int      @map("paciente_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  categoria   Categoria @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  paciente    Paciente  @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  atencion    Atencion?
+
+  @@unique([categoriaId, pacienteId])
+  @@map("categoria_paciente")
+  @@schema("hospital")
+}
+
+// ─── Expediente del paciente dentro de un servicio ───────────────────────────
+
+model Atencion {
+  id                  Int      @id @default(autoincrement())
+  categoriaPacienteId Int      @unique @map("categoria_paciente_id")
+  estado              String   @default("activo")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  categoriaPaciente   CategoriaPaciente @relation(fields: [categoriaPacienteId], references: [id], onDelete: Cascade)
+
+  consentimientos     Consentimiento[]
+  historiaClinica     HistoriaClinica?
+  protocolo           Protocolo?
+  cuidado             Cuidado?
+  epicrisis           Epicrisis?
+  receta              Receta?
+  certificado         Certificado?
+
+  @@map("atencion")
+  @@schema("hospital")
+}
+
+// ─── Catálogo de plantillas MSP ──────────────────────────────────────────────
+
+model Plantilla {
+  id              Int      @id @default(autoincrement())
+  codigo          String?
+  nombre          String
+  seccion         String   // 'consentimiento' | 'historia_clinica' | 'cuidado' | 'epicrisis' | 'protocolo' | 'receta'
+  tipoArchivo     String   @map("tipo_archivo") // 'xlsx' | 'docx'
+  esPlantillaFija Boolean  @default(true) @map("es_plantilla_fija")
+  rutaArchivo     String?  @map("ruta_archivo")
+  activo          Boolean  @default(true)
+
+  consentimientos Consentimiento[]
+  historiasClinicas HistoriaClinica[]
+  protocolos      Protocolo[]
+  cuidados        Cuidado[]
+  epicrisis       Epicrisis[]
+  recetas         Receta[]
+  certificados    Certificado[]
+
+  @@map("plantilla")
+  @@schema("hospital")
+}
+
+// ─── Secciones ────────────────────────────────────────────────────────────────
+
+model Consentimiento {
+  id          Int      @id @default(autoincrement())
+  atencionId  Int      @map("atencion_id")
+  plantillaId Int      @map("plantilla_id")
+  datos       Json     @default("{}")
+  estado      String   @default("borrador") // 'borrador' | 'firmado' | 'anulado'
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+
+  @@map("consentimiento")
+  @@schema("hospital")
+}
+
+model HistoriaClinica {
+  id          Int      @id @default(autoincrement())
+  atencionId  Int      @unique @map("atencion_id")
+  plantillaId Int      @map("plantilla_id")
+  datos       Json     @default("{}")
+  estado      String   @default("borrador")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+
+  @@map("historia_clinica")
+  @@schema("hospital")
+}
+
+model Protocolo {
+  id          Int      @id @default(autoincrement())
+  atencionId  Int      @unique @map("atencion_id")
+  plantillaId Int      @map("plantilla_id")
+  datos       Json     @default("{}")
+  estado      String   @default("borrador")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+
+  @@map("protocolo")
+  @@schema("hospital")
+}
+
+model Cuidado {
+  id          Int      @id @default(autoincrement())
+  atencionId  Int      @unique @map("atencion_id")
+  plantillaId Int      @map("plantilla_id")
+  datos       Json     @default("{}")
+  estado      String   @default("borrador")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+
+  @@map("cuidado")
+  @@schema("hospital")
+}
+
+model Epicrisis {
+  id          Int      @id @default(autoincrement())
+  atencionId  Int      @unique @map("atencion_id")
+  plantillaId Int      @map("plantilla_id")
+  datos       Json     @default("{}")
+  estado      String   @default("borrador")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+
+  @@map("epicrisis")
+  @@schema("hospital")
+}
+
+model Receta {
+  id          Int      @id @default(autoincrement())
+  atencionId  Int      @unique @map("atencion_id")
+  plantillaId Int      @map("plantilla_id")
+  datos       Json     @default("{}")
+  estado      String   @default("borrador")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+
+  @@map("receta")
+  @@schema("hospital")
+}
+
+model Certificado {
+  id          Int      @id @default(autoincrement())
+  atencionId  Int      @unique @map("atencion_id")
+  plantillaId Int      @map("plantilla_id")
+  datos       Json     @default("{}")
+  estado      String   @default("borrador")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+
+  @@map("certificado")
+  @@schema("hospital")
+}
+
+model Cie10 {
+  id          Int      @id @default(autoincrement())
+  codigo      String   @unique @db.VarChar(10)
+  descripcion String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("cie10")
+  @@schema("hospital")
+}
