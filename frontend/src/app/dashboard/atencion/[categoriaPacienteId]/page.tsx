@@ -233,6 +233,7 @@ export default function AtencionPage() {
     setProtocoloLoading(true);
     try {
       const datosProtocolo: Record<string, any> = {};
+      datosProtocolo.nombre = template?.label || 'Protocolo';
       if (template?.datos) {
         Object.entries(template.datos).forEach(([key, val]) => {
             if (key === 'graficos') {
@@ -508,7 +509,7 @@ export default function AtencionPage() {
             <div className="seccion-items">
               <div className="seccion-item">
                 <span className="seccion-item-name" style={{ cursor: 'default', textDecoration: 'none', color: '#18181b' }}>
-                  Protocolo
+                  {atencion.protocolo.datos?.nombre || 'Protocolo'}
                 </span>
                 <div className="table-actions">
                   <ConsentimientoActionsMenu

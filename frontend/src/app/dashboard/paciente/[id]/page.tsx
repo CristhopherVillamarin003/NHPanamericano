@@ -79,6 +79,7 @@ export default function PacienteDetailPage() {
       label: 'Fecha de Nacimiento',
       value: paciente.fechaNacimiento
         ? new Date(paciente.fechaNacimiento).toLocaleDateString('es-EC', {
+            timeZone: 'UTC',
             year: 'numeric',
             month: 'long',
             day: 'numeric',

@@ -34,6 +34,7 @@ export default function RichTextEpicrisis({
     ],
     content: value,
     editable: !readOnly,
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
       if (onChange) {
         onChange(editor.getHTML());

@@ -107,7 +107,7 @@ export function PacienteForm({ defaultValues, onSubmit, onCancel, loading, error
         {/* Cédula */}
         <div className="form-field">
           <label htmlFor="cedula" className="form-label">
-            Cédula
+            Cédula <span className="text-red-500">*</span>
           </label>
           <input
             id="cedula"
@@ -115,24 +115,30 @@ export function PacienteForm({ defaultValues, onSubmit, onCancel, loading, error
             className="form-input"
             {...register('cedula')}
           />
+          {errors.cedula && (
+            <p className="form-error">{errors.cedula.message}</p>
+          )}
         </div>
 
         {/* Tipo de Paciente */}
         <div className="form-field">
           <label htmlFor="tipoPaciente" className="form-label">
-            Tipo de Paciente
+            Tipo de Paciente <span className="text-red-500">*</span>
           </label>
           <select id="tipoPaciente" className="form-input" {...register('tipoPaciente')}>
             <option value="">Seleccionar</option>
             <option value="SPPAT">SPPAT</option>
             <option value="Particular">Particular</option>
           </select>
+          {errors.tipoPaciente && (
+            <p className="form-error">{errors.tipoPaciente.message}</p>
+          )}
         </div>
 
         {/* Fecha de Nacimiento */}
         <div className="form-field">
           <label htmlFor="fechaNacimiento" className="form-label">
-            Fecha de Nacimiento
+            Fecha de Nacimiento <span className="text-red-500">*</span>
           </label>
           <input
             id="fechaNacimiento"
@@ -140,6 +146,9 @@ export function PacienteForm({ defaultValues, onSubmit, onCancel, loading, error
             className="form-input"
             {...register('fechaNacimiento')}
           />
+          {errors.fechaNacimiento && (
+            <p className="form-error">{errors.fechaNacimiento.message}</p>
+          )}
         </div>
 
         {/* Edad */}

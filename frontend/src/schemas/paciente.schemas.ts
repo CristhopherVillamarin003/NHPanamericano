@@ -29,19 +29,18 @@ const soloLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
 const soloNumeros = /^\d+$/;
 
 export const pacienteSchema = z.object({
-  primerNombre: z.string().min(1, 'Requerido').regex(soloLetras, 'Solo se permiten letras'),
+  primerNombre: z.string().min(1, 'Por favor llena los campos obligatorios').regex(soloLetras, 'Solo se permiten letras'),
   segundoNombre: z.string().regex(soloLetras, 'Solo se permiten letras').optional().or(z.literal('')),
-  primerApellido: z.string().min(1, 'Requerido').regex(soloLetras, 'Solo se permiten letras'),
+  primerApellido: z.string().min(1, 'Por favor llena los campos obligatorios').regex(soloLetras, 'Solo se permiten letras'),
   segundoApellido: z.string().regex(soloLetras, 'Solo se permiten letras').optional().or(z.literal('')),
-  tipoPaciente: z.string().optional().or(z.literal('')),
+  tipoPaciente: z.string().min(1, 'Por favor llena los campos obligatorios'),
   cedula: z
     .string()
-    .optional()
-    .or(z.literal(''))
-    .refine((val) => !val || validarCedulaEcuatoriana(val), {
+    .min(1, 'Por favor llena los campos obligatorios')
+    .refine((val) => validarCedulaEcuatoriana(val), {
       message: 'Cédula ecuatoriana inválida',
     }),
-  fechaNacimiento: z.string().optional().or(z.literal('')),
+  fechaNacimiento: z.string().min(1, 'Por favor llena los campos obligatorios'),
   edad: z
     .preprocess((val) => {
       if (val === '' || val === undefined || val === null) return undefined;
