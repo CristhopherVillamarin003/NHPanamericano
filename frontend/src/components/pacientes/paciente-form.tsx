@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { pacienteSchema, type PacienteFormData } from '@/schemas/paciente.schemas';
@@ -17,6 +18,8 @@ export function PacienteForm({ defaultValues, onSubmit, onCancel, loading, error
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<PacienteFormData>({
     resolver: zodResolver(pacienteSchema) as any,
@@ -36,6 +39,24 @@ export function PacienteForm({ defaultValues, onSubmit, onCancel, loading, error
       direccion: defaultValues?.direccion ?? '',
     },
   });
+
+  const fechaNacimiento = watch('fechaNacimiento');
+
+  useEffect(() => {
+    if (fechaNacimiento) {
+      const birthDate = new Date(fechaNacimiento);
+      // Validar si la fecha es válida
+      if (!isNaN(birthDate.getTime())) {
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        setValue('edad', age >= 0 ? age : 0, { shouldValidate: true, shouldDirty: true });
+      }
+    }
+  }, [fechaNacimiento, setValue]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="paciente-form">
