@@ -190,6 +190,7 @@ model Plantilla {
   esPlantillaFija Boolean  @default(true) @map("es_plantilla_fija")
   rutaArchivo     String?  @map("ruta_archivo")
   activo          Boolean  @default(true)
+  datos           Json?    @default("{}")
 
   consentimientos Consentimiento[]
   historiasClinicas HistoriaClinica[]

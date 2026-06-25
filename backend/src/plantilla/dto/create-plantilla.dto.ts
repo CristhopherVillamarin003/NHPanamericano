@@ -23,4 +23,7 @@ export class CreatePlantillaDto {
   @IsOptional()
   @IsString()
   rutaArchivo?: string;
+
+  @IsOptional()
+  datos?: Record<string, any>;
 }

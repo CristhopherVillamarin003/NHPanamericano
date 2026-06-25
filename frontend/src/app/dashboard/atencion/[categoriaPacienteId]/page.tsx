@@ -14,7 +14,7 @@ import {
   upsertSeccion,
   deleteSeccion,
 } from '@/lib/services/atencion';
-import { CONSENTIMIENTO_TEMPLATES } from '@/lib/constants/consentimientosTemplates';
+import { getPlantillas, createPlantilla, deletePlantilla } from '@/lib/services/plantillas';
 import { PROTOCOLO_TEMPLATES } from '@/lib/constants/protocolosTemplates';
 import { CUIDADOS_TEMPLATES } from '@/lib/constants/cuidadosTemplates';
 
@@ -98,6 +98,7 @@ export default function AtencionPage() {
   const pacienteNombre = searchParams.get('nombre') ?? 'Paciente';
 
   const [atencion, setAtencion] = useState<Atencion | null>(null);
+  const [customTemplates, setCustomTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal crear consentimiento
@@ -121,10 +122,15 @@ export default function AtencionPage() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const filteredTemplates = CONSENTIMIENTO_TEMPLATES.filter(t =>
+  const allConsentimientoTemplates = [
+    { id: 'nuevo', label: 'Nuevo Consentimiento', nombre: 'Nuevo Consentimiento', datos: {}, isCustom: false },
+    ...customTemplates.filter(t => !t.esPlantillaFija).map(t => ({ id: t.id.toString(), label: t.nombre, nombre: t.nombre, datos: t.datos, isCustom: true }))
+  ];
+
+  const filteredTemplates = allConsentimientoTemplates.filter(t =>
     t.label.toLowerCase().includes(templateSearch.toLowerCase())
   );
-  const selectedTemplateLabel = CONSENTIMIENTO_TEMPLATES.find(t => t.id === selectedTemplate)?.label ?? '';
+  const selectedTemplateLabel = allConsentimientoTemplates.find(t => t.id === selectedTemplate)?.label ?? '';
 
   // Searchable dropdown — protocolo
   const [protocoloSearch, setProtocoloSearch] = useState('');
@@ -183,6 +189,9 @@ export default function AtencionPage() {
     try {
       const data = await findOrCreateAtencion(categoriaPacienteId);
       setAtencion(data as any);
+      
+      const plantillas = await getPlantillas('consentimiento');
+      setCustomTemplates(plantillas);
     } catch {
       /* silently fail */
     } finally {
@@ -197,25 +206,40 @@ export default function AtencionPage() {
   const handleCrearConsentimiento = async () => {
     if (!atencion) return;
 
-    const template = CONSENTIMIENTO_TEMPLATES.find(t => t.id === selectedTemplate);
-      const isCustom = selectedTemplate === 'nuevo';
-      const nombreFinal = isCustom ? nuevoNombre.trim() : (template?.nombre ?? '');
+    const template = allConsentimientoTemplates.find(t => t.id === selectedTemplate);
+    const isCustom = selectedTemplate === 'nuevo';
+    const nombreFinal = isCustom ? nuevoNombre.trim() : (template?.nombre ?? '');
 
-      setCreateLoading(true);
-      try {
-        const nuevoCons = await createConsentimiento(atencion.id, PLANTILLA_CONSENTIMIENTO_ID, {
+    setCreateLoading(true);
+    try {
+      if (isCustom) {
+        const nuevaPlantilla = await createPlantilla({
           nombre: nombreFinal,
-          ...(template?.datos || {})
+          seccion: 'consentimiento',
+          tipoArchivo: 'xlsx',
+          esPlantillaFija: false,
+          datos: {}
         });
-        
-        // Clear old drafts if any
-        const cedula = atencion.categoriaPaciente?.paciente?.cedula || 'new';
-        if (nuevoCons && nuevoCons.id) {
-            localStorage.removeItem(`draft_consentimiento_${nuevoCons.id}_${cedula}`);
-        }
-
         setNuevoNombre('');
         setSelectedTemplate('nuevo');
+        setCreateOpen(false);
+        router.push(`/dashboard/atencion/${categoriaPacienteId}/plantilla/${nuevaPlantilla.id}`);
+        return;
+      }
+
+      const nuevoCons = await createConsentimiento(atencion.id, PLANTILLA_CONSENTIMIENTO_ID, {
+        nombre: nombreFinal,
+        ...(template?.datos || {})
+      });
+      
+      // Clear old drafts if any
+      const cedula = atencion.categoriaPaciente?.paciente?.cedula || 'new';
+      if (nuevoCons && nuevoCons.id) {
+          localStorage.removeItem(`draft_consentimiento_${nuevoCons.id}_${cedula}`);
+      }
+
+      setNuevoNombre('');
+      setSelectedTemplate('nuevo');
       setCreateOpen(false);
       await fetchAtencion();
     } catch {
@@ -223,6 +247,26 @@ export default function AtencionPage() {
     } finally {
       setCreateLoading(false);
     }
+  };
+
+  const handleEliminarPlantilla = async (e: React.MouseEvent, plantillaIdStr: string) => {
+    e.stopPropagation();
+    if (!confirm('¿Seguro que deseas eliminar esta plantilla?')) return;
+    try {
+      await deletePlantilla(Number(plantillaIdStr));
+      if (selectedTemplate === plantillaIdStr) {
+        setSelectedTemplate('nuevo');
+      }
+      await fetchAtencion();
+    } catch {
+      alert('Error al eliminar la plantilla');
+    }
+  };
+
+  const handleEditarPlantilla = (e: React.MouseEvent, plantillaIdStr: string) => {
+    e.stopPropagation();
+    setCreateOpen(false);
+    router.push(`/dashboard/atencion/${categoriaPacienteId}/plantilla/${plantillaIdStr}`);
   };
 
   const handleCrearProtocolo = async () => {
@@ -797,11 +841,34 @@ export default function AtencionPage() {
                           color: selectedTemplate === t.id ? '#0369a1' : '#18181b',
                           fontWeight: selectedTemplate === t.id ? 600 : 400,
                           borderBottom: '1px solid #f4f4f5',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
                         }}
                         onMouseEnter={e => { if (selectedTemplate !== t.id) (e.currentTarget as HTMLDivElement).style.background = '#f9fafb'; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = selectedTemplate === t.id ? '#f0f9ff' : 'transparent'; }}
                       >
-                        {t.label}
+                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {t.label}
+                        </span>
+                        {(t as any).isCustom && (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              onClick={(e) => handleEditarPlantilla(e, t.id)}
+                              style={{ padding: '4px', color: '#6b7280', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                              title="Editar plantilla"
+                            >
+                              <Pencil className="w-4 h-4 hover:text-blue-600 transition-colors" />
+                            </button>
+                            <button
+                              onClick={(e) => handleEliminarPlantilla(e, t.id)}
+                              style={{ padding: '4px', color: '#6b7280', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                              title="Eliminar plantilla"
+                            >
+                              <Trash2 className="w-4 h-4 hover:text-red-600 transition-colors" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))
                   )}

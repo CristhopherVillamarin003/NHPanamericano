@@ -30,4 +30,7 @@ export class UpdatePlantillaDto {
   @IsOptional()
   @IsBoolean()
   activo?: boolean;
+
+  @IsOptional()
+  datos?: Record<string, any>;
 }
