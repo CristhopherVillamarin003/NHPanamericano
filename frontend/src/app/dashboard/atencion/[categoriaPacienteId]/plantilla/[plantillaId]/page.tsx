@@ -11,6 +11,11 @@ const ConsentimientoForm = dynamic(
   { ssr: false }
 );
 
+const ProtocoloForm = dynamic(
+  () => import('@/components/atencion/ProtocoloForm'),
+  { ssr: false }
+);
+
 export default function PlantillaPage() {
   const params = useParams();
   const router = useRouter();
@@ -36,7 +41,7 @@ export default function PlantillaPage() {
     if (plantillaId) load();
   }, [plantillaId]);
 
-  const handleGuardar = async (datos: { anverso: any; reverso: any }) => {
+  const handleGuardarConsentimiento = async (datos: { anverso: any; reverso: any }) => {
     if (!plantilla) return;
     setGuardando(true);
     try {
@@ -55,13 +60,29 @@ export default function PlantillaPage() {
     }
   };
 
+  const handleGuardarProtocolo = async (datosPlano: Record<string, any>) => {
+    if (!plantilla) return;
+    setGuardando(true);
+    try {
+      await updatePlantilla(plantilla.id, {
+        datos: datosPlano
+      });
+      formRef.current?.clearAutosave?.();
+      alert('Plantilla guardada exitosamente.');
+    } catch {
+      /* silently fail */
+    } finally {
+      setGuardando(false);
+    }
+  };
+
   const handleBack = () => {
     if (formRef.current?.isDirty?.()) {
       if (!confirm('Hay cambios sin guardar. ¿Seguro que quieres salir?')) {
         return;
       }
     }
-    router.push(`/dashboard/atencion/${categoriaPacienteId}`);
+    router.back();
   };
 
   if (loading) {
@@ -94,16 +115,26 @@ export default function PlantillaPage() {
         </div>
       </div>
       <div className="form-page-body">
-        <ConsentimientoForm
-          ref={formRef}
-          isTemplateMode={true}
-          initialData={{
-            anverso: plantilla?.datos?.anverso,
-            reverso: plantilla?.datos?.reverso,
-          }}
-          onGuardar={handleGuardar}
-          guardando={guardando}
-        />
+        {plantilla?.seccion === 'protocolo' ? (
+          <ProtocoloForm
+            ref={formRef}
+            isTemplateMode={true}
+            initialData={plantilla.datos}
+            onGuardar={handleGuardarProtocolo}
+            guardando={guardando}
+          />
+        ) : (
+          <ConsentimientoForm
+            ref={formRef}
+            isTemplateMode={true}
+            initialData={{
+              anverso: plantilla?.datos?.anverso,
+              reverso: plantilla?.datos?.reverso,
+            }}
+            onGuardar={handleGuardarConsentimiento}
+            guardando={guardando}
+          />
+        )}
       </div>
     </div>
   );

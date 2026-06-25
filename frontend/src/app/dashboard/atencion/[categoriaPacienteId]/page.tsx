@@ -15,7 +15,6 @@ import {
   deleteSeccion,
 } from '@/lib/services/atencion';
 import { getPlantillas, createPlantilla, deletePlantilla } from '@/lib/services/plantillas';
-import { PROTOCOLO_TEMPLATES } from '@/lib/constants/protocolosTemplates';
 import { CUIDADOS_TEMPLATES } from '@/lib/constants/cuidadosTemplates';
 
 const PLANTILLA_CONSENTIMIENTO_ID = 1; // ID del registro en tabla plantilla
@@ -37,10 +36,14 @@ function ConsentimientoActionsMenu({
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const handleToggle = () => {
+  const handleToggle = (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
     if (!open && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
-      setCoords({ top: rect.bottom + 6, left: rect.right });
+      setCoords({ top: rect.top - 4, left: Math.max(0, rect.left - 70) });
     }
     setOpen((v) => !v);
   };
@@ -96,9 +99,11 @@ export default function AtencionPage() {
   const searchParams = useSearchParams();
   const categoriaPacienteId = Number(params.categoriaPacienteId);
   const pacienteNombre = searchParams.get('nombre') ?? 'Paciente';
+  const categoriaId = searchParams.get('categoriaId');
 
   const [atencion, setAtencion] = useState<Atencion | null>(null);
   const [customTemplates, setCustomTemplates] = useState<any[]>([]);
+  const [customProtocoloTemplates, setCustomProtocoloTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal crear consentimiento
@@ -109,6 +114,7 @@ export default function AtencionPage() {
 
   // Modal crear protocolo
   const [protocoloOpen, setProtocoloOpen] = useState(false);
+  const [nuevoProtocoloNombre, setNuevoProtocoloNombre] = useState('');
   const [selectedProtocoloTemplate, setSelectedProtocoloTemplate] = useState('vacio');
   const [protocoloLoading, setProtocoloLoading] = useState(false);
 
@@ -137,10 +143,15 @@ export default function AtencionPage() {
   const [protocoloDropdownOpen, setProtocoloDropdownOpen] = useState(false);
   const protocoloDropdownRef = useRef<HTMLDivElement>(null);
 
-  const filteredProtocoloTemplates = PROTOCOLO_TEMPLATES.filter(t =>
+  const allProtocoloTemplates = [
+    { id: 'vacio', label: 'Protocolo Vacío', nombre: 'Protocolo Vacío', datos: {}, isCustom: false },
+    ...customProtocoloTemplates.filter(t => !t.esPlantillaFija).map(t => ({ id: t.id.toString(), label: t.nombre, nombre: t.nombre, datos: t.datos, isCustom: true }))
+  ];
+
+  const filteredProtocoloTemplates = allProtocoloTemplates.filter(t =>
     t.label.toLowerCase().includes(protocoloSearch.toLowerCase())
   );
-  const selectedProtocoloLabel = PROTOCOLO_TEMPLATES.find(t => t.id === selectedProtocoloTemplate)?.label ?? '';
+  const selectedProtocoloLabel = allProtocoloTemplates.find(t => t.id === selectedProtocoloTemplate)?.label ?? '';
 
   // Searchable dropdown — cuidados
   const [cuidadosSearch, setCuidadosSearch] = useState('');
@@ -184,6 +195,10 @@ export default function AtencionPage() {
   const [deleteSeccionTarget, setDeleteSeccionTarget] = useState<string | null>(null);
   const [deleteSeccionLoading, setDeleteSeccionLoading] = useState(false);
 
+  // Modal eliminar plantilla (consentimiento / protocolo)
+  const [deletePlantillaTarget, setDeletePlantillaTarget] = useState<string | null>(null);
+  const [deletePlantillaLoading, setDeletePlantillaLoading] = useState(false);
+
   const fetchAtencion = useCallback(async () => {
     setLoading(true);
     try {
@@ -192,6 +207,9 @@ export default function AtencionPage() {
       
       const plantillas = await getPlantillas('consentimiento');
       setCustomTemplates(plantillas);
+
+      const plantillasProtocolo = await getPlantillas('protocolo');
+      setCustomProtocoloTemplates(plantillasProtocolo);
     } catch {
       /* silently fail */
     } finally {
@@ -249,22 +267,31 @@ export default function AtencionPage() {
     }
   };
 
-  const handleEliminarPlantilla = async (e: React.MouseEvent, plantillaIdStr: string) => {
-    e.stopPropagation();
-    if (!confirm('¿Seguro que deseas eliminar esta plantilla?')) return;
+  const handleEliminarPlantilla = (plantillaIdStr: string) => {
+    setDeletePlantillaTarget(plantillaIdStr);
+  };
+
+  const confirmEliminarPlantilla = async () => {
+    if (!deletePlantillaTarget) return;
+    setDeletePlantillaLoading(true);
     try {
-      await deletePlantilla(Number(plantillaIdStr));
-      if (selectedTemplate === plantillaIdStr) {
+      await deletePlantilla(Number(deletePlantillaTarget));
+      if (selectedTemplate === deletePlantillaTarget) {
         setSelectedTemplate('nuevo');
       }
+      if (selectedProtocoloTemplate === deletePlantillaTarget) {
+        setSelectedProtocoloTemplate('vacio');
+      }
+      setDeletePlantillaTarget(null);
       await fetchAtencion();
     } catch {
-      alert('Error al eliminar la plantilla');
+      /* silently fail */
+    } finally {
+      setDeletePlantillaLoading(false);
     }
   };
 
-  const handleEditarPlantilla = (e: React.MouseEvent, plantillaIdStr: string) => {
-    e.stopPropagation();
+  const handleEditarPlantilla = (plantillaIdStr: string) => {
     setCreateOpen(false);
     router.push(`/dashboard/atencion/${categoriaPacienteId}/plantilla/${plantillaIdStr}`);
   };
@@ -272,15 +299,32 @@ export default function AtencionPage() {
   const handleCrearProtocolo = async () => {
     if (!atencion) return;
 
-    const template = PROTOCOLO_TEMPLATES.find(t => t.id === selectedProtocoloTemplate);
-    
+    const template = allProtocoloTemplates.find(t => t.id === selectedProtocoloTemplate);
+    const isCustom = selectedProtocoloTemplate === 'vacio';
+    const nombreFinal = isCustom ? nuevoProtocoloNombre.trim() : (template?.nombre ?? '');
+
     setProtocoloLoading(true);
     try {
+      if (isCustom) {
+        const nuevaPlantilla = await createPlantilla({
+          nombre: nombreFinal,
+          seccion: 'protocolo',
+          tipoArchivo: 'xlsx',
+          esPlantillaFija: false,
+          datos: {}
+        });
+        setNuevoProtocoloNombre('');
+        setSelectedProtocoloTemplate('vacio');
+        setProtocoloOpen(false);
+        router.push(`/dashboard/atencion/${categoriaPacienteId}/plantilla/${nuevaPlantilla.id}`);
+        return;
+      }
+
       const datosProtocolo: Record<string, any> = {};
-      datosProtocolo.nombre = template?.label || 'Protocolo';
+      datosProtocolo.nombre = nombreFinal;
       if (template?.datos) {
         Object.entries(template.datos).forEach(([key, val]) => {
-            if (key === 'graficos') {
+            if (key.startsWith('prot_') || key === 'graficos') {
                 datosProtocolo[key] = val;
             } else if (key === 'profesionales') {
                 (val as any[]).forEach((prof, i) => {
@@ -304,7 +348,10 @@ export default function AtencionPage() {
       const cedula = atencion.categoriaPaciente?.paciente?.cedula || 'new';
       localStorage.removeItem(`draft_protocolo_${atencion.id}_${cedula}`);
 
+      setNuevoProtocoloNombre('');
+      setSelectedProtocoloTemplate('vacio');
       setProtocoloOpen(false);
+      await fetchAtencion();
       router.push(`/dashboard/atencion/${categoriaPacienteId}/protocolo`);
     } catch {
       /* silently fail */
@@ -425,7 +472,13 @@ export default function AtencionPage() {
         </div>
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={() => {
+            if (categoriaId) {
+              router.push(`/dashboard/categoria/${categoriaId}`);
+            } else {
+              router.back();
+            }
+          }}
           className="detail-back-btn"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -852,21 +905,11 @@ export default function AtencionPage() {
                           {t.label}
                         </span>
                         {(t as any).isCustom && (
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                              onClick={(e) => handleEditarPlantilla(e, t.id)}
-                              style={{ padding: '4px', color: '#6b7280', background: 'transparent', border: 'none', cursor: 'pointer' }}
-                              title="Editar plantilla"
-                            >
-                              <Pencil className="w-4 h-4 hover:text-blue-600 transition-colors" />
-                            </button>
-                            <button
-                              onClick={(e) => handleEliminarPlantilla(e, t.id)}
-                              style={{ padding: '4px', color: '#6b7280', background: 'transparent', border: 'none', cursor: 'pointer' }}
-                              title="Eliminar plantilla"
-                            >
-                              <Trash2 className="w-4 h-4 hover:text-red-600 transition-colors" />
-                            </button>
+                          <div style={{ display: 'flex' }} onClick={e => e.stopPropagation()}>
+                            <ConsentimientoActionsMenu 
+                              onEdit={() => handleEditarPlantilla(t.id)}
+                              onDelete={() => handleEliminarPlantilla(t.id)}
+                            />
                           </div>
                         )}
                       </div>
@@ -953,6 +996,14 @@ export default function AtencionPage() {
         onConfirm={handleEliminarSeccion}
         message={`¿Está seguro que desea eliminar este registro? Esta acción no se puede deshacer.`}
         loading={deleteSeccionLoading}
+      />
+
+      <ConfirmDialog
+        open={!!deletePlantillaTarget}
+        onClose={() => setDeletePlantillaTarget(null)}
+        onConfirm={confirmEliminarPlantilla}
+        message="¿Está seguro que desea eliminar esta plantilla? Esta acción no se puede deshacer."
+        loading={deletePlantillaLoading}
       />
 
       {/* Modal crear protocolo */}
@@ -1056,11 +1107,24 @@ export default function AtencionPage() {
                           color: selectedProtocoloTemplate === t.id ? '#0369a1' : '#18181b',
                           fontWeight: selectedProtocoloTemplate === t.id ? 600 : 400,
                           borderBottom: '1px solid #f4f4f5',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
                         }}
                         onMouseEnter={e => { if (selectedProtocoloTemplate !== t.id) (e.currentTarget as HTMLDivElement).style.background = '#f9fafb'; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = selectedProtocoloTemplate === t.id ? '#f0f9ff' : 'transparent'; }}
                       >
-                        {t.label}
+                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {t.label}
+                        </span>
+                        {(t as any).isCustom && (
+                          <div style={{ display: 'flex' }} onClick={e => e.stopPropagation()}>
+                            <ConsentimientoActionsMenu 
+                              onEdit={() => handleEditarPlantilla(t.id)}
+                              onDelete={() => handleEliminarPlantilla(t.id)}
+                            />
+                          </div>
+                        )}
                       </div>
                     ))
                   )}
@@ -1068,6 +1132,20 @@ export default function AtencionPage() {
               )}
             </div>
           </div>
+
+          {selectedProtocoloTemplate === 'vacio' && (
+            <div className="form-field">
+              <label className="form-label">Nombre del protocolo <span className="text-red-500">*</span></label>
+              <input
+                type="text"
+                className="form-input"
+                value={nuevoProtocoloNombre}
+                onChange={e => setNuevoProtocoloNombre(e.target.value)}
+                placeholder="Ej. Protocolo Colelap"
+                autoFocus
+              />
+            </div>
+          )}
 
           <div className="paciente-form-actions">
             <button type="button" className="btn-cancel" onClick={() => setProtocoloOpen(false)} disabled={protocoloLoading}>

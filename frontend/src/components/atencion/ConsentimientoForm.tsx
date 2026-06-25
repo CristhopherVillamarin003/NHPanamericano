@@ -216,8 +216,8 @@ const ConsentimientoForm024 = React.forwardRef<ConsentimientoFormHandle, Props>(
   const [hoja, setHoja] = useState<"ANVERSO" | "REVERSO">("ANVERSO");
 
   const [anverso, setAnverso] = useState<DatosAnverso>({
-    institucion: (initialData?.anverso?.institucion) || paciente?.tipoPaciente || "PARTICULAR",
-    establecimiento: initialData?.anverso?.establecimiento || "NUEVO HOSPITAL PANAMERICANO",
+    institucion: isTemplateMode ? "" : ((initialData?.anverso?.institucion) || paciente?.tipoPaciente || "PARTICULAR"),
+    establecimiento: isTemplateMode ? "" : (initialData?.anverso?.establecimiento || "NUEVO HOSPITAL PANAMERICANO"),
     numero_historia_clinica: (initialData?.anverso?.numero_historia_clinica) || paciente?.numero_historia_clinica || paciente?.cedula || "",
     numero_archivo: initialData?.anverso?.numero_archivo || "",
     primer_apellido: (initialData?.anverso?.primer_apellido) || paciente?.primer_apellido || "",
@@ -282,8 +282,30 @@ const ConsentimientoForm024 = React.forwardRef<ConsentimientoFormHandle, Props>(
     },
   });
 
+  const getDatosFiltrados = () => {
+    const datosAnverso = { ...anverso };
+    const datosReverso = { ...reverso };
+
+    if (isTemplateMode) {
+      const anversoPatientKeys = [
+        'institucion', 'establecimiento', 'numero_historia_clinica', 'numero_archivo',
+        'primer_apellido', 'segundo_apellido', 'primer_nombre', 'segundo_nombre',
+        'sexo', 'edad', 'condicion_edad'
+      ];
+      const reversoPatientKeys = [
+        'nombre_paciente_firma', 'cedula_paciente_firma',
+        'nombre_paciente_negativa', 'cedula_paciente_negativa'
+      ];
+
+      anversoPatientKeys.forEach(k => delete (datosAnverso as any)[k]);
+      reversoPatientKeys.forEach(k => delete (datosReverso as any)[k]);
+    }
+
+    return { anverso: datosAnverso, reverso: datosReverso };
+  };
+
   useImperativeHandle(ref, () => ({
-    getDatos: () => ({ anverso, reverso }),
+    getDatos: () => getDatosFiltrados(),
     clearAutosave: () => clearAutosave(),
     isDirty: () => isDirty,
   }), [anverso, reverso, clearAutosave, isDirty]);
@@ -298,7 +320,7 @@ const ConsentimientoForm024 = React.forwardRef<ConsentimientoFormHandle, Props>(
   const TEXTO_LEGAL_E = 'De forma libre y voluntaria, revoco el consentimiento realizado en fecha y manifiesto expresamente mi deseo de no continuar con el procedimiento médico que doy por finalizado en esta fecha. Libero de responsabilidades futuras de cualquier índole al establecimiento de salud y al profesional sanitario que me atiende.';
 
   const handleGuardar = () => {
-    onGuardar?.({ anverso, reverso });
+    onGuardar?.(getDatosFiltrados());
     clearAutosave();
   };
   

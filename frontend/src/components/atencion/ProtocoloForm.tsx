@@ -80,6 +80,7 @@ interface Props {
   guardando?: boolean;
   exportando?: boolean;
   atencionId?: number;
+  isTemplateMode?: boolean;
 }
 
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
@@ -191,15 +192,15 @@ export type ProtocoloQuirurgicoFormHandle = {
 
 const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, Props>(({
   paciente, initialData, onGuardar, onExportarExcel,
-  guardando = false, exportando = false, atencionId,
+  guardando = false, exportando = false, atencionId, isTemplateMode = false
 }, ref) => {
   const [hoja, setHoja] = useState<"ANVERSO" | "REVERSO">("ANVERSO");
 
   const [d, setD] = useState<DatosProtocolo>(() => {
     const base: DatosProtocolo = {
-      institucion: paciente?.tipoPaciente ?? "PARTICULAR",
-      unicodigo: "62858",
-      establecimiento: "NUEVO HOSPITAL PANAMERICANO",
+      institucion: isTemplateMode ? "" : (paciente?.tipoPaciente ?? "PARTICULAR"),
+      unicodigo: isTemplateMode ? "" : "62858",
+      establecimiento: isTemplateMode ? "" : "NUEVO HOSPITAL PANAMERICANO",
       numero_historia_clinica: paciente?.numero_historia_clinica ?? paciente?.cedula ?? "",
       numero_archivo: "",
       primer_apellido: paciente?.primerApellido ?? "",
@@ -335,8 +336,20 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
     // Mapeo directo con prefijo prot_
     Object.entries(d).forEach(([key, val]) => {
       if (key === "proced_quirurgico" || key === "procedimiento_quirurgico_cont" || key === "profesionales" || key === "graficos" || key === "dieresis" || key === "hallazgos_quirurgicos") return;
+      
+      if (isTemplateMode) {
+        const patientKeys = [
+          'institucion', 'unicodigo', 'establecimiento', 'numero_historia_clinica', 
+          'numero_archivo', 'primer_apellido', 'segundo_apellido', 'primer_nombre', 
+          'segundo_nombre', 'sexo', 'edad', 'condicion_edad'
+        ];
+        if (patientKeys.includes(key)) return;
+      }
+
       out[`prot_${key}`] = val;
     });
+
+
 
     out.graficos = d.graficos;
 
@@ -370,6 +383,13 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
       out[`prot_prof_firma_${i + 1}`] = ""; // Firma física
       out[`prot_prof_sello_documento_${i + 1}`] = prof.sello_documento;
     });
+
+    if (isTemplateMode) {
+      delete out['prot_condicion_edad_h'];
+      delete out['prot_condicion_edad_d'];
+      delete out['prot_condicion_edad_m'];
+      delete out['prot_condicion_edad_a'];
+    }
 
     return out;
   };
