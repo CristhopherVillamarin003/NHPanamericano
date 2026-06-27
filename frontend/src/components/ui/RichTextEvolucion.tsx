@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { Medico } from "@/lib/services/medicos";
+import { MedicoInput } from "../atencion/MedicoInput";
 
 interface RichTextEvolucionProps {
   value: string;
@@ -10,6 +12,7 @@ interface RichTextEvolucionProps {
   readOnly?: boolean;
   minHeight?: string;
   placeholder?: string;
+  enableMedicoSelect?: boolean;
 }
 
 export default function RichTextEvolucion({
@@ -18,7 +21,11 @@ export default function RichTextEvolucion({
   readOnly = false,
   minHeight = "120px",
   placeholder = "",
+  enableMedicoSelect = false,
 }: RichTextEvolucionProps) {
+  const [medicoSearchAbierto, setMedicoSearchAbierto] = useState(false);
+  const [medicoQuery, setMedicoQuery] = useState("");
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -126,6 +133,67 @@ export default function RichTextEvolucion({
           }
         `}</style>
         <EditorContent editor={editor} />
+        
+        {enableMedicoSelect && !readOnly && (
+          <div style={{ position: 'absolute', bottom: '8px', right: '8px', zIndex: 10 }}>
+            {!medicoSearchAbierto ? (
+              <button
+                type="button"
+                onClick={() => setMedicoSearchAbierto(true)}
+                style={{
+                  background: '#e0f2fe',
+                  border: '1px solid #7dd3fc',
+                  borderRadius: '4px',
+                  padding: '4px 8px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  color: '#0369a1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+                title="Insertar Médico"
+              >
+                ⚕️ Médico 🔽
+              </button>
+            ) : (
+              <div style={{ 
+                background: '#fff', 
+                border: '1px solid #ccc', 
+                borderRadius: '4px', 
+                padding: '4px', 
+                width: '220px', 
+                display: 'flex', 
+                alignItems: 'center',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
+              }}>
+                <div style={{ flex: 1 }}>
+                  <MedicoInput
+                    value={medicoQuery}
+                    onChangeValue={setMedicoQuery}
+                    onSelectMedico={(m: Medico) => {
+                      const htmlStr = `<p>${m.nombre}</p><p>CI: ${m.identificacion}</p><p>${m.especialidad}</p><p></p>`;
+                      editor.chain().focus().insertContent(htmlStr).run();
+                      setMedicoSearchAbierto(false);
+                      setMedicoQuery("");
+                    }}
+                    placeholder="Buscar médico..."
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMedicoSearchAbierto(false)}
+                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '10px', color: '#999', padding: '0 4px' }}
+                  title="Cancelar"
+                >
+                  ❌
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

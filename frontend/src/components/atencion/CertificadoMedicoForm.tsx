@@ -2,6 +2,8 @@
 
 import React, { useState, useImperativeHandle } from "react";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
+import { MedicoInput } from "./MedicoInput";
+import type { Medico } from "@/lib/services/medicos";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -238,8 +240,9 @@ function TableField({ label, value, onChange, readOnly = false, placeholder = ""
   );
 }
 
-function DoctorField({ label, value, onChange }: {
+function DoctorField({ label, value, onChange, onSelectMedico }: {
   label: string; value: string; onChange: (v: string) => void;
+  onSelectMedico?: (m: Medico) => void;
 }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
@@ -248,7 +251,7 @@ function DoctorField({ label, value, onChange }: {
           {label}
         </span>
       )}
-      <input type="text" value={value} onChange={(e) => onChange(e.target.value)}
+      <MedicoInput value={value} onChangeValue={onChange} onSelectMedico={onSelectMedico || (() => {})}
         style={{
           border: "none", borderBottom: "1px dashed #aaa", outline: "none",
           background: "transparent", fontSize: "10px", fontFamily: "'Georgia', serif",
@@ -707,10 +710,14 @@ const CertificadoMedicoForm = React.forwardRef<CertificadoMedicoFormHandle, Prop
               (campos editables — se exportan al documento)
             </div>
             <div style={{ width: "100%", maxWidth: 500 }}>
-              <DoctorField label="" value={d.nombre_doctor} onChange={s("nombre_doctor")} />
-              <DoctorField label="" value={d.especialidad_doctor} onChange={s("especialidad_doctor")} />
-              <DoctorField label="" value={d.ci_doctor} onChange={s("ci_doctor")} />
-              <DoctorField label="" value={d.correo_doctor} onChange={s("correo_doctor")} />
+              <DoctorField label="" value={d.nombre_doctor} onChange={s("nombre_doctor")} 
+                onSelectMedico={(m) => { s("nombre_doctor")(m.nombre); s("especialidad_doctor")(m.especialidad); s("ci_doctor")(m.identificacion); s("correo_doctor")(m.correo); }} />
+              <DoctorField label="" value={d.especialidad_doctor} onChange={s("especialidad_doctor")}
+                onSelectMedico={(m) => { s("nombre_doctor")(m.nombre); s("especialidad_doctor")(m.especialidad); s("ci_doctor")(m.identificacion); s("correo_doctor")(m.correo); }} />
+              <DoctorField label="" value={d.ci_doctor} onChange={s("ci_doctor")}
+                onSelectMedico={(m) => { s("nombre_doctor")(m.nombre); s("especialidad_doctor")(m.especialidad); s("ci_doctor")(m.identificacion); s("correo_doctor")(m.correo); }} />
+              <DoctorField label="" value={d.correo_doctor} onChange={s("correo_doctor")}
+                onSelectMedico={(m) => { s("nombre_doctor")(m.nombre); s("especialidad_doctor")(m.especialidad); s("ci_doctor")(m.identificacion); s("correo_doctor")(m.correo); }} />
             </div>
           </div>
 

@@ -193,6 +193,20 @@ export default function EpicrisisPage() {
               const parser = new DOMParser();
               const doc = parser.parseFromString(bloque.farmacoterapia, 'text/html');
 
+              // Eliminar los datos del médico insertados (Nombre, CI, Especialidad)
+              const pTagsFarma = doc.body.querySelectorAll('p');
+              for (let i = 0; i < pTagsFarma.length; i++) {
+                const p = pTagsFarma[i];
+                const text = p.textContent || '';
+                if (text.trim().startsWith('CI: ') && /\d/.test(text)) {
+                  const prev = p.previousElementSibling;
+                  const next = p.nextElementSibling;
+                  p.remove();
+                  if (prev) prev.remove();
+                  if (next) next.remove();
+                }
+              }
+
               let foundIndicaciones = false;
               let contentHtml = '';
               for (let i = 0; i < doc.body.childNodes.length; i++) {
@@ -209,8 +223,12 @@ export default function EpicrisisPage() {
                   }
                 }
               }
+              
+              // Si no se encontró la palabra 'INDICACIONES', usar todo el contenido (ya limpio del médico)
               if (foundIndicaciones) {
                 filteredFarmaHtml = contentHtml;
+              } else {
+                filteredFarmaHtml = doc.body.innerHTML;
               }
             } catch (e) {
               console.error("Error parsing HTML for FARMACOTERAPIA INDICACIONES:", e);
@@ -222,6 +240,95 @@ export default function EpicrisisPage() {
             }
           }
           epicrisisDatos.resumen_tratamiento = aggregatedTratamientoHtml;
+        }
+
+        // --- LITERAL F: INDICACIONES DE ALTA / EGRESO ---
+        if (evolucionBloques.length > 0 && (!epicrisisDatos.indicaciones_alta || epicrisisDatos.indicaciones_alta.trim() === '')) {
+          let aggregatedIndicacionesHtml = '';
+          for (let idx = 0; idx < evolucionBloques.length; idx++) {
+            const bloque = evolucionBloques[idx];
+            if (!bloque.farmacoterapia) continue;
+
+            let firstLine = '';
+            let secondLine = '';
+            try {
+              if (bloque.notas_evolucion) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(bloque.notas_evolucion, 'text/html');
+                const pTags = doc.body.querySelectorAll('p');
+                if (pTags.length > 0) firstLine = pTags[0].textContent || '';
+                if (pTags.length > 1) secondLine = pTags[1].textContent || '';
+              }
+            } catch (e) {}
+
+            // SOLO procesar si es "NOTA DE ALTA"
+            if (!firstLine.toUpperCase().includes('NOTA DE ALTA')) {
+              continue;
+            }
+
+            let formattedDate = bloque.fecha || '';
+            if (formattedDate.includes('-')) {
+              const [y, m, d] = formattedDate.split('-');
+              formattedDate = `${d}/${m}/${y}`;
+            }
+            const formattedHora = (bloque.hora || '').replace(':', 'H');
+
+            const titleText = `${formattedDate} ${firstLine.trim()} ${secondLine.trim()} ${formattedHora}`;
+            const headerHtml = `<p><strong>${titleText}</strong></p>`;
+
+            let filteredFarmaHtml = '';
+            try {
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(bloque.farmacoterapia, 'text/html');
+
+              // Eliminar los datos del médico insertados (Nombre, CI, Especialidad)
+              const pTagsFarma = doc.body.querySelectorAll('p');
+              for (let i = 0; i < pTagsFarma.length; i++) {
+                const p = pTagsFarma[i];
+                const text = p.textContent || '';
+                if (text.trim().startsWith('CI: ') && /\d/.test(text)) {
+                  const prev = p.previousElementSibling;
+                  const next = p.nextElementSibling;
+                  p.remove();
+                  if (prev) prev.remove();
+                  if (next) next.remove();
+                }
+              }
+
+              let foundIndicaciones = false;
+              let contentHtml = '';
+              for (let i = 0; i < doc.body.childNodes.length; i++) {
+                const node = doc.body.childNodes[i];
+                if (!foundIndicaciones) {
+                  if (node.textContent?.toUpperCase().includes('INDICACIONES')) {
+                    foundIndicaciones = true;
+                  }
+                } else {
+                  if (node.nodeType === Node.ELEMENT_NODE) {
+                    contentHtml += (node as Element).outerHTML;
+                  } else if (node.nodeType === Node.TEXT_NODE) {
+                    contentHtml += node.textContent || '';
+                  }
+                }
+              }
+              
+              if (foundIndicaciones) {
+                filteredFarmaHtml = contentHtml;
+              } else {
+                filteredFarmaHtml = doc.body.innerHTML;
+              }
+            } catch (e) {
+              console.error("Error parsing HTML for INDICACIONES DE ALTA:", e);
+            }
+
+            if (aggregatedIndicacionesHtml.length > 0 && filteredFarmaHtml.trim() !== '') {
+              aggregatedIndicacionesHtml += '<br/><br/>';
+            }
+            if (filteredFarmaHtml.trim() !== '') {
+              aggregatedIndicacionesHtml += headerHtml + filteredFarmaHtml;
+            }
+          }
+          epicrisisDatos.indicaciones_alta = aggregatedIndicacionesHtml;
         }
 
         setInitialData(epicrisisDatos);

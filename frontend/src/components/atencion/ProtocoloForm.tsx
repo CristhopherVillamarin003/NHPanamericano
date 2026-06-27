@@ -2,6 +2,7 @@
 
 import React, { useState, useImperativeHandle } from "react";
 import { Cie10DescInput, Cie10CieInput } from "./Cie10Input";
+import { MedicoInput } from "./MedicoInput";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -938,14 +939,40 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
                 {d.profesionales.map((prof, idx) => (
                   <tr key={idx} style={{ height: 28 }}>
                     <td colSpan={8} style={td}>
-                      <TxtIn value={prof.nombre_apellidos} onChange={(v) => setProf(idx, "nombre_apellidos", v)} placeholder={`Profesional ${idx + 1}`} />
+                      <MedicoInput
+                        value={prof.nombre_apellidos}
+                        onChangeValue={(v) => setProf(idx, "nombre_apellidos", v)}
+                        onSelectMedico={(m) => {
+                          setProf(idx, "nombre_apellidos", m.nombre);
+                          setProf(idx, "especialidad", m.especialidad);
+                          setProf(idx, "sello_documento", m.identificacion);
+                        }}
+                        placeholder={`Profesional ${idx + 1}`}
+                      />
                     </td>
                     <td colSpan={5} style={td}>
-                      <TxtIn value={prof.especialidad} onChange={(v) => setProf(idx, "especialidad", v)} placeholder="Especialidad" />
+                      <MedicoInput
+                        value={prof.especialidad}
+                        onChangeValue={(v) => setProf(idx, "especialidad", v)}
+                        onSelectMedico={(m) => {
+                          setProf(idx, "nombre_apellidos", m.nombre);
+                          setProf(idx, "especialidad", m.especialidad);
+                          setProf(idx, "sello_documento", m.identificacion);
+                        }}
+                        placeholder="Especialidad"
+                      />
                     </td>
                     <td colSpan={4} style={{ ...td, background: "#f9f9f9" }} />
                     <td colSpan={3} style={td}>
-                      <TxtIn value={prof.sello_documento} onChange={(v) => setProf(idx, "sello_documento", v)} />
+                      <MedicoInput
+                        value={prof.sello_documento}
+                        onChangeValue={(v) => setProf(idx, "sello_documento", v)}
+                        onSelectMedico={(m) => {
+                          setProf(idx, "nombre_apellidos", m.nombre);
+                          setProf(idx, "especialidad", m.especialidad);
+                          setProf(idx, "sello_documento", m.identificacion);
+                        }}
+                      />
                     </td>
                   </tr>
                 ))}

@@ -3,6 +3,7 @@
 import React, { useState, useImperativeHandle } from "react";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
 import { Cie10DescInput, Cie10CieInput } from "./Cie10Input";
+import { MedicoInput } from "./MedicoInput";
 import RichTextEpicrisis from "../ui/RichTextEpicrisis";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -517,9 +518,39 @@ const EpicrisisForm = React.forwardRef<EpicrisisFormHandle, Props>(({
             </tr>
             <tr style={{ height: 28 }}>
               <td colSpan={1} style={tdC}><span style={{ fontSize: "10px", fontWeight: 700 }}>1.</span></td>
-              <td colSpan={7} style={td}><TxtIn value={d.medico_nombre} onChange={s("medico_nombre")} /></td>
-              <td colSpan={4} style={td}><TxtIn value={d.medico_especialidad} onChange={s("medico_especialidad")} /></td>
-              <td colSpan={5} style={td}><TxtIn value={d.medico_sello_documento} onChange={s("medico_sello_documento")} /></td>
+              <td colSpan={7} style={td}>
+                <MedicoInput 
+                  value={d.medico_nombre} 
+                  onChangeValue={s("medico_nombre")} 
+                  onSelectMedico={(m) => {
+                    s("medico_nombre")(m.nombre);
+                    s("medico_especialidad")(m.especialidad);
+                    s("medico_sello_documento")(m.identificacion);
+                  }} 
+                />
+              </td>
+              <td colSpan={4} style={td}>
+                <MedicoInput 
+                  value={d.medico_especialidad} 
+                  onChangeValue={s("medico_especialidad")} 
+                  onSelectMedico={(m) => {
+                    s("medico_nombre")(m.nombre);
+                    s("medico_especialidad")(m.especialidad);
+                    s("medico_sello_documento")(m.identificacion);
+                  }} 
+                />
+              </td>
+              <td colSpan={5} style={td}>
+                <MedicoInput 
+                  value={d.medico_sello_documento} 
+                  onChangeValue={s("medico_sello_documento")} 
+                  onSelectMedico={(m) => {
+                    s("medico_nombre")(m.nombre);
+                    s("medico_especialidad")(m.especialidad);
+                    s("medico_sello_documento")(m.identificacion);
+                  }} 
+                />
+              </td>
               <td colSpan={3} style={td}><TxtIn value={d.medico_periodo} onChange={s("medico_periodo")} placeholder="dd/mm/aaaa - dd/mm/aaaa" /></td>
             </tr>
           </tbody>

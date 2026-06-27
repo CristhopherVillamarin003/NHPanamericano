@@ -398,6 +398,7 @@ function EvolucionBloque({
                 onChange={(v) => onChange("farmacoterapia", v)}
                 minHeight="140px"
                 placeholder="Farmacoterapia e indicaciones..."
+                enableMedicoSelect={true}
               />
             </td>
           </tr>
@@ -504,6 +505,13 @@ const PLANTILLA_ALTA = `<p><strong>NOTA DE ALTA</strong></p>
 <p><strong>PROCEDIMIENTO REALIZADO: </strong></p>
 <p><strong>AL EXAMEN FISICO: </strong></p>`;
 
+const PLANTILLA_FARMACOTERAPIA = `<p><strong>A. ENFERMERIA</strong></p>
+<p><strong>B. NUTRICION</strong></p>
+<p><strong>C. INFUSIONES </strong></p>
+<p><strong>D. MEDICACION</strong></p>
+<p><strong>E. VENTILACION</strong></p>
+<p><strong>F. PROCEDIMIENTOS </strong></p>`;
+
 export type TipoNota = "INGRESO" | "POSTQUIRURGICA" | "EVOLUCION" | "ALTA";
 
 function getPlantillaNota(tipo: TipoNota): string {
@@ -540,7 +548,7 @@ function crearBloqueVacio(paciente?: Props["paciente"], tipoNota: TipoNota = "IN
     fecha: today,
     hora: nowTime,
     notas_evolucion: getPlantillaNota(tipoNota),
-    farmacoterapia: "",
+    farmacoterapia: tipoNota !== "ALTA" ? PLANTILLA_FARMACOTERAPIA : "<p><strong>INDICACIONES</strong></p>",
     administrar_farmacos: "",
   };
 }
@@ -588,6 +596,39 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
       });
       if (idx === 0 && campo === "farmacoterapia") {
         window.dispatchEvent(new CustomEvent("sync_plan_tratamiento", { detail: { source: "evolucion", value: valor } }));
+      }
+      if (idx === 0 && campo === "notas_evolucion") {
+        try {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(valor, 'text/html');
+          
+          let extracting = false;
+          let contentHtml = '';
+          for (let i = 0; i < doc.body.childNodes.length; i++) {
+            const node = doc.body.childNodes[i];
+            const text = node.textContent?.toUpperCase() || '';
+            
+            if (text.includes('MOTIVO DE CONSULTA:')) {
+               break;
+            }
+
+            if (extracting) {
+              if (node.nodeType === Node.ELEMENT_NODE) {
+                contentHtml += (node as Element).outerHTML;
+              } else if (node.nodeType === Node.TEXT_NODE) {
+                contentHtml += node.textContent || '';
+              }
+            }
+
+            if (!extracting && text.includes('SEGURO:')) {
+               extracting = true;
+            }
+          }
+          
+          window.dispatchEvent(new CustomEvent("sync_antecedentes", { detail: { source: "evolucion", value: contentHtml } }));
+        } catch (e) {
+          console.error("Error parsing HTML for sync_antecedentes:", e);
+        }
       }
     };
 
