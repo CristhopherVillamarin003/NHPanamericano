@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState, useImperativeHandle } from "react";
+
+import { BotonBuscarProfesional } from "@/components/ui/BotonBuscarProfesional";
+import { parseNombresMedico } from "@/lib/services/medicos";
 import { Cie10DescInput, Cie10CieInput } from "./Cie10Input";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
 
@@ -1014,7 +1017,7 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
 
         flat.tb_sensible = d.tb_tipo_resistencia === "SENSIBLE" ? "X" : "";
         flat.tb_resistente = d.tb_tipo_resistencia === "RESISTENTE" ? "X" : "";
-        flat.tb_tipo_resistencia = d.tb_tipo_resistencia;
+        flat.tb_tipo_resistencia = d.tb_antecedentes;
 
         flat.tb_muestra_esputo = X(!!d.tb_esputo);
         flat.tb_muestra_otro = d.tb_otro_muestra ? "X" : "";
@@ -1614,7 +1617,21 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
             </tr>
 
             {/* ── D. DATOS DEL PROFESIONAL (Solicitud 1) ── */}
-            <tr><td colSpan={20} style={secH}>D. DATOS DEL PROFESIONAL RESPONSABLE</td></tr>
+            <tr><td colSpan={20} style={secH}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span>D. DATOS DEL PROFESIONAL RESPONSABLE</span>
+                <BotonBuscarProfesional onSelect={(m) => {
+                  const partes = parseNombresMedico(m.nombre);
+                  setD(p => ({
+                    ...p,
+                    sol1_profesional_primer_nombre: partes.nombres,
+                    sol1_profesional_primer_apellido: partes.primerApellido,
+                    sol1_profesional_segundo_apellido: partes.segundoApellido,
+                    sol1_documento: m.identificacion
+                  }));
+                }} />
+              </div>
+            </td></tr>
             <tr>
               <td colSpan={3} style={tdM}><Lbl small>FECHA GENERACIÓN PEDIDO</Lbl></td>
               <td colSpan={2} style={tdM}><Lbl small>HORA GENERACIÓN</Lbl></td>
@@ -1892,7 +1909,21 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
             </tr>
 
             {/* ── C. DATOS DEL PROFESIONAL (Solicitud 2) ── */}
-            <tr><td colSpan={20} style={secH}>C. DATOS DEL PROFESIONAL RESPONSABLE</td></tr>
+            <tr><td colSpan={20} style={secH}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span>C. DATOS DEL PROFESIONAL RESPONSABLE</span>
+                <BotonBuscarProfesional onSelect={(m) => {
+                  const partes = parseNombresMedico(m.nombre);
+                  setD(p => ({
+                    ...p,
+                    sol2_profesional_primer_nombre: partes.nombres,
+                    sol2_profesional_primer_apellido: partes.primerApellido,
+                    sol2_profesional_segundo_apellido: partes.segundoApellido,
+                    sol2_documento: m.identificacion
+                  }));
+                }} />
+              </div>
+            </td></tr>
             <tr>
               <td colSpan={3} style={tdM}><Lbl small>FECHA GENERACIÓN PEDIDO</Lbl></td>
               <td colSpan={2} style={tdM}><Lbl small>HORA GENERACIÓN</Lbl></td>

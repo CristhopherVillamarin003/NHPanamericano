@@ -94,7 +94,8 @@ export default function CuidadosPage() {
     try {
       setExportando(true);
       await upsertSeccion(atencionId, 'cuidado', PLANTILLA_CUIDADO_ID, { html });
-      await exportarSeccion(PLANTILLA_CUIDADO_ID, 'cuidado', { html }, 'docx');
+      const nombrePaciente = paciente ? `${paciente.primerNombre || ''} ${paciente.primerApellido || ''}`.trim() : undefined;
+      await exportarSeccion(PLANTILLA_CUIDADO_ID, 'cuidado', { html }, 'docx', nombrePaciente);
       clearAutosave();
     } catch (err) {
       console.error(err);

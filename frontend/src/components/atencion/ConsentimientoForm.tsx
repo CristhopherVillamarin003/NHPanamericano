@@ -270,6 +270,8 @@ const ConsentimientoForm024 = React.forwardRef<ConsentimientoFormHandle, Props>(
     nombre_representante_e: initialData?.reverso?.nombre_representante_e || "",
     cedula_representante_e: initialData?.reverso?.cedula_representante_e || "",
     parentesco_e: initialData?.reverso?.parentesco_e || "",
+    nombre_paciente_rev: initialData?.reverso?.nombre_paciente_rev || "",
+    cedula_paciente_rev: initialData?.reverso?.cedula_paciente_rev || "",
   });
 
   const { isDirty, clearAutosave } = useFormAutosaveAndWarn({

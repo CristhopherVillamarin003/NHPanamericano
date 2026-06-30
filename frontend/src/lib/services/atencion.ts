@@ -47,6 +47,7 @@ type Seccion = 'historia-clinica' | 'protocolo' | 'cuidado' | 'epicrisis' | 'rec
 export async function exportarConsentimiento(
   plantillaId: number,
   datos: Record<string, any>,
+  nombrePaciente?: string,
 ): Promise<void> {
   const res = await api.post(
     `/plantillas/${plantillaId}/exportar`,
@@ -56,7 +57,13 @@ export async function exportarConsentimiento(
   const url = URL.createObjectURL(new Blob([res.data]));
   const a = document.createElement('a');
   a.href = url;
-  a.download = `consentimiento-${Date.now()}.xlsx`;
+  
+  let baseName = 'consentimiento';
+  if (nombrePaciente) {
+    baseName += `-${nombrePaciente.trim().replace(/\s+/g, '-')}`;
+  }
+  
+  a.download = `${baseName}-${Date.now()}.xlsx`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -66,6 +73,7 @@ export async function exportarSeccion(
   seccion: string,
   datos: Record<string, any>,
   extension: string = 'xlsx',
+  nombrePaciente?: string,
 ): Promise<void> {
   const res = await api.post(
     `/plantillas/${plantillaId}/exportar`,
@@ -75,7 +83,13 @@ export async function exportarSeccion(
   const url = URL.createObjectURL(new Blob([res.data]));
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${seccion}-${Date.now()}.${extension}`;
+  
+  let baseName = seccion;
+  if (nombrePaciente) {
+    baseName += `-${nombrePaciente.trim().replace(/\s+/g, '-')}`;
+  }
+  
+  a.download = `${baseName}-${Date.now()}.${extension}`;
   a.click();
   URL.revokeObjectURL(url);
 }

@@ -4,6 +4,8 @@ import React, { useState, useImperativeHandle } from "react";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
 import { Cie10DescInput, Cie10CieInput } from "./Cie10Input";
 import { MedicoInput } from "./MedicoInput";
+import { BotonBuscarProfesional } from "@/components/ui/BotonBuscarProfesional";
+import { parseNombresMedico } from "@/lib/services/medicos";
 import RichTextEpicrisis from "../ui/RichTextEpicrisis";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -628,7 +630,20 @@ const EpicrisisForm = React.forwardRef<EpicrisisFormHandle, Props>(({
             ════════════════════════════════════════════════════════════════ */}
         <table style={tbl}>
           <tbody>
-            <tr><td colSpan={20} style={secH()}>J. DATOS DEL PROFESIONAL RESPONSABLE</td></tr>
+            <tr>
+              <td colSpan={20} style={secH()}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span>J. DATOS DEL PROFESIONAL RESPONSABLE</span>
+                  <BotonBuscarProfesional onSelect={(m) => {
+                    const partes = parseNombresMedico(m.nombre);
+                    s("prof_primer_nombre")(partes.nombres);
+                    s("prof_primer_apellido")(partes.primerApellido);
+                    s("prof_segundo_apellido")(partes.segundoApellido);
+                    s("prof_numero_documento")(m.identificacion);
+                  }} />
+                </div>
+              </td>
+            </tr>
 
             {/* Labels */}
             <tr>

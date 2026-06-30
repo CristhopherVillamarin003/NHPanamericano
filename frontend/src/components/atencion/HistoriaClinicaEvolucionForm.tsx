@@ -433,84 +433,86 @@ function EvolucionBloque({
 
 // ─── Plantillas de Notas de Evolución ─────────────────────────────────────────
 
-const PLANTILLA_INGRESO = `<p><strong>NOTA DE INGRESO </strong></p>
+const PLANTILLA_INGRESO = `<p><strong>NOTA DE INGRESO</strong></p>
 <p><strong>CIRUGIA GENERAL</strong></p>
-<p><strong>INGRESO: </strong></p>
-<p><strong>HABITACION:  </strong></p>
-<p><strong>DH: </strong></p>
-<p><strong>SEGURO: </strong></p>
-<p><strong>APP: </strong></p>
-<p><strong>MEDICACION: </strong></p>
-<p><strong>AGO: </strong></p>
-<p><strong>APF: </strong></p>
-<p><strong>AQX: </strong></p>
-<p><strong>INMUNIZACIONES: </strong></p>
-<p><strong>ALERGIAS: </strong></p>
-<p><strong>HABITOS: </strong></p>
-<p><strong>MOTIVO DE CONSULTA: </strong></p>
-<p><strong>ENFERMEDAD ACTUAL: </strong></p>
-<p><strong>EXAMEN FISICO: </strong></p>
-<p><strong>SIGNOS VITALES:</strong></p>
-<p><strong>TA: </strong></p>
-<p><strong>T°: </strong></p>
-<p><strong>PLAN:</strong></p>
-<p><strong>DIAGNOSTICO: </strong></p>`;
+<p><strong>INGRESO:</strong>&nbsp;</p>
+<p><strong>HABITACION:</strong>&nbsp;</p>
+<p><strong>DH:</strong>&nbsp;</p>
+<p><strong>SEGURO:</strong>&nbsp;</p>
+<p><strong>APP:</strong>&nbsp;</p>
+<p><strong>MEDICACION:</strong>&nbsp;</p>
+<p><strong>AGO:</strong>&nbsp;</p>
+<p><strong>APF:</strong>&nbsp;</p>
+<p><strong>AQX:</strong>&nbsp;</p>
+<p><strong>INMUNIZACIONES:</strong>&nbsp;</p>
+<p><strong>ALERGIAS:</strong>&nbsp;</p>
+<p><strong>HABITOS:</strong>&nbsp;</p>
+<p><strong>MOTIVO DE CONSULTA:</strong>&nbsp;</p>
+<p><strong>ENFERMEDAD ACTUAL:</strong>&nbsp;</p>
+<p><strong>NOTA:</strong>&nbsp;</p>
+<p><strong>EXAMEN FISICO:</strong>&nbsp;</p>
+<p><strong>SIGNOS VITALES:</strong>&nbsp;</p>
+<p><strong>TA:</strong>&nbsp;</p>
+<p><strong>T°:</strong>&nbsp;</p>
+<p><strong>NOTA:</strong>&nbsp;</p>
+<p><strong>PLAN:</strong>&nbsp;</p>
+<p><strong>DIAGNOSTICO:</strong>&nbsp;</p>`;
 
 const PLANTILLA_POSTQUIRURGICA = `<p><strong>NOTA POSTQUIRURGICA</strong></p>
 <p><strong>CIRUGIA GENERAL</strong></p>
-<p><strong>INGRESO: </strong></p>
-<p><strong>HABITACION: </strong></p>
-<p><strong>DH: </strong></p>
-<p><strong>SEGURO:  </strong></p>
-<p><strong>DIAGNOSTICO PREOPERATORIO: </strong></p>
-<p><strong>DIAGNOSTICO POSTOPERATORIO: </strong></p>
-<p><strong>CIRUGIA PROYECTADA: </strong></p>
-<p><strong>CIRUGIA REALIZADA: </strong></p>
-<p><strong>HALLAZGOS:</strong></p>
-<p><strong>TEAM:  </strong></p>
-<p><strong>CIRUJANO 1: </strong></p>
-<p><strong>AYUDANTE: </strong></p>
-<p><strong>ANESTESIOLOGO: </strong></p>
-<p><strong>INSTRUMENTISTA: </strong></p>
-<p><strong>COMPLICACIONES: </strong></p>
-<p><strong>DRENAJE: </strong></p>
-<p><strong>HISTOPATOLOGICO: </strong></p>
-<p><strong>SANGRADO: </strong></p>`;
+<p><strong>INGRESO:</strong>&nbsp;</p>
+<p><strong>HABITACION:</strong>&nbsp;</p>
+<p><strong>DH:</strong>&nbsp;</p>
+<p><strong>SEGURO:</strong>&nbsp;</p>
+<p><strong>DIAGNOSTICO PREOPERATORIO:</strong>&nbsp;</p>
+<p><strong>DIAGNOSTICO POSTOPERATORIO:</strong>&nbsp;</p>
+<p><strong>CIRUGIA PROYECTADA:</strong>&nbsp;</p>
+<p><strong>CIRUGIA REALIZADA:</strong>&nbsp;</p>
+<p><strong>HALLAZGOS:</strong>&nbsp;</p>
+<p><strong>TEAM:</strong>&nbsp;</p>
+<p><strong>CIRUJANO 1:</strong>&nbsp;</p>
+<p><strong>AYUDANTE:</strong>&nbsp;</p>
+<p><strong>ANESTESIOLOGO:</strong>&nbsp;</p>
+<p><strong>INSTRUMENTISTA:</strong>&nbsp;</p>
+<p><strong>COMPLICACIONES:</strong>&nbsp;</p>
+<p><strong>DRENAJE:</strong>&nbsp;</p>
+<p><strong>HISTOPATOLOGICO:</strong>&nbsp;</p>
+<p><strong>SANGRADO:</strong>&nbsp;</p>`;
 
 const PLANTILLA_EVOLUCION = `<p><strong>NOTA DE EVOLUCIÓN</strong></p>
 <p><strong>CIRUGIA GENERAL</strong></p>
-<p><strong>INGRESO: </strong></p>
-<p><strong>HABITACION: </strong></p>
-<p><strong>DH: </strong></p>
-<p><strong>SEGURO:</strong></p>
-<p><strong>DIAGNOSTICO POSTOPERATORIO: </strong></p>
-<p><strong>DIAGNOSTICOS SECUNDARIOS:</strong></p>
-<p><strong>PROCEDIMIENTO REALIZADO: </strong></p>
-<p><strong>SUBJETIVO: </strong></p>
-<p><strong>OBJETIVO: </strong></p>
-<p><strong>SIGNOS VITALES: </strong></p>
-<p><strong>TA: </strong></p>
-<p><strong>T°: </strong></p>
-<p><strong>EXAMEN FISICO:</strong></p>
-<p><strong>ANALISIS: </strong></p>
-<p><strong>PLAN: </strong></p>`;
+<p><strong>INGRESO:</strong>&nbsp;</p>
+<p><strong>HABITACION:</strong>&nbsp;</p>
+<p><strong>DH:</strong>&nbsp;</p>
+<p><strong>SEGURO:</strong>&nbsp;</p>
+<p><strong>DIAGNOSTICO POSTOPERATORIO:</strong>&nbsp;</p>
+<p><strong>DIAGNOSTICOS SECUNDARIOS:</strong>&nbsp;</p>
+<p><strong>PROCEDIMIENTO REALIZADO:</strong>&nbsp;</p>
+<p><strong>SUBJETIVO:</strong>&nbsp;</p>
+<p><strong>OBJETIVO:</strong>&nbsp;</p>
+<p><strong>SIGNOS VITALES:</strong>&nbsp;</p>
+<p><strong>TA:</strong>&nbsp;</p>
+<p><strong>T°:</strong>&nbsp;</p>
+<p><strong>EXAMEN FISICO:</strong>&nbsp;</p>
+<p><strong>ANALISIS:</strong>&nbsp;</p>
+<p><strong>PLAN:</strong>&nbsp;</p>`;
 
 const PLANTILLA_ALTA = `<p><strong>NOTA DE ALTA</strong></p>
 <p><strong>CIRUGIA GENERAL</strong></p>
-<p><strong>INGRESO: </strong></p>
-<p><strong>HABITACION: </strong></p>
-<p><strong>DH: </strong></p>
-<p><strong>SEGURO: </strong></p>
-<p><strong>DIAGNOSTICO POSTOPERATORIO: </strong></p>
-<p><strong>PROCEDIMIENTO REALIZADO: </strong></p>
-<p><strong>AL EXAMEN FISICO: </strong></p>`;
+<p><strong>INGRESO:</strong>&nbsp;</p>
+<p><strong>HABITACION:</strong>&nbsp;</p>
+<p><strong>DH:</strong>&nbsp;</p>
+<p><strong>SEGURO:</strong>&nbsp;</p>
+<p><strong>DIAGNOSTICO POSTOPERATORIO:</strong>&nbsp;</p>
+<p><strong>PROCEDIMIENTO REALIZADO:</strong>&nbsp;</p>
+<p><strong>AL EXAMEN FISICO:</strong>&nbsp;</p>`;
 
 const PLANTILLA_FARMACOTERAPIA = `<p><strong>A. ENFERMERIA</strong></p>
 <p><strong>B. NUTRICION</strong></p>
-<p><strong>C. INFUSIONES </strong></p>
+<p><strong>C. INFUSIONES</strong></p>
 <p><strong>D. MEDICACION</strong></p>
 <p><strong>E. VENTILACION</strong></p>
-<p><strong>F. PROCEDIMIENTOS </strong></p>`;
+<p><strong>F. PROCEDIMIENTOS</strong></p>`;
 
 export type TipoNota = "INGRESO" | "POSTQUIRURGICA" | "EVOLUCION" | "ALTA";
 
@@ -602,8 +604,9 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
           const parser = new DOMParser();
           const doc = parser.parseFromString(valor, 'text/html');
           
-          let extracting = false;
-          let contentHtml = '';
+          // Extracción 1: Antecedentes (desde SEGURO hasta MOTIVO DE CONSULTA)
+          let extractingAnt = false;
+          let contentAnt = '';
           for (let i = 0; i < doc.body.childNodes.length; i++) {
             const node = doc.body.childNodes[i];
             const text = node.textContent?.toUpperCase() || '';
@@ -612,22 +615,91 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
                break;
             }
 
-            if (extracting) {
+            if (extractingAnt) {
               if (node.nodeType === Node.ELEMENT_NODE) {
-                contentHtml += (node as Element).outerHTML;
+                contentAnt += (node as Element).outerHTML;
               } else if (node.nodeType === Node.TEXT_NODE) {
-                contentHtml += node.textContent || '';
+                contentAnt += node.textContent || '';
               }
             }
 
-            if (!extracting && text.includes('SEGURO:')) {
-               extracting = true;
+            if (!extractingAnt && text.includes('SEGURO:')) {
+               extractingAnt = true;
             }
           }
-          
-          window.dispatchEvent(new CustomEvent("sync_antecedentes", { detail: { source: "evolucion", value: contentHtml } }));
+          window.dispatchEvent(new CustomEvent("sync_antecedentes", { detail: { source: "evolucion", value: contentAnt } }));
+
+          // Extracción 2: Enfermedad Actual (desde ENFERMEDAD ACTUAL hasta NOTA o EXAMEN FISICO)
+          let extractingEA = false;
+          let contentEA = '';
+          for (let i = 0; i < doc.body.childNodes.length; i++) {
+            const node = doc.body.childNodes[i];
+            const text = node.textContent?.toUpperCase() || '';
+            
+            if (text.includes('NOTA:') || text.includes('EXAMEN FISICO:')) {
+               break;
+            }
+
+            if (!extractingEA && text.includes('ENFERMEDAD ACTUAL:')) {
+               extractingEA = true;
+               let html = node.nodeType === Node.ELEMENT_NODE ? (node as Element).outerHTML : (node.textContent || '');
+               html = html.replace(/<strong[^>]*>\s*ENFERMEDAD ACTUAL:\s*<\/strong>\s*/i, '');
+               html = html.replace(/ENFERMEDAD ACTUAL:\s*/i, '');
+               contentEA += html;
+               continue;
+            }
+
+            if (extractingEA) {
+              if (node.nodeType === Node.ELEMENT_NODE) {
+                contentEA += (node as Element).outerHTML;
+              } else if (node.nodeType === Node.TEXT_NODE) {
+                contentEA += node.textContent || '';
+              }
+            }
+          }
+          window.dispatchEvent(new CustomEvent("sync_enfermedad_actual", { detail: { source: "evolucion", value: contentEA } }));
+
+          // Extracción 3: Examen Físico (desde EXAMEN FISICO hasta NOTA, PLAN, DIAGNOSTICO o fecha)
+          let extractingEF = false;
+          let contentEF = '';
+          for (let i = 0; i < doc.body.childNodes.length; i++) {
+            const node = doc.body.childNodes[i];
+            const text = node.textContent?.toUpperCase() || '';
+            
+            if (extractingEF) {
+               if (text.includes('NOTA:') || text.includes('PLAN:') || text.includes('DIAGNOSTICO:') || /^\s*\d{2}\/\d{2}\/\d{4}/.test(text)) {
+                  break;
+               }
+            }
+
+            if (!extractingEF && text.includes('EXAMEN FISICO:')) {
+               extractingEF = true;
+               let html = node.nodeType === Node.ELEMENT_NODE ? (node as Element).outerHTML : (node.textContent || '');
+               html = html.replace(/<strong[^>]*>\s*EXAMEN FISICO:\s*<\/strong>\s*/i, '');
+               html = html.replace(/EXAMEN FISICO:\s*/i, '');
+               
+               const isExcluded = text.includes('SIGNOS VITALES:') || /(^|\s)TA:/.test(text) || /(^|\s)T°:/.test(text);
+               if (!isExcluded && html.replace(/<[^>]*>/g, '').trim() !== '') {
+                 contentEF += html;
+               }
+               continue;
+            }
+
+            if (extractingEF) {
+              const isExcluded = text.includes('SIGNOS VITALES:') || /(^|\s)TA:/.test(text) || /(^|\s)T°:/.test(text);
+              if (isExcluded) continue;
+
+              if (node.nodeType === Node.ELEMENT_NODE) {
+                contentEF += (node as Element).outerHTML;
+              } else if (node.nodeType === Node.TEXT_NODE) {
+                contentEF += node.textContent || '';
+              }
+            }
+          }
+          window.dispatchEvent(new CustomEvent("sync_examen_fisico", { detail: { source: "evolucion", value: contentEF } }));
+
         } catch (e) {
-          console.error("Error parsing HTML for sync_antecedentes:", e);
+          console.error("Error parsing HTML for sync events:", e);
         }
       }
     };

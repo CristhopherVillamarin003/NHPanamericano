@@ -174,7 +174,7 @@ export default function RichTextEvolucion({
                     value={medicoQuery}
                     onChangeValue={setMedicoQuery}
                     onSelectMedico={(m: Medico) => {
-                      const htmlStr = `<p>${m.nombre}</p><p>CI: ${m.identificacion}</p><p>${m.especialidad}</p><p></p>`;
+                      const htmlStr = `<p><strong>${m.nombre}</strong></p><p><strong>CI: ${m.identificacion}</strong></p><p><strong>${m.especialidad}</strong></p><p></p>`;
                       editor.chain().focus().insertContent(htmlStr).run();
                       setMedicoSearchAbierto(false);
                       setMedicoQuery("");

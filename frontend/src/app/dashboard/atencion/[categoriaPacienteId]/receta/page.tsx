@@ -71,7 +71,8 @@ export default function RecetaPage() {
     try {
       setExportando(true);
       await upsertSeccion(atencionId, 'receta', PLANTILLA_RECETA_ID, datosPlano);
-      await exportarSeccion(PLANTILLA_RECETA_ID, 'receta', datosPlano, 'docx');
+      const nombrePaciente = paciente ? `${paciente.primerNombre || ''} ${paciente.primerApellido || ''}`.trim() : undefined;
+      await exportarSeccion(PLANTILLA_RECETA_ID, 'receta', datosPlano, 'docx', nombrePaciente);
       formRef.current?.clearAutosave?.();
     } catch (err) {
       console.error(err);

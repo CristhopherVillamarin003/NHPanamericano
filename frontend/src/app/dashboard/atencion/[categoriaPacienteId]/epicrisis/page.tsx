@@ -361,7 +361,8 @@ export default function EpicrisisPage() {
     try {
       setExportando(true);
       await upsertSeccion(atencionId, 'epicrisis', PLANTILLA_EPICRISIS_ID, datosPlano);
-      await exportarSeccion(PLANTILLA_EPICRISIS_ID, 'epicrisis', datosPlano, 'docx');
+      const nombrePaciente = paciente ? `${paciente.primerNombre || ''} ${paciente.primerApellido || ''}`.trim() : undefined;
+      await exportarSeccion(PLANTILLA_EPICRISIS_ID, 'epicrisis', datosPlano, 'docx', nombrePaciente);
       formRef.current?.clearAutosave?.();
     } catch (err) {
       console.error(err);

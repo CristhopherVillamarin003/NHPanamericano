@@ -36,6 +36,7 @@ export interface CategoriaPaciente {
 export interface Atencion {
   id: number;
   categoriaPacienteId: number;
+  categoriaPaciente?: CategoriaPaciente;
   estado: string;
   createdAt: string;
   updatedAt: string;

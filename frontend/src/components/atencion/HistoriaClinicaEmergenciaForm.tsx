@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useImperativeHandle, useState, useEffect } from "react";
+import { BotonBuscarProfesional } from "@/components/ui/BotonBuscarProfesional";
+import { parseNombresMedico } from "@/lib/services/medicos";
 import Cie10Autocomplete from "./Cie10Autocomplete";
 import RichTextEvolucion from "../ui/RichTextEvolucion";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
@@ -283,11 +285,14 @@ const FONT = "Arial, sans-serif";
 
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
 
-function SecBar({ letra, titulo, bg = C.seccion }: { letra: string; titulo: string; bg?: string }) {
+function SecBar({ letra, titulo, bg = C.seccion, rightComponent }: { letra: string; titulo: string; bg?: string; rightComponent?: React.ReactNode }) {
   return (
     <tr>
       <td colSpan={12} style={{ ...B, background: bg, fontWeight: 700, fontSize: "9px", fontFamily: FONT, padding: "3px 6px", borderTop: "2px solid #000", letterSpacing: "0.04em" }}>
-        {letra}. {titulo}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span>{letra}. {titulo}</span>
+          {rightComponent}
+        </div>
       </td>
     </tr>
   );
@@ -454,6 +459,9 @@ const EmergenciaForm008 = React.forwardRef<HistoriaClinicaEmergenciaHandle, Prop
     if (k === "enfermedad_actual") {
       window.dispatchEvent(new CustomEvent("sync_enfermedad_actual", { detail: { source: "emergencia", value: v } }));
     }
+    if (k === "examen_fisico_descripcion") {
+      window.dispatchEvent(new CustomEvent("sync_examen_fisico", { detail: { source: "emergencia", value: v } }));
+    }
     if (["presion_arterial", "pulso", "frecuencia_respiratoria", "pulsioximetria", "perimetro_cefalico", "peso", "talla"].includes(k as string)) {
       window.dispatchEvent(new CustomEvent("sync_constante_vital", { detail: { source: "emergencia", field: k, value: v } }));
     }
@@ -482,6 +490,11 @@ const EmergenciaForm008 = React.forwardRef<HistoriaClinicaEmergenciaHandle, Prop
         setD(p => ({ ...p, enfermedad_actual: e.detail.value }));
       }
     };
+    const handleSyncEF = (e: CustomEvent) => {
+      if (e.detail.source !== "emergencia") {
+        setD(p => ({ ...p, examen_fisico_descripcion: e.detail.value }));
+      }
+    };
     const handleSyncConstante = (e: CustomEvent) => {
       if (e.detail.source !== "emergencia") {
         setD(p => ({ ...p, [e.detail.field]: e.detail.value }));
@@ -489,10 +502,12 @@ const EmergenciaForm008 = React.forwardRef<HistoriaClinicaEmergenciaHandle, Prop
     };
     window.addEventListener("sync_antecedentes", handleSyncAnt as EventListener);
     window.addEventListener("sync_enfermedad_actual", handleSyncEA as EventListener);
+    window.addEventListener("sync_examen_fisico", handleSyncEF as EventListener);
     window.addEventListener("sync_constante_vital", handleSyncConstante as EventListener);
     return () => {
       window.removeEventListener("sync_antecedentes", handleSyncAnt as EventListener);
       window.removeEventListener("sync_enfermedad_actual", handleSyncEA as EventListener);
+      window.removeEventListener("sync_examen_fisico", handleSyncEF as EventListener);
       window.removeEventListener("sync_constante_vital", handleSyncConstante as EventListener);
     };
   }, []);
@@ -1061,7 +1076,22 @@ const EmergenciaForm008 = React.forwardRef<HistoriaClinicaEmergenciaHandle, Prop
             </tr>
 
             {/* ══ P. DATOS DEL PROFESIONAL RESPONSABLE ════════════════════ */}
-            <SecBar letra="P" titulo="DATOS DEL PROFESIONAL RESPONSABLE" />
+            <SecBar 
+              letra="P" 
+              titulo="DATOS DEL PROFESIONAL RESPONSABLE" 
+              rightComponent={
+                <BotonBuscarProfesional onSelect={(m) => {
+                  const partes = parseNombresMedico(m.nombre);
+                  setD(p => ({
+                    ...p,
+                    prof_primer_nombre: partes.nombres,
+                    prof_primer_apellido: partes.primerApellido,
+                    prof_segundo_apellido: partes.segundoApellido,
+                    prof_numero_documento: m.identificacion
+                  }));
+                }} />
+              }
+            />
             <tr>
               <td colSpan={2} style={B}><Lbl>FECHA (aaaa-mm-dd)</Lbl></td>
               <td colSpan={1} style={B}><Lbl>HORA (hh:mm)</Lbl></td>

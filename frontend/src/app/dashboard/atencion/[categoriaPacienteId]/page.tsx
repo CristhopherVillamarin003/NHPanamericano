@@ -251,7 +251,7 @@ export default function AtencionPage() {
       });
       
       // Clear old drafts if any
-      const cedula = atencion.categoriaPaciente?.paciente?.cedula || 'new';
+      const cedula = atencion?.categoriaPaciente?.paciente?.cedula || 'new';
       if (nuevoCons && nuevoCons.id) {
           localStorage.removeItem(`draft_consentimiento_${nuevoCons.id}_${cedula}`);
       }
@@ -345,7 +345,7 @@ export default function AtencionPage() {
       await upsertSeccion(atencion.id, 'protocolo', PLANTILLA_PROTOCOLO_ID, datosProtocolo, 'ACTIVO');
       
       // Clear old draft from LocalStorage to ensure new template data isn't overridden
-      const cedula = atencion.categoriaPaciente?.paciente?.cedula || 'new';
+      const cedula = atencion?.categoriaPaciente?.paciente?.cedula || 'new';
       localStorage.removeItem(`draft_protocolo_${atencion.id}_${cedula}`);
 
       setNuevoProtocoloNombre('');
@@ -370,7 +370,7 @@ export default function AtencionPage() {
       const html = template?.html || '';
       await upsertSeccion(atencion.id, 'cuidado', PLANTILLA_CUIDADO_ID, { html }, 'ACTIVO');
       
-      const cedula = atencion.categoriaPaciente?.paciente?.cedula || 'new';
+      const cedula = atencion?.categoriaPaciente?.paciente?.cedula || 'new';
       localStorage.removeItem(`draft_cuidados_${cedula}`);
 
       setCuidadosOpen(false);
@@ -406,7 +406,7 @@ export default function AtencionPage() {
     try {
       await deleteConsentimiento(deleteTarget.id);
       
-      const cedula = atencion.categoriaPaciente?.paciente?.cedula || 'new';
+      const cedula = atencion?.categoriaPaciente?.paciente?.cedula || 'new';
       localStorage.removeItem(`draft_consentimiento_${deleteTarget.id}_${cedula}`);
 
       setDeleteOpen(false);
@@ -425,7 +425,7 @@ export default function AtencionPage() {
     try {
       await deleteSeccion(atencion.id, deleteSeccionTarget as any);
       
-      const cedula = atencion.categoriaPaciente?.paciente?.cedula || 'new';
+      const cedula = atencion?.categoriaPaciente?.paciente?.cedula || 'new';
       
       // Eliminamos el draft de la sección si existe
       if (deleteSeccionTarget === 'historia-clinica') {

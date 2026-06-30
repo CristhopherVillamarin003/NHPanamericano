@@ -3,6 +3,8 @@
 import React, { useState, useImperativeHandle, useEffect } from "react";
 import { Cie10DescInput, Cie10CieInput } from "./Cie10Input";
 import RichTextEvolucion from "../ui/RichTextEvolucion";
+import { BotonBuscarProfesional } from "@/components/ui/BotonBuscarProfesional";
+import { parseNombresMedico } from "@/lib/services/medicos";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -439,7 +441,18 @@ function ImagenologiaBloque({
           })}
 
           {/* ── G. DATOS DEL PROFESIONAL RESPONSABLE ── */}
-          <tr><td colSpan={20} style={secH()}>G. DATOS DEL PROFESIONAL RESPONSABLE</td></tr>
+          <tr><td colSpan={20} style={secH()}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span>G. DATOS DEL PROFESIONAL RESPONSABLE</span>
+              <BotonBuscarProfesional onSelect={(m) => {
+                const partes = parseNombresMedico(m.nombre);
+                onChange("prof_primer_nombre", partes.nombres);
+                onChange("prof_primer_apellido", partes.primerApellido);
+                onChange("prof_segundo_apellido", partes.segundoApellido);
+                onChange("prof_documento", m.identificacion);
+              }} />
+            </div>
+          </td></tr>
           <tr>
             <td colSpan={2} style={tdM}><Lbl>FECHA</Lbl></td>
             <td colSpan={2} style={tdM}><Lbl>HORA</Lbl></td>

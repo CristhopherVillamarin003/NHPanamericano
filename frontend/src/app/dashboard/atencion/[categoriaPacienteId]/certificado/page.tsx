@@ -73,7 +73,8 @@ export default function CertificadoPage() {
     try {
       setExportando(true);
       await upsertSeccion(atencionId, 'certificado', PLANTILLA_CERTIFICADO_ID, datosPlano);
-      await exportarSeccion(PLANTILLA_CERTIFICADO_ID, 'certificado', datosPlano, 'docx');
+      const nombrePaciente = paciente ? `${paciente.primerNombre || ''} ${paciente.primerApellido || ''}`.trim() : undefined;
+      await exportarSeccion(PLANTILLA_CERTIFICADO_ID, 'certificado', datosPlano, 'docx', nombrePaciente);
       formRef.current?.clearAutosave?.();
     } catch (err) {
       console.error(err);

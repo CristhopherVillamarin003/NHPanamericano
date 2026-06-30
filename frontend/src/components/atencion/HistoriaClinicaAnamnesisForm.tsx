@@ -4,6 +4,8 @@ import React, { useState, useImperativeHandle, useEffect } from "react";
 import { Cie10DescInput, Cie10CieInput } from "./Cie10Input";
 import RichTextEvolucion from "../ui/RichTextEvolucion";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
+import { BotonBuscarProfesional } from "@/components/ui/BotonBuscarProfesional";
+import { parseNombresMedico } from "@/lib/services/medicos";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -452,6 +454,9 @@ const AnamnesisForm = React.forwardRef<HistoriaClinicaAnamnesisHandle, Props>(
     if (field === "enfermedad_actual") {
       window.dispatchEvent(new CustomEvent("sync_enfermedad_actual", { detail: { source: "anamnesis", value: v } }));
     }
+    if (field === "desc_examen_fisico") {
+      window.dispatchEvent(new CustomEvent("sync_examen_fisico", { detail: { source: "anamnesis", value: v } }));
+    }
     if (["presion_arterial", "pulso", "frecuencia_respiratoria", "pulsioximetria", "perimetro_cefalico", "peso", "talla"].includes(field as string)) {
       window.dispatchEvent(new CustomEvent("sync_constante_vital", { detail: { source: "anamnesis", field, value: v } }));
     }
@@ -490,6 +495,11 @@ const AnamnesisForm = React.forwardRef<HistoriaClinicaAnamnesisHandle, Props>(
         setDatos(p => ({ ...p, enfermedad_actual: e.detail.value }));
       }
     };
+    const handleSyncEF = (e: CustomEvent) => {
+      if (e.detail.source !== "anamnesis") {
+        setDatos(p => ({ ...p, desc_examen_fisico: e.detail.value }));
+      }
+    };
     const handleSyncConstante = (e: CustomEvent) => {
       if (e.detail.source !== "anamnesis") {
         setDatos(p => ({ ...p, [e.detail.field]: e.detail.value }));
@@ -502,11 +512,13 @@ const AnamnesisForm = React.forwardRef<HistoriaClinicaAnamnesisHandle, Props>(
     };
     window.addEventListener("sync_antecedentes", handleSyncAnt as EventListener);
     window.addEventListener("sync_enfermedad_actual", handleSyncEA as EventListener);
+    window.addEventListener("sync_examen_fisico", handleSyncEF as EventListener);
     window.addEventListener("sync_constante_vital", handleSyncConstante as EventListener);
     window.addEventListener("sync_plan_tratamiento", handleSyncPlanTratamiento as EventListener);
     return () => {
       window.removeEventListener("sync_antecedentes", handleSyncAnt as EventListener);
       window.removeEventListener("sync_enfermedad_actual", handleSyncEA as EventListener);
+      window.removeEventListener("sync_examen_fisico", handleSyncEF as EventListener);
       window.removeEventListener("sync_constante_vital", handleSyncConstante as EventListener);
       window.removeEventListener("sync_plan_tratamiento", handleSyncPlanTratamiento as EventListener);
     };
@@ -1071,7 +1083,19 @@ const AnamnesisForm = React.forwardRef<HistoriaClinicaAnamnesisHandle, Props>(
                 ══════════════════════════════════════════════════════════════ */}
             <tr>
               <td colSpan={20} style={{ ...sectionHeader, border: "1px solid #000" }}>
-                L. DATOS DEL PROFESIONAL RESPONSABLE
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span>L. DATOS DEL PROFESIONAL RESPONSABLE</span>
+                  <BotonBuscarProfesional onSelect={(m) => {
+                    const partes = parseNombresMedico(m.nombre);
+                    setDatos(p => ({
+                      ...p,
+                      profesional_primer_nombre: partes.nombres,
+                      profesional_primer_apellido: partes.primerApellido,
+                      profesional_segundo_apellido: partes.segundoApellido,
+                      profesional_documento: m.identificacion
+                    }));
+                  }} />
+                </div>
               </td>
             </tr>
             <tr>

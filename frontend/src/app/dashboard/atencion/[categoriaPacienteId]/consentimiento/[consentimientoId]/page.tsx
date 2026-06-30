@@ -69,7 +69,8 @@ export default function ConsentimientoPage() {
   const handleExportarExcel = async (datos: { anverso: any; reverso: any }) => {
     setExportando(true);
     try {
-      await exportarConsentimiento(PLANTILLA_ID, { ...datos.anverso, ...datos.reverso });
+      const nombrePaciente = paciente ? `${paciente.primerNombre || ''} ${paciente.primerApellido || ''}`.trim() : undefined;
+      await exportarConsentimiento(PLANTILLA_ID, { ...datos.anverso, ...datos.reverso }, nombrePaciente);
       formRef.current?.clearAutosave?.();
     } catch {
       /* silently fail */

@@ -14,14 +14,14 @@ export const LISTA_MEDICOS: Medico[] = [
   { nombre: "MD. CARLOS GABRIEL FLORES ENDERICA", especialidad: "MÉDICO ESPECIALISTA EN NEUROCIRUGÍA", identificacion: "0103769113", correo: "gabrielfloresneurocx@outlook.com" },
   { nombre: "DR. JOSÉ ANDRÉS CALDERÓN RAMOS", especialidad: "MEDICO RESIDENTE", identificacion: "1003683248", correo: "caldernjose@gmail.com" },
   { nombre: "DRA. KARLA IVETH CUCHIPE ASTUDILLO", especialidad: "MEDICO GENERAL", identificacion: "1718353558", correo: "kariveth200@gmail.com" },
-  { nombre: "DRA. ALVAREZ JAQUE MONICA ELIZABETH", especialidad: "PEDIATRIA/ NEONATOLOGIA", identificacion: "1708297369", correo: "dra.monicaalvarez@hotmail.com" },
+  { nombre: "DRA. MONICA ELIZABETH ALVAREZ JAQUE", especialidad: "PEDIATRIA/ NEONATOLOGIA", identificacion: "1708297369", correo: "dra.monicaalvarez@hotmail.com" },
   { nombre: "DR. JORGE PATRICIO ALDAZ JORDAN", especialidad: "UROLOGO", identificacion: "1802776748", correo: "patodos21@yahoo.com" },
-  { nombre: "DR. LLANGARI PAGUAY MILTON IVAN", especialidad: "UROLOGO", identificacion: "1709893919", correo: "drmiltonllangari@yahoo.com" },
+  { nombre: "DR. MILTON IVAN LLANGARI PAGUAY", especialidad: "UROLOGO", identificacion: "1709893919", correo: "drmiltonllangari@yahoo.com" },
   { nombre: "DR. FLAVIO JOSE NAVARRETE YANEZ", especialidad: "GINECÓLOGO – OBSTETRA", identificacion: "1713212122", correo: "fjny_patron@hotmail.com" },
-  { nombre: "Dr. TORRES MANZANO FRANCISCO JAVIER", especialidad: "GINECOLOGO – OBSTETRA", identificacion: "1707137228", correo: "nhpanamericano.vlc@gmail.com" },
+  { nombre: "Dr. FRANCISCO JAVIER TORRES MANZANO", especialidad: "GINECOLOGO – OBSTETRA", identificacion: "1707137228", correo: "nhpanamericano.vlc@gmail.com" },
   { nombre: "Dr. GONZALO ROBERTO PALOMO ALLAUCA", especialidad: "GINECOLOGO – OBSTETRA", identificacion: "1713628434", correo: "gpalomoallauca@yahoo.es" },
-  { nombre: "DR. PILATASIG LEMA LUIS RAMIRO", especialidad: "GINECOLOGÍA Y OBSTETRICIA", identificacion: "1706378534", correo: "rpmedical@hotmail.com" },
-  { nombre: "DRA. ESPINOZA MEJIA ANGELITA JANNETH", especialidad: "DERMATOLOGIA", identificacion: "2100050190", correo: "dra.aespinoza@gmail.com" }
+  { nombre: "DR. LUIS RAMIRO PILATASIG LEMA", especialidad: "GINECOLOGÍA Y OBSTETRICIA", identificacion: "1706378534", correo: "rpmedical@hotmail.com" },
+  { nombre: "DRA. ANGELITA JANNETH ESPINOZA MEJIA", especialidad: "DERMATOLOGIA", identificacion: "2100050190", correo: "dra.aespinoza@gmail.com" }
 ];
 
 export async function buscarMedicos(q: string): Promise<Medico[]> {
@@ -36,4 +36,44 @@ export async function buscarMedicos(q: string): Promise<Medico[]> {
       ));
     }, 50); // slight debounce delay matching CIE-10
   });
+}
+
+export function parseNombresMedico(nombreCompleto: string) {
+  let nombre = nombreCompleto.replace(/^(DR\.|DRA\.|MD\.|DR|DRA|MD)\s+/i, "").trim();
+  const partes = nombre.split(/\s+/);
+  
+  let primerNombre = "";
+  let segundoNombre = "";
+  let primerApellido = "";
+  let segundoApellido = "";
+
+  if (partes.length === 4) {
+    primerNombre = partes[0];
+    segundoNombre = partes[1];
+    primerApellido = partes[2];
+    segundoApellido = partes[3];
+  } else if (partes.length === 3) {
+    primerNombre = partes[0];
+    segundoNombre = "";
+    primerApellido = partes[1];
+    segundoApellido = partes[2];
+  } else if (partes.length >= 5) {
+    primerNombre = partes[0];
+    segundoNombre = partes[1];
+    primerApellido = partes[2];
+    segundoApellido = partes.slice(3).join(" ");
+  } else {
+    primerNombre = partes[0] || "";
+    segundoNombre = "";
+    primerApellido = partes[1] || "";
+    segundoApellido = "";
+  }
+  
+  return {
+    nombres: (primerNombre + " " + segundoNombre).trim(),
+    primerNombre,
+    segundoNombre,
+    primerApellido,
+    segundoApellido
+  };
 }

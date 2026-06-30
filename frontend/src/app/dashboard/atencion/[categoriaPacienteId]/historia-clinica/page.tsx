@@ -157,7 +157,9 @@ export default function HistoriaClinicaPage() {
       const laboratorio = labRef.current?.getDatos?.() ?? {};
       const imagenologia = imagRef.current?.getDatos?.() ?? {};
       const interconsulta = interRef.current?.getDatos?.() ?? {};
-      await exportarSeccion(PLANTILLA_HC_ID, 'historia-clinica', { emergencia, anamnesis, evolucion, laboratorio, imagenologia, interconsulta });
+      
+      const nombrePaciente = paciente ? `${paciente.primerNombre || ''} ${paciente.primerApellido || ''}`.trim() : undefined;
+      await exportarSeccion(PLANTILLA_HC_ID, 'historia-clinica', { emergencia, anamnesis, evolucion, laboratorio, imagenologia, interconsulta }, 'xlsx', nombrePaciente);
 
       emergRef.current?.clearAutosave?.();
       anamRef.current?.clearAutosave?.();

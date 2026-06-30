@@ -2,6 +2,8 @@
 
 import React, { useState, useImperativeHandle, useEffect } from "react";
 import { Cie10DescInput, Cie10CieInput } from "./Cie10Input";
+import { BotonBuscarProfesional } from "@/components/ui/BotonBuscarProfesional";
+import { parseNombresMedico } from "@/lib/services/medicos";
 import RichTextEvolucion from "../ui/RichTextEvolucion";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
 
@@ -686,7 +688,19 @@ const InterconsultaForm = React.forwardRef<HistoriaClinicaInterconsultaHandle, P
                   ══════════════════════════════════════════════════════════════ */}
               <tr>
                 <td colSpan={20} style={secH}>
-                  G. DATOS DEL PROFESIONAL RESPONSABLE
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span>G. DATOS DEL PROFESIONAL RESPONSABLE</span>
+                    <BotonBuscarProfesional onSelect={(m) => {
+                      const partes = parseNombresMedico(m.nombre);
+                      setD(p => ({
+                        ...p,
+                        prof_primer_nombre: partes.nombres,
+                        prof_primer_apellido: partes.primerApellido,
+                        prof_segundo_apellido: partes.segundoApellido,
+                        prof_documento: m.identificacion
+                      }));
+                    }} />
+                  </div>
                 </td>
               </tr>
 

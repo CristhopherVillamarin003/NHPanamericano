@@ -73,7 +73,8 @@ export default function ProtocoloPage() {
       await upsertSeccion(atencionId, 'protocolo', PLANTILLA_PROTOCOLO_ID, datosPlano);
       formRef.current?.clearAutosave?.();
       // Luego exportamos
-      await exportarSeccion(PLANTILLA_PROTOCOLO_ID, 'protocolo', datosPlano, 'xlsx');
+      const nombrePaciente = paciente ? `${paciente.primerNombre || ''} ${paciente.primerApellido || ''}`.trim() : undefined;
+      await exportarSeccion(PLANTILLA_PROTOCOLO_ID, 'protocolo', datosPlano, 'xlsx', nombrePaciente);
     } catch (err) {
       console.error(err);
       alert('Error al exportar a Excel.');
