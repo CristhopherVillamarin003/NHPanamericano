@@ -224,7 +224,8 @@ export function Cie10CieInput({
   cie,
   descripcion,
   onChange,
-}: SharedProps) {
+  center = true,
+}: SharedProps & { center?: boolean }) {
   const {
     opciones, abierto, highlighted, setHighlighted,
     dropPos, inputRef, dropRef, buscar, seleccionar, handleKey,
@@ -236,7 +237,7 @@ export function Cie10CieInput({
         ref={inputRef}
         type="text"
         value={cie}
-        style={{ ...BASE_INPUT, textAlign: "center" }}
+        style={{ ...BASE_INPUT, textAlign: center ? "center" : "left" }}
         onChange={(e) => { onChange(e.target.value, descripcion); buscar(e.target.value, e.currentTarget); }}
         onKeyDown={handleKey}
       />

@@ -14,6 +14,49 @@ const EpicrisisForm: any = dynamic(
 
 const PLANTILLA_EPICRISIS_ID = 8;
 
+function cleanExtractedHtml(html: string): string {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const nodes = Array.from(doc.body.childNodes);
+    
+    while (nodes.length > 0) {
+      const node = nodes[0];
+      const text = node.textContent?.trim() || '';
+      const isBr = node.nodeName === 'BR';
+      const isEmptyP = node.nodeName === 'P' && (!text && !(node as Element).querySelector('img, table, iframe'));
+      if (text === '' && (node.nodeType === Node.TEXT_NODE || isBr || isEmptyP)) {
+        nodes.shift();
+      } else {
+        break;
+      }
+    }
+    while (nodes.length > 0) {
+      const node = nodes[nodes.length - 1];
+      const text = node.textContent?.trim() || '';
+      const isBr = node.nodeName === 'BR';
+      const isEmptyP = node.nodeName === 'P' && (!text && !(node as Element).querySelector('img, table, iframe'));
+      if (text === '' && (node.nodeType === Node.TEXT_NODE || isBr || isEmptyP)) {
+        nodes.pop();
+      } else {
+        break;
+      }
+    }
+    
+    let resultHtml = '';
+    for (const node of nodes) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        resultHtml += (node as Element).outerHTML;
+      } else if (node.nodeType === Node.TEXT_NODE) {
+        resultHtml += node.textContent || '';
+      }
+    }
+    return resultHtml.replace(/[\r\n]+/g, ' ');
+  } catch(e) {
+    return html.replace(/[\r\n]+/g, ' ');
+  }
+}
+
 export default function EpicrisisPage() {
   const params = useParams();
   const router = useRouter();
@@ -86,7 +129,7 @@ export default function EpicrisisPage() {
                 }
               }
               if (foundSeguro) {
-                filteredEvolucion = resultHtml;
+                filteredEvolucion = cleanExtractedHtml(resultHtml);
               }
             } catch (e) {
               console.error("Error parsing HTML for SEGURO:", e);
@@ -138,7 +181,7 @@ export default function EpicrisisPage() {
                 }
               }
               if (foundSeguro) {
-                filteredHtml = contentHtml;
+                filteredHtml = cleanExtractedHtml(contentHtml);
               }
             } catch (e) {
               console.error("Error parsing HTML for EVOLUCION SEGURO:", e);
@@ -149,7 +192,7 @@ export default function EpicrisisPage() {
 
             aggregatedHtml += headerHtml + filteredHtml;
             if (idx < evolucionBloques.length - 1) {
-              aggregatedHtml += '<br/><br/>';
+              aggregatedHtml += '<p><br></p>';
             }
           }
           epicrisisDatos.resumen_evolucion = aggregatedHtml;
@@ -226,9 +269,9 @@ export default function EpicrisisPage() {
               
               // Si no se encontró la palabra 'INDICACIONES', usar todo el contenido (ya limpio del médico)
               if (foundIndicaciones) {
-                filteredFarmaHtml = contentHtml;
+                filteredFarmaHtml = cleanExtractedHtml(contentHtml);
               } else {
-                filteredFarmaHtml = doc.body.innerHTML;
+                filteredFarmaHtml = cleanExtractedHtml(doc.body.innerHTML);
               }
             } catch (e) {
               console.error("Error parsing HTML for FARMACOTERAPIA INDICACIONES:", e);
@@ -236,7 +279,7 @@ export default function EpicrisisPage() {
 
             aggregatedTratamientoHtml += headerHtml + filteredFarmaHtml;
             if (idx < evolucionBloques.length - 1) {
-              aggregatedTratamientoHtml += '<br/><br/>';
+              aggregatedTratamientoHtml += '<p><br></p>';
             }
           }
           epicrisisDatos.resumen_tratamiento = aggregatedTratamientoHtml;
@@ -313,16 +356,16 @@ export default function EpicrisisPage() {
               }
               
               if (foundIndicaciones) {
-                filteredFarmaHtml = contentHtml;
+                filteredFarmaHtml = cleanExtractedHtml(contentHtml);
               } else {
-                filteredFarmaHtml = doc.body.innerHTML;
+                filteredFarmaHtml = cleanExtractedHtml(doc.body.innerHTML);
               }
             } catch (e) {
               console.error("Error parsing HTML for INDICACIONES DE ALTA:", e);
             }
 
             if (aggregatedIndicacionesHtml.length > 0 && filteredFarmaHtml.trim() !== '') {
-              aggregatedIndicacionesHtml += '<br/><br/>';
+              aggregatedIndicacionesHtml += '<p><br></p>';
             }
             if (filteredFarmaHtml.trim() !== '') {
               aggregatedIndicacionesHtml += headerHtml + filteredFarmaHtml;

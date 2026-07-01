@@ -3,6 +3,7 @@
 import React, { useState, useImperativeHandle } from "react";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
 import { MedicoInput } from "./MedicoInput";
+import { Cie10DescInput, Cie10CieInput } from "./Cie10Input";
 import type { Medico } from "@/lib/services/medicos";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -596,9 +597,35 @@ const CertificadoMedicoForm = React.forwardRef<CertificadoMedicoFormHandle, Prop
                   <div style={{ height: 26, display: "flex", alignItems: "center" }}>INSTITUCIÓN / EMPRESA:</div>
                 </td>
                 <td style={{ border: "1px solid #999", padding: "0 4px", verticalAlign: "top" }}>
+                  {/* DIAGNÓSTICO */}
+                  <div style={{ height: 26, display: "flex", alignItems: "center", borderBottom: "1px solid #f0f0f0" }}>
+                    <div style={{ flex: 1, padding: "2px 4px", fontSize: "10px", fontFamily: "'Georgia', serif", width: "100%" }}>
+                      <Cie10DescInput
+                        cie={d.codigo_cie10}
+                        descripcion={d.diagnostico}
+                        placeholder="Ej: HERNIA UMBILICAL CON OBSTRUCCIÓN, SIN GANGRENA"
+                        onChange={(cie, desc) => {
+                          s("codigo_cie10")(cie);
+                          s("diagnostico")(desc);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  {/* CÓDIGO DE DIAGNÓSTICO (CIE10) */}
+                  <div style={{ height: 26, display: "flex", alignItems: "center", borderBottom: "1px solid #f0f0f0" }}>
+                    <div style={{ flex: 1, padding: "2px 4px", fontSize: "10px", fontFamily: "'Georgia', serif", width: "100%" }}>
+                      <Cie10CieInput
+                        cie={d.codigo_cie10}
+                        descripcion={d.diagnostico}
+                        center={false}
+                        onChange={(cie, desc) => {
+                          s("codigo_cie10")(cie);
+                          s("diagnostico")(desc);
+                        }}
+                      />
+                    </div>
+                  </div>
                   {[
-                    { k: "diagnostico" as const, ph: "Ej: HERNIA UMBILICAL CON OBSTRUCCIÓN, SIN GANGRENA" },
-                    { k: "codigo_cie10" as const, ph: "Ej: K420" },
                     { k: "cuadro_clinico" as const, ph: "Descripción del cuadro clínico..." },
                     { k: "tipo_contingencia" as const, ph: "ENFERMEDAD / ACCIDENTE / MATERNIDAD" },
                     { k: "direccion_paciente" as const, ph: "Dirección de domicilio" },
@@ -606,13 +633,31 @@ const CertificadoMedicoForm = React.forwardRef<CertificadoMedicoFormHandle, Prop
                     { k: "institucion_empresa" as const, ph: "Empresa u organización" },
                   ].map(({ k, ph }) => (
                     <div key={k} style={{ height: 26, display: "flex", alignItems: "center", borderBottom: "1px solid #f0f0f0" }}>
-                      <input type="text" value={d[k]} onChange={(e) => s(k)(e.target.value)}
-                        placeholder={ph}
-                        style={{
-                          width: "100%", border: "none", outline: "none", fontSize: "10px",
-                          fontFamily: "'Georgia', serif", padding: "2px 4px",
-                          background: "transparent", boxSizing: "border-box",
-                        }} />
+                      {k === "tipo_contingencia" ? (
+                        <select
+                          value={d[k]}
+                          onChange={(e) => s(k)(e.target.value)}
+                          style={{
+                            width: "100%", border: "none", outline: "none", fontSize: "10px",
+                            fontFamily: "'Georgia', serif", padding: "2px 4px",
+                            background: "transparent", boxSizing: "border-box",
+                            cursor: "pointer", color: d[k] ? "#000" : "#777",
+                          }}
+                        >
+                          <option value="" disabled>Seleccione...</option>
+                          <option value="ENFERMEDAD GENERAL">ENFERMEDAD GENERAL</option>
+                          <option value="ENFERMEDAD CATASTRÓFICA">ENFERMEDAD CATASTRÓFICA</option>
+                          <option value="MATERNIDAD">MATERNIDAD</option>
+                        </select>
+                      ) : (
+                        <input type="text" value={d[k]} onChange={(e) => s(k)(e.target.value)}
+                          placeholder={ph}
+                          style={{
+                            width: "100%", border: "none", outline: "none", fontSize: "10px",
+                            fontFamily: "'Georgia', serif", padding: "2px 4px",
+                            background: "transparent", boxSizing: "border-box",
+                          }} />
+                      )}
                     </div>
                   ))}
                 </td>
