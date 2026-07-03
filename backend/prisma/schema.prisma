@@ -151,7 +151,6 @@ model CategoriaPaciente {
   paciente    Paciente  @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
   atencion    Atencion?
 
-  @@unique([categoriaId, pacienteId])
   @@map("categoria_paciente")
   @@schema("hospital")
 }
@@ -174,6 +173,7 @@ model Atencion {
   epicrisis           Epicrisis?
   receta              Receta?
   certificado         Certificado?
+  liquidacion         Liquidacion?
 
   @@map("atencion")
   @@schema("hospital")
@@ -199,6 +199,7 @@ model Plantilla {
   epicrisis       Epicrisis[]
   recetas         Receta[]
   certificados    Certificado[]
+  liquidaciones   Liquidacion[]
 
   @@map("plantilla")
   @@schema("hospital")
@@ -315,6 +316,22 @@ model Certificado {
   plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
 
   @@map("certificado")
+  @@schema("hospital")
+}
+
+model Liquidacion {
+  id          Int      @id @default(autoincrement())
+  atencionId  Int      @unique @map("atencion_id")
+  plantillaId Int      @map("plantilla_id")
+  datos       Json     @default("{}")
+  estado      String   @default("borrador")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+
+  @@map("liquidacion")
   @@schema("hospital")
 }
 

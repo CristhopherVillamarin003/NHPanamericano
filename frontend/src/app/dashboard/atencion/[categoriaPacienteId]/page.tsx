@@ -106,6 +106,12 @@ export default function AtencionPage() {
   const [customProtocoloTemplates, setCustomProtocoloTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // User email for conditional rendering
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  useEffect(() => {
+    setUserEmail(localStorage.getItem('user_email'));
+  }, []);
+
   // Modal crear consentimiento
   const [createOpen, setCreateOpen] = useState(false);
   const [nuevoNombre, setNuevoNombre] = useState('');
@@ -497,14 +503,16 @@ export default function AtencionPage() {
               <span>Consentimientos</span>
               <span className="seccion-badge">{atencion?.consentimientos?.length ?? 0}</span>
             </div>
-            <button
-              type="button"
-              className="btn-create"
-              onClick={() => { setNuevoNombre(''); setSelectedTemplate('nuevo'); setTemplateSearch(''); setDropdownOpen(false); setCreateOpen(true); }}
-            >
-              <Plus className="w-4 h-4" />
-              Añadir Consentimiento
-            </button>
+            {userEmail !== 'administracion@hospitalpanamericano.com.ec' && (
+              <button
+                type="button"
+                className="btn-create"
+                onClick={() => { setNuevoNombre(''); setSelectedTemplate('nuevo'); setTemplateSearch(''); setDropdownOpen(false); setCreateOpen(true); }}
+              >
+                <Plus className="w-4 h-4" />
+                Añadir Consentimiento
+              </button>
+            )}
           </div>
 
           <div className="seccion-items">
@@ -521,16 +529,18 @@ export default function AtencionPage() {
                 >
                   {c.datos?.nombre ?? `Consentimiento #${c.id}`}
                 </button>
-                <div className="table-actions">
-                  <ConsentimientoActionsMenu
-                    onEdit={() => {
-                      setEditTarget(c);
-                      setEditNombre(c.datos?.nombre ?? '');
-                      setEditOpen(true);
-                    }}
-                    onDelete={() => { setDeleteTarget(c); setDeleteOpen(true); }}
-                  />
-                </div>
+                {userEmail !== 'administracion@hospitalpanamericano.com.ec' && (
+                  <div className="table-actions">
+                    <ConsentimientoActionsMenu
+                      onEdit={() => {
+                        setEditTarget(c);
+                        setEditNombre(c.datos?.nombre ?? '');
+                        setEditOpen(true);
+                      }}
+                      onDelete={() => { setDeleteTarget(c); setDeleteOpen(true); }}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -584,23 +594,25 @@ export default function AtencionPage() {
                 <span className="seccion-badge">1</span>
               )}
             </div>
-            <button
-              type="button"
-              className="btn-create"
-              onClick={() => {
-                if (atencion?.protocolo) {
-                  router.push(`/dashboard/atencion/${categoriaPacienteId}/protocolo`);
-                } else {
-                  setSelectedProtocoloTemplate('vacio');
-                  setProtocoloSearch('');
-                  setProtocoloDropdownOpen(false);
-                  setProtocoloOpen(true);
-                }
-              }}
-            >
-              <ArrowRight className="w-4 h-4" />
-              Ingresar
-            </button>
+            {!(userEmail === 'administracion@hospitalpanamericano.com.ec' && !atencion?.protocolo) && (
+              <button
+                type="button"
+                className="btn-create"
+                onClick={() => {
+                  if (atencion?.protocolo) {
+                    router.push(`/dashboard/atencion/${categoriaPacienteId}/protocolo`);
+                  } else {
+                    setSelectedProtocoloTemplate('vacio');
+                    setProtocoloSearch('');
+                    setProtocoloDropdownOpen(false);
+                    setProtocoloOpen(true);
+                  }
+                }}
+              >
+                <ArrowRight className="w-4 h-4" />
+                Ingresar
+              </button>
+            )}
           </div>
           {atencion?.protocolo && (
             <div className="seccion-items">
@@ -608,13 +620,15 @@ export default function AtencionPage() {
                 <span className="seccion-item-name" style={{ cursor: 'default', textDecoration: 'none', color: '#18181b' }}>
                   {atencion.protocolo.datos?.nombre || 'Protocolo'}
                 </span>
-                <div className="table-actions">
-                  <ConsentimientoActionsMenu
-                    onEdit={() => {}}
-                    onDelete={() => setDeleteSeccionTarget('protocolo')}
-                    hideEdit
-                  />
-                </div>
+                {userEmail !== 'administracion@hospitalpanamericano.com.ec' && (
+                  <div className="table-actions">
+                    <ConsentimientoActionsMenu
+                      onEdit={() => {}}
+                      onDelete={() => setDeleteSeccionTarget('protocolo')}
+                      hideEdit
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -630,23 +644,25 @@ export default function AtencionPage() {
                 <span className="seccion-badge">1</span>
               )}
             </div>
-            <button
-              type="button"
-              className="btn-create"
-              onClick={() => {
-                if (atencion?.cuidado) {
-                  router.push(`/dashboard/atencion/${categoriaPacienteId}/cuidados`);
-                } else {
-                  setSelectedCuidadosTemplate('post-operatorios');
-                  setCuidadosSearch('');
-                  setCuidadosDropdownOpen(false);
-                  setCuidadosOpen(true);
-                }
-              }}
-            >
-              <ArrowRight className="w-4 h-4" />
-              Ingresar
-            </button>
+            {!(userEmail === 'administracion@hospitalpanamericano.com.ec' && !atencion?.cuidado) && (
+              <button
+                type="button"
+                className="btn-create"
+                onClick={() => {
+                  if (atencion?.cuidado) {
+                    router.push(`/dashboard/atencion/${categoriaPacienteId}/cuidados`);
+                  } else {
+                    setSelectedCuidadosTemplate('post-operatorios');
+                    setCuidadosSearch('');
+                    setCuidadosDropdownOpen(false);
+                    setCuidadosOpen(true);
+                  }
+                }}
+              >
+                <ArrowRight className="w-4 h-4" />
+                Ingresar
+              </button>
+            )}
           </div>
           {atencion?.cuidado && (
             <div className="seccion-items">
@@ -654,13 +670,15 @@ export default function AtencionPage() {
                 <span className="seccion-item-name" style={{ cursor: 'default', textDecoration: 'none', color: '#18181b' }}>
                   Documento de Cuidados
                 </span>
-                <div className="table-actions">
-                  <ConsentimientoActionsMenu
-                    onEdit={() => {}}
-                    onDelete={() => setDeleteSeccionTarget('cuidado')}
-                    hideEdit
-                  />
-                </div>
+                {userEmail !== 'administracion@hospitalpanamericano.com.ec' && (
+                  <div className="table-actions">
+                    <ConsentimientoActionsMenu
+                      onEdit={() => {}}
+                      onDelete={() => setDeleteSeccionTarget('cuidado')}
+                      hideEdit
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -776,6 +794,45 @@ export default function AtencionPage() {
             </div>
           )}
         </div>
+
+        {/* Liquidaciones — condicional */}
+        {userEmail === 'administracion@hospitalpanamericano.com.ec' && (
+          <div className="seccion-card">
+            <div className="seccion-card-header">
+              <div className="seccion-card-title">
+                <FolderOpen className="w-4 h-4 text-sky-500" />
+                <span>Liquidaciones</span>
+                {atencion?.liquidacion && (
+                  <span className="seccion-badge">1</span>
+                )}
+              </div>
+              <button
+                type="button"
+                className="btn-create"
+                onClick={() => router.push(`/dashboard/atencion/${categoriaPacienteId}/liquidaciones`)}
+              >
+                <ArrowRight className="w-4 h-4" />
+                Ingresar
+              </button>
+            </div>
+            {atencion?.liquidacion && (
+              <div className="seccion-items">
+                <div className="seccion-item">
+                  <span className="seccion-item-name" style={{ cursor: 'default', textDecoration: 'none', color: '#18181b' }}>
+                    Liquidaciones
+                  </span>
+                  <div className="seccion-item-estado">
+                    {atencion.liquidacion.estado !== 'borrador' && (
+                      <span className={`estado-badge estado-${atencion.liquidacion.estado}`}>
+                        {atencion.liquidacion.estado}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Resto de secciones — próximamente */}
         {([] as const).map((seccion) => (

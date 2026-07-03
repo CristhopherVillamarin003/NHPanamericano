@@ -15,6 +15,7 @@ interface DataTableProps<T> {
   data: T[];
   emptyMessage?: string;
   loading?: boolean;
+  rowKey?: (row: T) => string | number;
 }
 
 export function DataTable<T extends { id?: number | string }>({
@@ -22,6 +23,7 @@ export function DataTable<T extends { id?: number | string }>({
   data,
   emptyMessage = 'No hay datos disponibles',
   loading = false,
+  rowKey,
 }: DataTableProps<T>) {
   const [sortConfig, setSortConfig] = React.useState<{
     key: string;
@@ -109,7 +111,7 @@ export function DataTable<T extends { id?: number | string }>({
             </tr>
           ) : (
             sortedData.map((row, i) => (
-              <tr key={(row as any).id ?? i}>
+              <tr key={rowKey ? rowKey(row) : ((row as any).id ?? i)}>
                 {columns.map((col) => (
                   <td key={col.key}>
                     {col.render

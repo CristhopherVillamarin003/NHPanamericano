@@ -12,14 +12,12 @@ interface VincularPacienteModalProps {
   open: boolean;
   onClose: () => void;
   onLink: (pacienteId: number) => Promise<void>;
-  excludePacienteIds?: number[];
 }
 
 export function VincularPacienteModal({
   open,
   onClose,
   onLink,
-  excludePacienteIds = [],
 }: VincularPacienteModalProps) {
   const [pacientes, setPacientes] = React.useState<Paciente[]>([]);
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -31,9 +29,7 @@ export function VincularPacienteModal({
       setLoading(true);
       getPacientes()
         .then((data) => {
-          // Filter out patients that are already in the current category
-          const available = data.filter((p) => !excludePacienteIds.includes(p.id));
-          setPacientes(available);
+          setPacientes(data);
         })
         .catch(() => {
           /* silently fail */
@@ -42,7 +38,7 @@ export function VincularPacienteModal({
           setLoading(false);
         });
     }
-  }, [open, excludePacienteIds]);
+  }, [open]);
 
   const filteredPacientes = pacientes.filter((row) => {
     if (!searchQuery) return true;

@@ -310,7 +310,7 @@ export default function CategoriaPage() {
         </div>
       </div>
 
-      <DataTable columns={columns} data={filteredRows} loading={loading} />
+      <DataTable columns={columns} data={filteredRows} loading={loading} rowKey={(row) => row._recordId ?? row.id} />
 
       {/* Create Modal */}
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Crear Paciente">
@@ -348,7 +348,6 @@ export default function CategoriaPage() {
         open={vincularOpen}
         onClose={() => setVincularOpen(false)}
         onLink={handleLinkExisting}
-        excludePacienteIds={rows.map((r) => r.id)}
       />
     </div>
   );

@@ -49,7 +49,9 @@ interface Props {
   onExportarDocx?: (datos: DatosReceta) => void;
   guardando?: boolean;
   exportando?: boolean;
+  exportando?: boolean;
   atencionId?: number;
+  isReadOnly?: boolean;
 }
 
 export type HistoriaClinicaRecetaHandle = {
@@ -115,7 +117,7 @@ function FieldRow({ label, value, onChange, readOnly = false, type = "text" }: {
 // ─── Componente Principal ─────────────────────────────────────────────────────
 
 const RecetaForm = React.forwardRef<HistoriaClinicaRecetaHandle, Props>(
-  ({ paciente, medico, establecimiento, initialData, onGuardar, onExportarDocx, guardando = false, exportando = false, atencionId }, ref) => {
+  ({ paciente, medico, establecimiento, initialData, onGuardar, onExportarDocx, guardando = false, exportando = false, atencionId, isReadOnly }, ref) => {
   const today = new Date().toISOString().split("T")[0];
 
   const [d, setD] = useState<DatosReceta>({
@@ -137,7 +139,7 @@ const RecetaForm = React.forwardRef<HistoriaClinicaRecetaHandle, Props>(
     onRestore: (saved) => setD(p => ({ ...p, ...saved })),
   });
 
-  const s = (k: keyof DatosReceta) => (v: string) => setD(p => ({ ...p, [k]: v }));
+  const s = (k: keyof DatosReceta) => (v: string) => !isReadOnly && setD(p => ({ ...p, [k]: v }));
 
   useImperativeHandle(ref, () => ({
     getDatos: () => d,
@@ -148,12 +150,12 @@ const RecetaForm = React.forwardRef<HistoriaClinicaRecetaHandle, Props>(
   // ── Shared patient block ───────────────────────────────────────────────────
   const renderDatosBloque = () => (
     <div style={{ marginBottom: 10 }}>
-      <FieldRow label="NOMBRE:" value={d.nombre} onChange={s("nombre")} />
-      <FieldRow label="CÉDULA DE IDENTIDAD:" value={d.cedula} onChange={s("cedula")} />
-      <FieldRow label="EDAD:" value={d.edad} onChange={s("edad")} />
-      <FieldRow label="ALERGIAS:" value={d.alergias} onChange={s("alergias")} />
-      <FieldRow label="DIAGNÓSTICO:" value={d.diagnostico} onChange={s("diagnostico")} />
-      <FieldRow label="FECHA:" value={d.fecha} onChange={s("fecha")} type="date" />
+      <FieldRow label="NOMBRE:" value={d.nombre} onChange={s("nombre")} readOnly={isReadOnly} />
+      <FieldRow label="CÉDULA DE IDENTIDAD:" value={d.cedula} onChange={s("cedula")} readOnly={isReadOnly} />
+      <FieldRow label="EDAD:" value={d.edad} onChange={s("edad")} readOnly={isReadOnly} />
+      <FieldRow label="ALERGIAS:" value={d.alergias} onChange={s("alergias")} readOnly={isReadOnly} />
+      <FieldRow label="DIAGNÓSTICO:" value={d.diagnostico} onChange={s("diagnostico")} readOnly={isReadOnly} />
+      <FieldRow label="FECHA:" value={d.fecha} onChange={s("fecha")} type="date" readOnly={isReadOnly} />
     </div>
   );
 
@@ -189,9 +191,11 @@ const RecetaForm = React.forwardRef<HistoriaClinicaRecetaHandle, Props>(
           </span>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={() => { onGuardar?.(d); clearAutosave(); }} disabled={guardando} style={btnStyle("#1a3a5c")}>
-            {guardando ? "Guardando..." : "💾 Guardar"}
-          </button>
+          {!isReadOnly && (
+            <button onClick={() => { onGuardar?.(d); clearAutosave(); }} disabled={guardando} style={btnStyle("#1a3a5c")}>
+              {guardando ? "Guardando..." : "💾 Guardar"}
+            </button>
+          )}
           <button onClick={() => { onExportarDocx?.(d); clearAutosave(); }} disabled={exportando} style={btnStyle("#1e6b2e")}>
             {exportando ? "Exportando..." : "📄 Descargar Word"}
           </button>
@@ -199,7 +203,7 @@ const RecetaForm = React.forwardRef<HistoriaClinicaRecetaHandle, Props>(
       </div>
 
       {/* ── Cuerpo de la receta ────────────────────────────────────────────── */}
-      <div style={{
+      <div className={isReadOnly ? 'read-only-mode' : ''} inert={isReadOnly ? true : undefined} style={{
         background: "#fff",
         border: "1px solid #c8d8e8",
         margin: "12px",

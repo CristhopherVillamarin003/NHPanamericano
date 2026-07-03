@@ -23,12 +23,14 @@ export default function ProtocoloPage() {
   const [atencionId, setAtencionId] = useState<number | null>(null);
   const [initialData, setInitialData] = useState<Record<string, any> | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [exportando, setExportando] = useState(false);
   const formRef = useRef<any>(null);
 
   useEffect(() => {
     async function load() {
+      setIsReadOnly(localStorage.getItem('user_email') === 'administracion@hospitalpanamericano.com.ec');
       try {
         const atencionData = await findOrCreateAtencion(categoriaPacienteId);
         setAtencionId(atencionData.id);
@@ -127,6 +129,7 @@ export default function ProtocoloPage() {
 
       <div className="form-page-body">
         <ProtocoloForm
+          isReadOnly={isReadOnly}
             ref={formRef}
             atencionId={atencionId ?? undefined}
             paciente={paciente ?? undefined}
@@ -135,7 +138,7 @@ export default function ProtocoloPage() {
             onExportarExcel={handleExportarExcel}
             guardando={guardando}
             exportando={exportando}
-          />
+        />
       </div>
     </div>
   );

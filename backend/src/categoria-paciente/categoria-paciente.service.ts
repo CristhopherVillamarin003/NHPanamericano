@@ -17,16 +17,12 @@ export class CategoriaPacienteService {
 
     if (!categoria) throw new NotFoundException('Categoría no encontrada');
 
-    try {
-      return await this.prisma.categoriaPaciente.create({
-        data: {
-          categoriaId: input.categoriaId,
-          pacienteId: input.pacienteId,
-        },
-      });
-    } catch {
-      throw new ConflictException('El paciente ya está en la categoría');
-    }
+    return await this.prisma.categoriaPaciente.create({
+      data: {
+        categoriaId: input.categoriaId,
+        pacienteId: input.pacienteId,
+      },
+    });
   }
 
   async listPacientesByCategoria(categoriaId: number) {

@@ -16,6 +16,7 @@ export class AtencionService {
     epicrisis:         { include: { plantilla: true } },
     receta:            { include: { plantilla: true } },
     certificado:       { include: { plantilla: true } },
+    liquidacion:       { include: { plantilla: true } },
   };
 
   async findOrCreate(categoriaPacienteId: number) {
@@ -151,6 +152,16 @@ export class AtencionService {
   async upsertCertificado(atencionId: number, plantillaId: number, datos: object, estado?: string) {
     await this.getAtencion(atencionId);
     return this.prisma.certificado.upsert({
+      where: { atencionId },
+      create: { atencionId, plantillaId, datos, ...(estado ? { estado } : {}) },
+      update: { datos, ...(estado ? { estado } : {}), plantillaId },
+      include: { plantilla: true },
+    });
+  }
+
+  async upsertLiquidacion(atencionId: number, plantillaId: number, datos: object, estado?: string) {
+    await this.getAtencion(atencionId);
+    return this.prisma.liquidacion.upsert({
       where: { atencionId },
       create: { atencionId, plantillaId, datos, ...(estado ? { estado } : {}) },
       update: { datos, ...(estado ? { estado } : {}), plantillaId },

@@ -95,6 +95,7 @@ interface Props {
   guardando?: boolean;
   exportando?: boolean;
   atencionId?: number;
+  isReadOnly?: boolean;
 }
 
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
@@ -228,6 +229,7 @@ const EpicrisisForm = React.forwardRef<EpicrisisFormHandle, Props>(({
   guardando = false,
   exportando = false,
   atencionId,
+  isReadOnly,
 }, ref) => {
   const [hoja, setHoja] = useState<"ANVERSO" | "REVERSO">("ANVERSO");
   const nowTime = new Date().toTimeString().slice(0, 5);
@@ -332,16 +334,18 @@ const EpicrisisForm = React.forwardRef<EpicrisisFormHandle, Props>(({
           </span>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={() => { onGuardar?.(d); clearAutosave(); }} disabled={guardando} style={btnStyle("#1a3a5c")}>
-            {guardando ? "Guardando..." : "💾 Guardar"}
-          </button>
+          {!isReadOnly && (
+            <button onClick={() => { onGuardar?.(d); clearAutosave(); }} disabled={guardando} style={btnStyle("#1a3a5c")}>
+              {guardando ? "Guardando..." : "💾 Guardar"}
+            </button>
+          )}
           <button onClick={() => onExportarDocx?.(d)} disabled={exportando} style={btnStyle("#1e6b2e")}>
             {exportando ? "Exportando..." : "📄 Descargar Word"}
           </button>
         </div>
       </div>
 
-      <div style={{ overflowX: "visible", overflowY: "visible", background: "#fff" }}>
+      <div className={isReadOnly ? 'read-only-mode' : ''} inert={isReadOnly ? true : undefined} style={{ overflowX: "visible", overflowY: "visible", background: "#fff" }}>
 
         {/* ════════════════════════════════════════════════════════════════
             TABLA [0] — A, B, C, D

@@ -179,6 +179,7 @@ export function AppSidebar() {
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');
+    localStorage.removeItem('user_email');
     router.push('/auth/login');
   };
 

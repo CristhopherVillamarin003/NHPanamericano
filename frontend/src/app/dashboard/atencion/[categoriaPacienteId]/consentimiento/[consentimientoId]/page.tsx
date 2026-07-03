@@ -22,6 +22,7 @@ export default function ConsentimientoPage() {
   const [paciente, setPaciente] = useState<Paciente | null>(null);
   const [consentimiento, setConsentimiento] = useState<Consentimiento | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [exportando, setExportando] = useState(false);
   const formRef = useRef<any>(null);
@@ -30,6 +31,7 @@ export default function ConsentimientoPage() {
 
   useEffect(() => {
     async function load() {
+      setIsReadOnly(localStorage.getItem('user_email') === 'administracion@hospitalpanamericano.com.ec');
       try {
         const atencionData = await findOrCreateAtencion(categoriaPacienteId);
         const c = atencionData.consentimientos.find((x) => x.id === consentimientoId);
@@ -122,6 +124,7 @@ export default function ConsentimientoPage() {
       </div>
       <div className="form-page-body">
         <ConsentimientoForm
+          isReadOnly={isReadOnly}
           ref={formRef}
           consentimientoId={consentimientoId}
           paciente={{

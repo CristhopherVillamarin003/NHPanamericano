@@ -82,6 +82,7 @@ interface Props {
   exportando?: boolean;
   atencionId?: number;
   isTemplateMode?: boolean;
+  isReadOnly?: boolean;
 }
 
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
@@ -193,7 +194,7 @@ export type ProtocoloQuirurgicoFormHandle = {
 
 const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, Props>(({
   paciente, initialData, onGuardar, onExportarExcel,
-  guardando = false, exportando = false, atencionId, isTemplateMode = false
+  guardando = false, exportando = false, atencionId, isTemplateMode = false, isReadOnly = false
 }, ref) => {
   const [hoja, setHoja] = useState<"ANVERSO" | "REVERSO">("ANVERSO");
 
@@ -314,22 +315,24 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
     onRestore: (saved) => setD(p => ({ ...p, ...saved })),
   });
 
-  const s = (k: keyof DatosProtocolo) => (v: string) => setD(p => ({ ...p, [k]: v }));
-  const c = (k: keyof DatosProtocolo) => (v: boolean) => setD(p => ({ ...p, [k]: v }));
+  const s = (k: keyof DatosProtocolo) => (v: string) => !isReadOnly && setD(p => ({ ...p, [k]: v }));
+  const c = (k: keyof DatosProtocolo) => (v: boolean) => !isReadOnly && setD(p => ({ ...p, [k]: v }));
 
   const setLine = (arr: "proced_quirurgico" | "procedimiento_quirurgico_cont" | "dieresis" | "hallazgos_quirurgicos", idx: number, val: string) =>
-    setD(p => {
+    !isReadOnly && setD(p => {
       const next = [...p[arr]];
       next[idx] = val;
       return { ...p, [arr]: next };
     });
 
-  const setProf = (idx: number, campo: keyof ProfesionalRow, val: string) =>
+  const updateProf = (idx: number, campo: keyof ProfesionalRow, val: string) => {
+    if (isReadOnly) return;
     setD(p => {
       const profs = [...p.profesionales] as [ProfesionalRow, ProfesionalRow, ProfesionalRow, ProfesionalRow];
       profs[idx] = { ...profs[idx], [campo]: val };
       return { ...p, profesionales: profs };
     });
+  };
 
   const getDatosPlanos = () => {
     const out: Record<string, any> = {};
@@ -349,8 +352,6 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
 
       out[`prot_${key}`] = val;
     });
-
-
 
     out.graficos = d.graficos;
 
@@ -394,15 +395,14 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
 
     return out;
   };
+  const handleGuardar = () => { onGuardar?.(getDatosPlanos()); clearAutosave(); };
+  const handleExcel = () => onExportarExcel?.(getDatosPlanos());
 
   useImperativeHandle(ref, () => ({
     getDatos: () => getDatosPlanos(),
     clearAutosave: () => clearAutosave(),
     isDirty: () => isDirty,
   }), [d, clearAutosave, isDirty]);
-
-  const handleGuardar = () => { onGuardar?.(getDatosPlanos()); clearAutosave(); };
-  const handleExcel = () => onExportarExcel?.(getDatosPlanos());
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -418,9 +418,11 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
           </span>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={handleGuardar} disabled={guardando} style={btnStyle("#1a3a5c")}>
-            {guardando ? "Guardando..." : "💾 Guardar"}
-          </button>
+          {!isReadOnly && (
+            <button onClick={handleGuardar} disabled={guardando} style={btnStyle("#1a3a5c")}>
+              {guardando ? "Guardando..." : "💾 Guardar"}
+            </button>
+          )}
           <button onClick={handleExcel} disabled={exportando} style={btnStyle("#1e6b2e")}>
             {exportando ? "Exportando..." : "📊 Descargar Excel"}
           </button>
@@ -447,7 +449,7 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
         ))}
       </div>
 
-      <div style={{ overflowX: "visible", background: "#fff" }}>
+      <div className={isReadOnly ? 'read-only-mode' : ''} inert={isReadOnly ? true : undefined} style={{ overflowX: "visible", background: "#fff" }}>
 
         {/* ════════════════════════════════════════════════════════════════
             ANVERSO

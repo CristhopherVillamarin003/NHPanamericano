@@ -47,6 +47,7 @@ export interface Atencion {
   epicrisis: SeccionUnica | null;
   receta: SeccionUnica | null;
   certificado: SeccionUnica | null;
+  liquidacion: SeccionUnica | null;
 }
 
 export interface Consentimiento {

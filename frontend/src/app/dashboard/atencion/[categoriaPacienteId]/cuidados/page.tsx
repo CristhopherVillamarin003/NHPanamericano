@@ -34,6 +34,7 @@ export default function CuidadosPage() {
   const [guardando, setGuardando] = useState(false);
   const [exportando, setExportando] = useState(false);
   const [html, setHtml] = useState<string>('');
+  const [isReadOnly, setIsReadOnly] = useState(false);
 
   const pacienteNombre = useMemo(() => {
     if (!paciente) return 'Cargando paciente...';
@@ -42,6 +43,7 @@ export default function CuidadosPage() {
 
   useEffect(() => {
     async function load() {
+      setIsReadOnly(localStorage.getItem('user_email') === 'administracion@hospitalpanamericano.com.ec');
       try {
         const atencionData = await findOrCreateAtencion(categoriaPacienteId);
         setAtencionId(atencionData.id);
@@ -140,28 +142,30 @@ export default function CuidadosPage() {
 
         {/* Botones de acción */}
         <div className="flex items-center gap-2">
+          {!isReadOnly && (
+            <button
+              type="button"
+              onClick={handleGuardar}
+              disabled={guardando}
+              className="px-4 py-2 bg-[#1a3a5c] text-white text-sm font-semibold rounded-md hover:bg-[#15304d] disabled:opacity-60 transition-colors"
+            >
+              {guardando ? 'Guardando...' : '💾 Guardar'}
+            </button>
+          )}
           <button
-            type="button"
-            onClick={handleGuardar}
-            disabled={guardando}
-            className="px-4 py-2 bg-[#1a3a5c] text-white text-sm font-semibold rounded-md hover:bg-[#15304d] disabled:opacity-60 transition-colors"
-          >
-            {guardando ? 'Guardando...' : '💾 Guardar'}
-          </button>
-          <button
-            type="button"
-            onClick={handleDescargarWord}
-            disabled={exportando}
-            className="px-4 py-2 bg-[#1e6b2e] text-white text-sm font-semibold rounded-md hover:bg-[#185a26] disabled:opacity-60 transition-colors"
-          >
-            {exportando ? 'Descargando...' : '📄 Descargar Word'}
-          </button>
+              type="button"
+              onClick={handleDescargarWord}
+              disabled={exportando}
+              className="px-4 py-2 bg-[#1e6b2e] text-white text-sm font-semibold rounded-md hover:bg-[#185a26] disabled:opacity-60 transition-colors"
+            >
+              {exportando ? 'Descargando...' : '📄 Descargar Word'}
+            </button>
         </div>
       </div>
 
       {/* Editor */}
       <div className="flex-1 overflow-auto p-4 md:p-6">
-        <div className="max-w-[1100px] mx-auto">
+        <div className={`max-w-[1100px] mx-auto ${isReadOnly ? 'read-only-mode' : ''}`} inert={isReadOnly ? true : undefined}>
           <RichTextEditor
             content={html}
             onChange={setHtml}

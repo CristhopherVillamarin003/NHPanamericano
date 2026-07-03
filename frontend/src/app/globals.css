@@ -63,6 +63,27 @@ body {
   min-height: 0;           /* necesario para que flex respete el overflow */
 }
 
+/* Modo solo lectura (Enfoque A) */
+.read-only-mode {
+  pointer-events: none !important;
+  opacity: 0.95;
+  user-select: none !important;
+  position: relative;
+}
+.read-only-mode * {
+  pointer-events: none !important;
+}
+.read-only-mode::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 9999;
+  background: transparent;
+}
+.read-only-mode button {
+  display: none !important;
+}
+
 /* ========================================
    SIDEBAR
    ======================================== */

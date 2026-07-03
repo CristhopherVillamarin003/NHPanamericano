@@ -85,6 +85,7 @@ interface Props {
   guardando?: boolean;
   exportando?: boolean;
   atencionId?: number;
+  isReadOnly?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -285,6 +286,7 @@ const CertificadoMedicoForm = React.forwardRef<CertificadoMedicoFormHandle, Prop
   guardando = false,
   exportando = false,
   atencionId,
+  isReadOnly,
 }, ref) => {
   const today = new Date().toISOString().split("T")[0];
 
@@ -353,38 +355,38 @@ const CertificadoMedicoForm = React.forwardRef<CertificadoMedicoFormHandle, Prop
     isDirty: () => isDirty,
   }), [d, clearAutosave, isDirty]);
 
-  const s = (k: keyof DatosCertificado) => (v: string) => setD(p => ({ ...p, [k]: v }));
+  const s = (k: keyof DatosCertificado) => (v: string) => !isReadOnly && setD(p => ({ ...p, [k]: v }));
 
   // Fecha del certificado: ciudad editable
-  const onCiudad = (v: string) => setD(p => ({
+  const onCiudad = (v: string) => !isReadOnly && setD(p => ({
     ...p,
     fecha_certificado_ciudad: v.toUpperCase(),
     fecha_certificado: buildFechaCertificado(v, p.fecha_certificado_raw),
   }));
 
   // Fecha del certificado: calendario
-  const onFechaCert = (v: string) => setD(p => ({
+  const onFechaCert = (v: string) => !isReadOnly && setD(p => ({
     ...p,
     fecha_certificado_raw: v,
     fecha_certificado: buildFechaCertificado(p.fecha_certificado_ciudad, v),
   }));
 
   // Desde / Hasta reposo
-  const onDesde = (v: string) => setD(p => ({
+  const onDesde = (v: string) => !isReadOnly && setD(p => ({
     ...p, desde_fecha_raw: v, desde_fecha_letras: fechaCompletaConLetras(v),
   }));
-  const onHasta = (v: string) => setD(p => ({
+  const onHasta = (v: string) => !isReadOnly && setD(p => ({
     ...p, hasta_fecha_raw: v, hasta_fecha_letras: fechaCompletaConLetras(v),
   }));
 
   // Fechas de tabla clínica
-  const onFechaIngreso = (v: string) => setD(p => ({
+  const onFechaIngreso = (v: string) => !isReadOnly && setD(p => ({
     ...p, fecha_ingreso_raw: v, fecha_ingreso: fechaCompletaConLetras(v),
   }));
-  const onFechaProcedimiento = (v: string) => setD(p => ({
+  const onFechaProcedimiento = (v: string) => !isReadOnly && setD(p => ({
     ...p, fecha_procedimiento_raw: v, fecha_procedimiento: fechaCompletaConLetras(v),
   }));
-  const onFechaAlta = (v: string) => setD(p => ({
+  const onFechaAlta = (v: string) => !isReadOnly && setD(p => ({
     ...p, fecha_alta_raw: v, fecha_alta: fechaCompletaConLetras(v),
   }));
 
@@ -418,9 +420,11 @@ const CertificadoMedicoForm = React.forwardRef<CertificadoMedicoFormHandle, Prop
           </span>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={() => { onGuardar?.(d); clearAutosave(); }} disabled={guardando} style={btnStyle("#1a3a5c")}>
-            {guardando ? "Guardando..." : "💾 Guardar"}
-          </button>
+          {!isReadOnly && (
+            <button onClick={() => { onGuardar?.(d); clearAutosave(); }} disabled={guardando} style={btnStyle("#1a3a5c")}>
+              {guardando ? "Guardando..." : "💾 Guardar"}
+            </button>
+          )}
           <button onClick={() => onExportarDocx?.(d)} disabled={exportando} style={btnStyle("#1e6b2e")}>
             {exportando ? "Exportando..." : "📄 Descargar Word"}
           </button>
@@ -428,7 +432,7 @@ const CertificadoMedicoForm = React.forwardRef<CertificadoMedicoFormHandle, Prop
       </div>
 
       {/* ── Documento ─────────────────────────────────────────────────────── */}
-      <div style={docStyle}>
+      <div className={isReadOnly ? 'read-only-mode' : ''} inert={isReadOnly ? true : undefined} style={docStyle}>
 
         {/* ══ ENCABEZADO ══════════════════════════════════════════════════ */}
         <div style={{

@@ -167,4 +167,17 @@ export class AtencionController {
       dto.estado,
     );
   }
+
+  @Put(':atencionId/liquidacion')
+  upsertLiquidacion(
+    @Param('atencionId', ParseIntPipe) atencionId: number,
+    @Body() dto: SeccionDto,
+  ) {
+    return this.atencionService.upsertLiquidacion(
+      atencionId,
+      dto.plantillaId,
+      dto.datos ?? {},
+      dto.estado,
+    );
+  }
 }

@@ -42,6 +42,9 @@ export default function LoginPage() {
       });
 
       localStorage.setItem('access_token', result.accessToken);
+      if (result.usuario && result.usuario.email) {
+        localStorage.setItem('user_email', result.usuario.email);
+      }
       router.push('/dashboard');
     } catch (error) {
       const errorMessage = getErrorMessage(error);

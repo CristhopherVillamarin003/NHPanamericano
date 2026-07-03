@@ -52,6 +52,7 @@ import { HISTORIA_CLINICA_IMAGENOLOGIA_MAP } from './historia-clinica-imagenolog
 import { HISTORIA_CLINICA_INTERCONSULTA_MAP } from './historia-clinica-interconsulta.map';
 import { PROTOCOLO_MAP } from './protocolo.map';
 import { MAPEO_CERTIFICADO } from './certificado.map';
+import { LIQUIDACIONES_MAP } from './liquidaciones.map';
 
 // Campos que contienen imágenes en Base64 y su posición en el Excel
 // Nota: el nombre de hoja y el rango cambian según la plantilla.
@@ -78,7 +79,8 @@ const SECTION_MAPS: Record<string, Record<string, { sheet: string; cell: string 
   historia_clinica_laboratorio: HISTORIA_CLINICA_LABORATORIO_MAP,
   historia_clinica_imagenologia: HISTORIA_CLINICA_IMAGENOLOGIA_MAP,
   historia_clinica_interconsulta: HISTORIA_CLINICA_INTERCONSULTA_MAP,
-protocolo:                   PROTOCOLO_MAP,
+  protocolo:                   PROTOCOLO_MAP,
+  liquidaciones:               LIQUIDACIONES_MAP,
 };
 
 function htmlToRichText(html: string): any {
@@ -1494,6 +1496,20 @@ export class ExportService {
 
     // Si el mapa de celdas no existe pero fue procesado específicamente arriba, lo saltamos
     if (cellMap) {
+      if (seccion === 'liquidaciones') {
+        const itemsKeys = [
+          'habitacion', 'med_quirurgico', 'med_clinico', 'laboratorio', 'sala', 'anestesia',
+          'honor_internista', 'honor_traumato', 'tac_craneo', 'tac_columna', 'rayosx', 'eco',
+          'honor_traumato2', 'emergencia'
+        ];
+        for (const k of itemsKeys) {
+          if (datos[k] && typeof datos[k] === 'object') {
+            datos[`cantidad_${k}`] = datos[k].cantidad ?? '';
+            datos[`unitario_${k}`] = datos[k].unitario ?? '';
+            datos[`total_${k}`] = datos[k].total ?? '';
+          }
+        }
+      }
       injectFields(workbook, cellMap, datos);
     }
 

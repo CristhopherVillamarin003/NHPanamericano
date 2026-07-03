@@ -65,11 +65,13 @@ export default function HistoriaClinicaPage() {
   const [initialImagenologia, setInitialImagenologia] = useState<Record<string, any> | undefined>(undefined);
   const [initialInterconsulta, setInitialInterconsulta] = useState<Record<string, any> | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [exportando, setExportando] = useState(false);
 
   useEffect(() => {
     async function load() {
+      setIsReadOnly(localStorage.getItem('user_email') === 'administracion@hospitalpanamericano.com.ec');
       try {
         const atencionData = await findOrCreateAtencion(categoriaPacienteId);
         setAtencionId(atencionData.id);
@@ -242,41 +244,43 @@ export default function HistoriaClinicaPage() {
           </span>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
+          {!isReadOnly && (
+            <button
+              type="button"
+              onClick={handleGuardarTodo}
+              disabled={guardando}
+              style={{
+                background: '#1a3a5c',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 4,
+                padding: '5px 12px',
+                fontSize: '11px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'Arial, sans-serif',
+              }}
+            >
+              {guardando ? 'Guardando...' : '💾 Guardar'}
+            </button>
+          )}
           <button
-            type="button"
-            onClick={handleGuardarTodo}
-            disabled={guardando}
-            style={{
-              background: '#1a3a5c',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 4,
-              padding: '5px 12px',
-              fontSize: '11px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: 'Arial, sans-serif',
-            }}
-          >
-            {guardando ? 'Guardando...' : '💾 Guardar'}
-          </button>
-          <button
-            type="button"
-            onClick={handleExportarExcelTodo}
-            disabled={exportando}
-            style={{
-              background: '#1e6b2e',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 4,
-              padding: '5px 12px',
-              fontSize: '11px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: 'Arial, sans-serif',
-            }}
-          >
-            📊 Descargar Excel
+              type="button"
+              onClick={handleExportarExcelTodo}
+              disabled={exportando}
+              style={{
+                background: '#1e6b2e',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 4,
+                padding: '5px 12px',
+                fontSize: '11px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'Arial, sans-serif',
+              }}
+            >
+              📊 Descargar Excel
           </button>
         </div>
       </div>
@@ -309,7 +313,8 @@ export default function HistoriaClinicaPage() {
 
       {/* Área scrollable con el formulario activo */}
       <div className="form-page-body">
-        <div style={{ display: tab === 'EMERGENCIA' ? 'block' : 'none' }}>
+        <div className={isReadOnly ? 'read-only-mode' : ''} inert={isReadOnly ? true : undefined}>
+          <div style={{ display: tab === 'EMERGENCIA' ? 'block' : 'none' }}>
           <HistoriaClinicaEmergenciaForm
             ref={emergRef}
             atencionId={atencionId ?? undefined}
@@ -364,6 +369,7 @@ export default function HistoriaClinicaPage() {
             paciente={pacienteProps}
             initialData={initialInterconsulta}
           />
+          </div>
         </div>
       </div>
     </div>

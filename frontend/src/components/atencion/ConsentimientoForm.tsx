@@ -212,6 +212,7 @@ const ConsentimientoForm024 = React.forwardRef<ConsentimientoFormHandle, Props>(
   exportando = false,
   consentimientoId,
   isTemplateMode = false,
+  isReadOnly = false,
 }, ref) => {
   const [hoja, setHoja] = useState<"ANVERSO" | "REVERSO">("ANVERSO");
 
@@ -369,9 +370,11 @@ const ConsentimientoForm024 = React.forwardRef<ConsentimientoFormHandle, Props>(
           </span>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={handleGuardar} disabled={guardando} style={btnStyle("#1a3a5c")}>
-            {guardando ? "Guardando..." : "💾 Guardar"}
-          </button>
+          {!isReadOnly && (
+            <button onClick={handleGuardar} disabled={guardando} style={btnStyle("#1a3a5c")}>
+              {guardando ? "Guardando..." : "💾 Guardar"}
+            </button>
+          )}
           <button onClick={handleExcel} disabled={exportando} style={btnStyle("#1e6b2e")}>
             📊 Descargar Excel
           </button>
@@ -404,7 +407,7 @@ const ConsentimientoForm024 = React.forwardRef<ConsentimientoFormHandle, Props>(
       </div>
 
       {/* ── Área del formulario con scroll ────────────────────────────────── */}
-      <div className="consentimiento-print-area" style={{ overflowY: "visible", overflowX: "visible", background: "#fff", minHeight: "60vh" }}>
+      <div className={`consentimiento-print-area ${isReadOnly ? 'read-only-mode' : ''}`} inert={isReadOnly ? true : undefined} style={{ overflowY: "visible", overflowX: "visible", background: "#fff", minHeight: "60vh" }}>
 
         {/* ════════════════════════════════════════════════════════════════════
             ANVERSO
