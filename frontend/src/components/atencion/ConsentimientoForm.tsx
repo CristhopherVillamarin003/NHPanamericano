@@ -84,6 +84,7 @@ interface Props {
   exportando?: boolean;
   consentimientoId?: number;
   isTemplateMode?: boolean;
+  isReadOnly?: boolean;
 }
 
 // ─── Sub-componentes de celda ─────────────────────────────────────────────────
