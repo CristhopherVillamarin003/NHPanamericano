@@ -325,7 +325,7 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
       return { ...p, [arr]: next };
     });
 
-  const updateProf = (idx: number, campo: keyof ProfesionalRow, val: string) => {
+  const setProf = (idx: number, campo: keyof ProfesionalRow, val: string) => {
     if (isReadOnly) return;
     setD(p => {
       const profs = [...p.profesionales] as [ProfesionalRow, ProfesionalRow, ProfesionalRow, ProfesionalRow];
