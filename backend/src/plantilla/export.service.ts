@@ -1497,6 +1497,7 @@ export class ExportService {
     // Si el mapa de celdas no existe pero fue procesado específicamente arriba, lo saltamos
     if (cellMap) {
       if (seccion === 'liquidaciones') {
+        // Soporte para formato antiguo (objetos con llaves fijas) por si acaso no ha sido migrado
         const itemsKeys = [
           'habitacion', 'med_quirurgico', 'med_clinico', 'laboratorio', 'sala', 'anestesia',
           'honor_internista', 'honor_traumato', 'tac_craneo', 'tac_columna', 'rayosx', 'eco',
@@ -1504,13 +1505,39 @@ export class ExportService {
         ];
         for (const k of itemsKeys) {
           if (datos[k] && typeof datos[k] === 'object') {
+            datos[`detalle_${k}`] = datos[k].detalle ?? '';
             datos[`cantidad_${k}`] = datos[k].cantidad ?? '';
             datos[`unitario_${k}`] = datos[k].unitario ?? '';
             datos[`total_${k}`] = datos[k].total ?? '';
           }
         }
+        
+        // Soporte para nuevo formato dinámico (arreglo de items)
+        if (Array.isArray(datos.items)) {
+          datos.items.forEach((item: any, idx: number) => {
+            datos[`item_${idx}_cantidad`] = item.cantidad ?? '';
+            datos[`item_${idx}_detalle`]  = item.detalle ?? '';
+            datos[`item_${idx}_unitario`] = item.unitario ?? '';
+            datos[`item_${idx}_total`]    = item.total ?? '';
+          });
+        }
       }
       injectFields(workbook, cellMap, datos);
+      
+      // Ocultar filas no utilizadas en Liquidaciones para que los totales suban
+      if (seccion === 'liquidaciones') {
+        const sheetName = Object.values(cellMap)[0]?.sheet || 'Liquidacion';
+        const sheet = workbook.getWorksheet(sheetName);
+        if (sheet) {
+          const maxItems = 35;
+          const startRow = 15;
+          const itemsCount = Array.isArray(datos.items) ? datos.items.length : 0;
+          for (let i = itemsCount; i < maxItems; i++) {
+            const rowObj = sheet.getRow(startRow + i);
+            rowObj.hidden = true;
+          }
+        }
+      }
     }
 
     // ── Inyectar imágenes en mosaico (campo graficos: string[]) ─────────────

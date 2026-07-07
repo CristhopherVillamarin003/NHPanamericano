@@ -1,12 +1,15 @@
 import React, { forwardRef, useImperativeHandle, useState, useEffect } from 'react';
 import { MedicoInput } from "./MedicoInput";
+import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 interface ItemLiquidacion {
+  id: string;
+  detalle?: string;
   cantidad: string;
   unitario: string;
-  total: string; // calculado automáticamente
+  total: string;
 }
 
 export interface DatosLiquidacion {
@@ -22,21 +25,8 @@ export interface DatosLiquidacion {
   telefono: string;
   observacion: string;
 
-  // Ítems (cantidad, unitario, total)
-  habitacion: ItemLiquidacion;
-  med_quirurgico: ItemLiquidacion;
-  med_clinico: ItemLiquidacion;
-  laboratorio: ItemLiquidacion;
-  sala: ItemLiquidacion;
-  anestesia: ItemLiquidacion;
-  honor_internista: ItemLiquidacion;
-  honor_traumato: ItemLiquidacion;
-  tac_craneo: ItemLiquidacion;
-  tac_columna: ItemLiquidacion;
-  rayosx: ItemLiquidacion;
-  eco: ItemLiquidacion;
-  honor_traumato2: ItemLiquidacion;
-  emergencia: ItemLiquidacion;
+  // Ítems dinámicos
+  items: ItemLiquidacion[];
 
   // Totales
   subtotal: string;
@@ -56,7 +46,7 @@ interface Props {
     telefono?: string;
   } | any;
   medico?: string;
-  initialData?: Partial<DatosLiquidacion>;
+  initialData?: any; // any to support migration
   onGuardar?: (datos: DatosLiquidacion) => void;
   onExportarExcel?: (datos: DatosLiquidacion) => void;
   guardando?: boolean;
@@ -71,8 +61,8 @@ export type LiquidacionFormHandle = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function itemVacio(): ItemLiquidacion {
-  return { cantidad: "", unitario: "", total: "0.00" };
+function itemVacio(detalle: string = ""): ItemLiquidacion {
+  return { id: Math.random().toString(36).substring(2, 9), detalle, cantidad: "", unitario: "", total: "0.00" };
 }
 
 function fmt(n: number): string {
@@ -80,7 +70,7 @@ function fmt(n: number): string {
 }
 
 function toNum(v: string): number {
-  const n = parseFloat(v.replace(",", "."));
+  const n = parseFloat(String(v || "").replace(",", "."));
   return isNaN(n) ? 0 : n;
 }
 
@@ -129,11 +119,6 @@ const tdV: React.CSSProperties = {
 const tdN: React.CSSProperties = {
   ...tdV, textAlign: "right",
 };
-const tdDesc: React.CSSProperties = {
-  border: "1px solid #ccc", padding: "3px 6px",
-  fontSize: "9px", fontFamily: "Arial, sans-serif",
-  color: "#333",
-};
 
 function numIn(value: string, onChange: (v: string) => void, align: "right" | "left" = "right", readOnly = false, customColor?: string): React.ReactElement {
   return (
@@ -172,24 +157,60 @@ function txtIn(value: string, onChange: (v: string) => void, readOnly = false, p
   );
 }
 
-// ─── Definición de ítems ──────────────────────────────────────────────────────
+// ─── Definición de ítems por defecto ───────────────────────────────────────────
 
-const ITEMS: Array<{ key: keyof DatosLiquidacion; label: string }> = [
-  { key: "habitacion",      label: "HABITACIÓN (Incluye cuidado y manejo diario de un paciente monitoreado)" },
-  { key: "med_quirurgico",  label: "Medicinas e Insumos Quirúrgico" },
-  { key: "med_clinico",     label: "Medicinas e Insumos Clínico" },
-  { key: "laboratorio",     label: "Laboratorio" },
-  { key: "sala",            label: "Derecho de Sala" },
-  { key: "anestesia",       label: "Anestesia" },
-  { key: "honor_internista",label: "Honorarios Médicos Neurología / Internista" },
-  { key: "honor_traumato",  label: "Honorarios Médicos Traumatología" },
-  { key: "tac_craneo",      label: "TAC de Cráneo" },
-  { key: "tac_columna",     label: "TAC de Columna Lumbar" },
-  { key: "rayosx",          label: "Rayos X AP + Lateral Columna Lumbar" },
-  { key: "eco",             label: "Eco Abdomen Superior" },
-  { key: "honor_traumato2", label: "Honorarios Médicos Traumatología (2)" },
-  { key: "emergencia",      label: "Emergencia" },
+const DEFAULT_LABELS = [
+  "HABITACIÓN (Incluye cuidado y manejo diario de un paciente monitoreado)",
+  "Medicinas e Insumos Quirúrgico",
+  "Medicinas e Insumos Clínico",
+  "Laboratorio",
+  "Derecho de Sala",
+  "Anestesia",
+  "Honorarios Médicos Neurología / Internista",
+  "Honorarios Médicos Traumatología",
+  "TAC de Cráneo",
+  "TAC de Columna Lumbar",
+  "Rayos X AP + Lateral Columna Lumbar",
+  "Eco Abdomen Superior",
+  "Honorarios Médicos Traumatología (2)",
+  "Emergencia"
 ];
+
+// Migración de datos legados
+function migrateInitialData(initial: any): ItemLiquidacion[] {
+  if (initial?.items && Array.isArray(initial.items)) {
+    return initial.items;
+  }
+  
+  // Si no hay initialData o está vacío, creamos los por defecto
+  if (!initial || Object.keys(initial).length === 0) {
+    return DEFAULT_LABELS.map(label => itemVacio(label));
+  }
+
+  // Si tiene el formato viejo (keys fijas como 'habitacion')
+  const keysFijas = [
+    'habitacion', 'med_quirurgico', 'med_clinico', 'laboratorio', 'sala', 'anestesia',
+    'honor_internista', 'honor_traumato', 'tac_craneo', 'tac_columna', 'rayosx', 'eco',
+    'honor_traumato2', 'emergencia'
+  ];
+  
+  const migrados: ItemLiquidacion[] = [];
+  keysFijas.forEach((k, i) => {
+    if (initial[k]) {
+      migrados.push({
+        id: Math.random().toString(36).substring(2, 9),
+        detalle: initial[k].detalle || DEFAULT_LABELS[i],
+        cantidad: initial[k].cantidad || "",
+        unitario: initial[k].unitario || "",
+        total: initial[k].total || "0.00",
+      });
+    } else {
+      migrados.push(itemVacio(DEFAULT_LABELS[i]));
+    }
+  });
+  
+  return migrados;
+}
 
 // ─── Componente Principal ─────────────────────────────────────────────────────
 
@@ -206,50 +227,57 @@ const LiquidacionForm = forwardRef<LiquidacionFormHandle, Props>(({
 }, ref) => {
   const today = new Date().toISOString().split("T")[0];
 
-  const [d, setD] = useState<DatosLiquidacion>({
-    fecha_ingreso: today,
-    fecha_salida: today,
-    hora_ingreso: "",
-    hora_salida: "",
-    nombre: nombreCompleto(paciente),
-    cedula: paciente?.cedula ?? "",
-    DG: "",
-    medico_tratante: medico ?? "",
-    telefono: paciente?.telefono ?? "",
-    observacion: "",
-    habitacion:      itemVacio(),
-    med_quirurgico:  itemVacio(),
-    med_clinico:     itemVacio(),
-    laboratorio:     itemVacio(),
-    sala:            itemVacio(),
-    anestesia:       itemVacio(),
-    honor_internista:itemVacio(),
-    honor_traumato:  itemVacio(),
-    tac_craneo:      itemVacio(),
-    tac_columna:     itemVacio(),
-    rayosx:          itemVacio(),
-    eco:             itemVacio(),
-    honor_traumato2: itemVacio(),
-    emergencia:      itemVacio(),
-    subtotal: "0.00",
-    descuento: "0.00",
-    total: "0.00",
-    ...initialData,
+  const [d, setD] = useState<DatosLiquidacion>(() => {
+    const defaultData: DatosLiquidacion = {
+      fecha_ingreso: today,
+      fecha_salida: today,
+      hora_ingreso: "",
+      hora_salida: "",
+      nombre: nombreCompleto(paciente),
+      cedula: paciente?.cedula ?? "",
+      DG: "",
+      medico_tratante: medico ?? "",
+      telefono: paciente?.telefono ?? "",
+      observacion: "",
+      items: migrateInitialData(initialData),
+      subtotal: initialData?.subtotal || "0.00",
+      descuento: initialData?.descuento || "0.00",
+      total: initialData?.total || "0.00",
+    };
+    
+    // Si hay initialData para los campos simples, lo aplicamos
+    if (initialData) {
+      if (initialData.fecha_ingreso !== undefined) defaultData.fecha_ingreso = initialData.fecha_ingreso;
+      if (initialData.fecha_salida !== undefined) defaultData.fecha_salida = initialData.fecha_salida;
+      if (initialData.hora_ingreso !== undefined) defaultData.hora_ingreso = initialData.hora_ingreso;
+      if (initialData.hora_salida !== undefined) defaultData.hora_salida = initialData.hora_salida;
+      if (initialData.nombre !== undefined) defaultData.nombre = initialData.nombre;
+      if (initialData.cedula !== undefined) defaultData.cedula = initialData.cedula;
+      if (initialData.DG !== undefined) defaultData.DG = initialData.DG;
+      if (initialData.medico_tratante !== undefined) defaultData.medico_tratante = initialData.medico_tratante;
+      if (initialData.telefono !== undefined) defaultData.telefono = initialData.telefono;
+      if (initialData.observacion !== undefined) defaultData.observacion = initialData.observacion;
+    }
+    
+    return defaultData;
   });
 
-  // Exponer métodos al padre (page.tsx)
+  const { isDirty, clearAutosave } = useFormAutosaveAndWarn({
+    formId: `liquidacion_${atencionId || 'new'}_${paciente?.cedula || 'new'}`,
+    initialData: initialData || {},
+    currentData: d,
+    onRestore: (saved) => setD(p => ({ ...p, ...saved })),
+  });
+
   useImperativeHandle(ref, () => ({
     getDatos: () => d,
-    clearAutosave: () => {},
-    isDirty: () => false,
-  }), [d]);
+    clearAutosave,
+    isDirty: () => isDirty,
+  }), [d, clearAutosave, isDirty]);
 
   // Recalcular totales cuando cambian los ítems o descuento
   useEffect(() => {
-    const sub = ITEMS.reduce((acc, { key }) => {
-      const item = d[key] as ItemLiquidacion;
-      return acc + toNum(item.total);
-    }, 0);
+    const sub = d.items.reduce((acc, item) => acc + toNum(item.total), 0);
     const desc = toNum(d.descuento);
     setD(p => ({
       ...p,
@@ -257,16 +285,9 @@ const LiquidacionForm = forwardRef<LiquidacionFormHandle, Props>(({
       total: fmt(Math.max(0, sub - desc)),
     }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    d.habitacion.total, d.med_quirurgico.total, d.med_clinico.total,
-    d.laboratorio.total, d.sala.total, d.anestesia.total,
-    d.honor_internista.total, d.honor_traumato.total,
-    d.tac_craneo.total, d.tac_columna.total, d.rayosx.total,
-    d.eco.total, d.honor_traumato2.total, d.emergencia.total,
-    d.descuento,
-  ]);
+  }, [d.items, d.descuento]);
 
-  // Calcular días de estadía y actualizar habitación
+  // Calcular días de estadía y actualizar la fila de "HABITACIÓN"
   useEffect(() => {
     if (isReadOnly) return;
     if (d.fecha_ingreso && d.fecha_salida) {
@@ -276,19 +297,23 @@ const LiquidacionForm = forwardRef<LiquidacionFormHandle, Props>(({
       if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
         const diffTime = end.getTime() - start.getTime();
         let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        // Mínimo 1 día de habitación
         if (diffDays <= 0) diffDays = 1;
 
         const nuevaCantidad = String(diffDays);
         const nuevoUnitario = "150.00";
 
         setD(prev => {
-          const hab = prev.habitacion as ItemLiquidacion;
+          // Buscamos la fila que dice HABITACIÓN
+          const habIdx = prev.items.findIndex(it => it.detalle?.toUpperCase().includes("HABITACIÓN"));
+          if (habIdx === -1) return prev; // Si la borraron, no hacemos nada
+          
+          const hab = prev.items[habIdx];
           if (hab.cantidad !== nuevaCantidad || hab.unitario !== nuevoUnitario) {
             const nextHab = { ...hab, cantidad: nuevaCantidad, unitario: nuevoUnitario };
             nextHab.total = calcTotal(nextHab);
-            return { ...prev, habitacion: nextHab };
+            const nextItems = [...prev.items];
+            nextItems[habIdx] = nextHab;
+            return { ...prev, items: nextItems };
           }
           return prev;
         });
@@ -296,17 +321,45 @@ const LiquidacionForm = forwardRef<LiquidacionFormHandle, Props>(({
     }
   }, [d.fecha_ingreso, d.fecha_salida, isReadOnly]);
 
-  // Actualizar un campo de item y recalcular su total
-  const setItem = (key: keyof DatosLiquidacion, campo: keyof ItemLiquidacion, val: string) => {
+  // Actualizar un campo de item
+  const setItem = (idx: number, campo: keyof ItemLiquidacion, val: string) => {
     if (isReadOnly) return;
     setD(p => {
-      const prev = p[key] as ItemLiquidacion;
+      const nextItems = [...p.items];
+      const prev = nextItems[idx];
       const next = { ...prev, [campo]: val };
-      // Recalcular total si cambia cantidad o unitario
       if (campo === "cantidad" || campo === "unitario") {
         next.total = calcTotal(next);
       }
-      return { ...p, [key]: next };
+      nextItems[idx] = next;
+      return { ...p, items: nextItems };
+    });
+  };
+  
+  // Agregar item arriba o abajo
+  const addItem = (idx: number, posicion: 'arriba' | 'abajo') => {
+    if (isReadOnly) return;
+    // Si ya llegamos a 35 ítems, podemos limitar o simplemente dejar que Excel lo ignore, pero mejor limitar a 35 por seguridad
+    if (d.items.length >= 35) {
+      alert("Se ha alcanzado el límite máximo de 35 filas.");
+      return;
+    }
+    
+    setD(p => {
+      const nextItems = [...p.items];
+      const insertAt = posicion === 'arriba' ? idx : idx + 1;
+      nextItems.splice(insertAt, 0, itemVacio(""));
+      return { ...p, items: nextItems };
+    });
+  };
+  
+  // Eliminar item
+  const removeItem = (idx: number) => {
+    if (isReadOnly) return;
+    setD(p => {
+      const nextItems = [...p.items];
+      nextItems.splice(idx, 1);
+      return { ...p, items: nextItems };
     });
   };
 
@@ -348,7 +401,7 @@ const LiquidacionForm = forwardRef<LiquidacionFormHandle, Props>(({
         <div style={{ display: "flex", gap: 6 }}>
           {!isReadOnly && (
             <button onClick={handleGuardar} disabled={guardando} style={btnStyle("#1a3a5c")}>
-              {guardando ? "Guardando..." : "💾 Guardar borrador"}
+              {guardando ? "Guardando..." : "💾 Guardar"}
             </button>
           )}
           <button onClick={handleExcel} disabled={exportando} style={btnStyle("#1e6b2e")}>
@@ -473,31 +526,81 @@ const LiquidacionForm = forwardRef<LiquidacionFormHandle, Props>(({
                 <td style={{ ...tdH }}>DETALLE</td>
                 <td style={{ ...tdH, width: 90, textAlign: "center" }}>V. UNITARIO</td>
                 <td style={{ ...tdH, width: 100, textAlign: "center" }}>VALOR TOTAL</td>
+                {!isReadOnly && <td style={{ ...tdH, width: 50, textAlign: "center", background: "#f5f7fa", border: "none" }}></td>}
               </tr>
 
               {/* ══ ÍTEMS ════════════════════════════════════════════════════ */}
-              {ITEMS.map(({ key, label }, idx) => {
-                const item = d[key] as ItemLiquidacion;
+              {d.items.map((item, idx) => {
                 const isEven = idx % 2 === 0;
                 const rowBg = isEven ? "#fff" : "#f7faff";
                 return (
-                  <tr key={key}>
+                  <tr key={item.id}>
                     {/* Cantidad */}
                     <td style={{ ...tdN, background: rowBg, width: 50 }}>
-                      {numIn(item.cantidad, (v) => setItem(key, "cantidad", v), "right", isReadOnly)}
+                      {numIn(item.cantidad, (v) => setItem(idx, "cantidad", v), "right", isReadOnly)}
                     </td>
-                    {/* Descripción fija */}
-                    <td style={{ ...tdDesc, background: rowBg, padding: "3px 8px" }}>
-                      {label}
+                    {/* Descripción editable */}
+                    <td style={{ ...tdV, background: rowBg }}>
+                      <textarea
+                        value={item.detalle ?? ""}
+                        readOnly={isReadOnly}
+                        onChange={(e) => setItem(idx, "detalle", e.target.value)}
+                        rows={1}
+                        style={{
+                          width: "100%", border: "none", outline: "none",
+                          background: "transparent", fontSize: "9px",
+                          fontFamily: "Arial, sans-serif", padding: "3px 6px",
+                          color: "#333", boxSizing: "border-box", resize: "none",
+                          overflow: "hidden", minHeight: "18px"
+                        }}
+                        ref={(el) => {
+                          if (el) {
+                            el.style.height = "auto";
+                            el.style.height = `${Math.max(el.scrollHeight, 18)}px`;
+                          }
+                        }}
+                        onInput={(e) => {
+                          e.currentTarget.style.height = "auto";
+                          e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
+                        }}
+                      />
                     </td>
                     {/* Unitario */}
                     <td style={{ ...tdN, background: rowBg, width: 90 }}>
-                      {numIn(item.unitario, (v) => setItem(key, "unitario", v), "right", isReadOnly)}
+                      {numIn(item.unitario, (v) => setItem(idx, "unitario", v), "right", isReadOnly)}
                     </td>
                     {/* Total — calculado automáticamente */}
                     <td style={{ ...tdN, background: "#f0f4f8", width: 100 }}>
-                      {numIn(item.total, (v) => setItem(key, "total", v), "right", isReadOnly)}
+                      {numIn(item.total, (v) => setItem(idx, "total", v), "right", isReadOnly)}
                     </td>
+                    {/* Controles para agregar o quitar filas */}
+                    {!isReadOnly && (
+                      <td style={{ textAlign: "center", verticalAlign: "middle", width: 50, padding: "0 4px" }}>
+                        <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>
+                          <button
+                            onClick={() => addItem(idx, 'arriba')}
+                            title="Añadir arriba"
+                            style={{ cursor: "pointer", background: "#eef3f9", border: "1px solid #c8d8e8", borderRadius: 2, padding: "2px 4px", fontSize: "8px", color: "#1a3a5c" }}
+                          >
+                            +↑
+                          </button>
+                          <button
+                            onClick={() => addItem(idx, 'abajo')}
+                            title="Añadir abajo"
+                            style={{ cursor: "pointer", background: "#eef3f9", border: "1px solid #c8d8e8", borderRadius: 2, padding: "2px 4px", fontSize: "8px", color: "#1a3a5c" }}
+                          >
+                            +↓
+                          </button>
+                          <button
+                            onClick={() => removeItem(idx)}
+                            title="Eliminar fila"
+                            style={{ cursor: "pointer", background: "#fee", border: "1px solid #fcc", borderRadius: 2, padding: "2px 4px", fontSize: "8px", color: "#c00" }}
+                          >
+                            -
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
@@ -511,8 +614,9 @@ const LiquidacionForm = forwardRef<LiquidacionFormHandle, Props>(({
                   SUBTOTAL
                 </td>
                 <td style={{ ...tdN, background: "#eef3f9", fontWeight: 700, fontSize: "11px", padding: "4px 6px" }}>
-                  {numIn(d.subtotal, () => {}, "right", true)}
+                  {numIn(d.subtotal, s("subtotal"), "right", isReadOnly)}
                 </td>
+                {!isReadOnly && <td></td>}
               </tr>
               <tr>
                 <td colSpan={3} style={{
@@ -524,6 +628,7 @@ const LiquidacionForm = forwardRef<LiquidacionFormHandle, Props>(({
                 <td style={{ ...tdN, background: "#fff8e1" }}>
                   {numIn(d.descuento, s("descuento"), "right", isReadOnly)}
                 </td>
+                {!isReadOnly && <td></td>}
               </tr>
               <tr>
                 <td colSpan={3} style={{
@@ -538,8 +643,9 @@ const LiquidacionForm = forwardRef<LiquidacionFormHandle, Props>(({
                   fontWeight: 700, fontSize: "13px", padding: "5px 6px",
                   fontFamily: "Arial, sans-serif",
                 }}>
-                  {numIn(d.total, () => {}, "right", true, "#fff")}
+                  {numIn(d.total, s("total"), "right", isReadOnly, "#fff")}
                 </td>
+                {!isReadOnly && <td></td>}
               </tr>
 
             </tbody>
@@ -557,22 +663,16 @@ const LiquidacionForm = forwardRef<LiquidacionFormHandle, Props>(({
 
         {/* Pie */}
         <div style={{
-          borderTop: "1px solid #dde8f0", background: "#f8fafd",
-          padding: "6px 20px", display: "flex", justifyContent: "space-between",
+          background: "#1a3a5c", padding: "10px 20px", color: "#fff",
+          fontSize: "8.5px", display: "flex", justifyContent: "space-between",
+          fontFamily: "Arial, sans-serif",
         }}>
-          <span style={{ fontSize: "8px", color: "#aab8c8", fontFamily: "Arial, sans-serif" }}>
-            Nuevo Hospital Panamericano VALECAM S.A.S
-          </span>
-          <span style={{ fontSize: "8px", color: "#aab8c8", fontFamily: "Arial, sans-serif" }}>
-            {d.fecha_ingreso} → {d.fecha_salida}
-          </span>
+          <div>Reciba un cordial saludo.</div>
+          <div style={{ opacity: 0.8 }}>Valecam S.A.S</div>
         </div>
-
       </div>
     </div>
   );
 });
-
-LiquidacionForm.displayName = 'LiquidacionForm';
 
 export default LiquidacionForm;
