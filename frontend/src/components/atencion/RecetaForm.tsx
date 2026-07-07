@@ -49,7 +49,6 @@ interface Props {
   onExportarDocx?: (datos: DatosReceta) => void;
   guardando?: boolean;
   exportando?: boolean;
-  exportando?: boolean;
   atencionId?: number;
   isReadOnly?: boolean;
 }
