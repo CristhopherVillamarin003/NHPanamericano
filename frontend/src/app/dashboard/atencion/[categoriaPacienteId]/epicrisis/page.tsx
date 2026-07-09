@@ -81,7 +81,11 @@ export default function EpicrisisPage() {
         const catPac = (atencionData as any).categoriaPaciente;
         const cedulaPaciente = catPac?.paciente?.cedula || 'new';
         if (catPac?.paciente) {
-          setPaciente(catPac.paciente);
+          const p = { ...catPac.paciente };
+          if (catPac.tipoPaciente) {
+            p.tipoPaciente = catPac.tipoPaciente;
+          }
+          setPaciente(p);
         }
 
         let epicrisisDatos = (atencionData.epicrisis?.datos ?? {}) as any;

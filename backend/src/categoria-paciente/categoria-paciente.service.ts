@@ -10,7 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class CategoriaPacienteService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async addPacienteToCategoria(input: { categoriaId: number; pacienteId: number }) {
+  async addPacienteToCategoria(input: { categoriaId: number; pacienteId: number; tipoPaciente?: string }) {
     const categoria = await this.prisma.categoria.findUnique({
       where: { id: input.categoriaId },
     });
@@ -21,7 +21,20 @@ export class CategoriaPacienteService {
       data: {
         categoriaId: input.categoriaId,
         pacienteId: input.pacienteId,
+        tipoPaciente: input.tipoPaciente,
       },
+    });
+  }
+
+  async updateCategoriaPaciente(id: number, data: { tipoPaciente?: string }) {
+    const record = await this.prisma.categoriaPaciente.findUnique({
+      where: { id },
+    });
+    if (!record) throw new NotFoundException('Registro no encontrado');
+
+    return this.prisma.categoriaPaciente.update({
+      where: { id },
+      data,
     });
   }
 

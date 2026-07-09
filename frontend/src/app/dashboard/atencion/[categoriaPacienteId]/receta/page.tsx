@@ -42,7 +42,11 @@ export default function RecetaPage() {
 
         const catPac = (atencionData as any).categoriaPaciente;
         if (catPac?.paciente) {
-          setPaciente(catPac.paciente);
+          const p = { ...catPac.paciente };
+          if (catPac.tipoPaciente) {
+            p.tipoPaciente = catPac.tipoPaciente;
+          }
+          setPaciente(p);
         }
       } catch (err) {
         console.error('Error al cargar la atención:', err);

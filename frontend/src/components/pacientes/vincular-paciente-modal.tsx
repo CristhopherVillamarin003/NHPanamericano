@@ -11,7 +11,7 @@ import type { Paciente } from '@/types';
 interface VincularPacienteModalProps {
   open: boolean;
   onClose: () => void;
-  onLink: (pacienteId: number) => Promise<void>;
+  onLink: (pacienteId: number, tipoPaciente: string) => Promise<void>;
 }
 
 export function VincularPacienteModal({
@@ -23,6 +23,7 @@ export function VincularPacienteModal({
   const [searchQuery, setSearchQuery] = React.useState('');
   const [loading, setLoading] = React.useState(true);
   const [linkingId, setLinkingId] = React.useState<number | null>(null);
+  const [tipoPaciente, setTipoPaciente] = React.useState<string>('SPPAT');
 
   React.useEffect(() => {
     if (open) {
@@ -55,7 +56,7 @@ export function VincularPacienteModal({
   const handleLink = async (id: number) => {
     setLinkingId(id);
     try {
-      await onLink(id);
+      await onLink(id, tipoPaciente);
       onClose();
     } catch {
       /* handle error silently or show toast */
@@ -98,6 +99,20 @@ export function VincularPacienteModal({
           onChange={(e) => setSearchQuery(e.target.value)}
           className="max-w-full"
         />
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-zinc-700">
+            Tipo de Paciente para este servicio
+          </label>
+          <select
+            value={tipoPaciente}
+            onChange={(e) => setTipoPaciente(e.target.value)}
+            className="form-input w-full max-w-xs"
+          >
+            <option value="SPPAT">SPPAT</option>
+            <option value="Particular">Particular</option>
+          </select>
+        </div>
 
         <div className="border border-zinc-200 rounded-lg overflow-hidden">
           <DataTable

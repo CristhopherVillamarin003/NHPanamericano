@@ -40,7 +40,11 @@ export default function LiquidacionesPage() {
 
         const catPac = (atencionData as any).categoriaPaciente;
         if (catPac?.paciente) {
-          setPaciente(catPac.paciente);
+          const p = { ...catPac.paciente };
+          if (catPac.tipoPaciente) {
+            p.tipoPaciente = catPac.tipoPaciente;
+          }
+          setPaciente(p);
         }
 
         let liquidacionDatos = (atencionData.liquidacion?.datos ?? {}) as any;

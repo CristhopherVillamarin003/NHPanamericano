@@ -28,6 +28,7 @@ export interface CategoriaPaciente {
   categoriaId: number;
   pacienteId: number;
   createdAt: string;
+  tipoPaciente?: string;
   paciente: Paciente;
 }
 

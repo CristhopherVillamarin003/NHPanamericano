@@ -149,6 +149,8 @@ model CategoriaPaciente {
 
   categoria   Categoria @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
   paciente    Paciente  @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  tipoPaciente String?  @map("tipo_paciente")
+
   atencion    Atencion?
 
   @@map("categoria_paciente")

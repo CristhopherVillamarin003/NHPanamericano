@@ -11,7 +11,7 @@ import { PacienteForm } from '@/components/pacientes/paciente-form';
 import { VincularPacienteModal } from '@/components/pacientes/vincular-paciente-modal';
 import type { Paciente, CategoriaPaciente } from '@/types';
 import type { PacienteFormData } from '@/schemas/paciente.schemas';
-import { getPacientesByCategoria, addPacienteToCategoria, removePacienteFromCategoria } from '@/lib/services/categoria-paciente';
+import { getPacientesByCategoria, addPacienteToCategoria, removePacienteFromCategoria, updateCategoriaPaciente } from '@/lib/services/categoria-paciente';
 import { createPaciente, updatePaciente } from '@/lib/services/pacientes';
 
 // Dropdown menu for row actions
@@ -131,7 +131,7 @@ export default function CategoriaPage() {
     setFormError(undefined);
     try {
       const paciente = await createPaciente(data);
-      await addPacienteToCategoria(categoriaId, paciente.id);
+      await addPacienteToCategoria(categoriaId, paciente.id, data.tipoPaciente);
       setCreateOpen(false);
       await fetchRecords();
     } catch (error: any) {
@@ -145,8 +145,8 @@ export default function CategoriaPage() {
     }
   };
 
-  const handleLinkExisting = async (pacienteId: number) => {
-    await addPacienteToCategoria(categoriaId, pacienteId);
+  const handleLinkExisting = async (pacienteId: number, tipoPaciente?: string) => {
+    await addPacienteToCategoria(categoriaId, pacienteId, tipoPaciente);
     await fetchRecords();
   };
 
@@ -156,6 +156,12 @@ export default function CategoriaPage() {
     setFormLoading(true);
     try {
       await updatePaciente(selectedPaciente.id, data);
+      
+      const recordId = (selectedPaciente as any)._recordId;
+      if (recordId) {
+        await updateCategoriaPaciente(recordId, { tipoPaciente: data.tipoPaciente });
+      }
+
       setEditOpen(false);
       setSelectedPaciente(null);
       await fetchRecords();
@@ -238,11 +244,12 @@ export default function CategoriaPage() {
     },
   ];
 
-  // Map records to flat rows with _recordId for deletion
+  // Map records to flat rows with _recordId for deletion and tipoPaciente overridden
   const rows = records.map((r) => ({
     ...r.paciente,
     _recordId: r.id,
     _vinculadoAt: r.createdAt,
+    tipoPaciente: r.tipoPaciente || r.paciente.tipoPaciente, // Override with specific type
   }));
 
   const filteredRows = rows.filter((row) => {

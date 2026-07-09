@@ -49,7 +49,13 @@ export default function CuidadosPage() {
         setAtencionId(atencionData.id);
 
         const catPac = (atencionData as any).categoriaPaciente;
-        if (catPac?.pacienteId) setPaciente(catPac.paciente);
+        if (catPac?.pacienteId) {
+          const p = { ...catPac.paciente };
+          if (catPac.tipoPaciente) {
+            p.tipoPaciente = catPac.tipoPaciente;
+          }
+          setPaciente(p);
+        }
 
         const htmlGuardado = (atencionData as any)?.cuidado?.datos?.html;
         if (typeof htmlGuardado === 'string') {

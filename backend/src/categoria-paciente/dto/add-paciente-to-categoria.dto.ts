@@ -1,4 +1,4 @@
-import { IsInt, Min } from 'class-validator';
+import { IsInt, Min, IsOptional, IsString } from 'class-validator';
 
 export class AddPacienteToCategoriaDto {
   @IsInt()
@@ -8,4 +8,8 @@ export class AddPacienteToCategoriaDto {
   @IsInt()
   @Min(1)
   pacienteId!: number;
+
+  @IsOptional()
+  @IsString()
+  tipoPaciente?: string;
 }

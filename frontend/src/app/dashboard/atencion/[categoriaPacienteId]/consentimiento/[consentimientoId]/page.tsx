@@ -39,6 +39,9 @@ export default function ConsentimientoPage() {
         const catPac = (atencionData as any).categoriaPaciente;
         if (catPac?.paciente) {
           const p = await getPacienteById(catPac.pacienteId);
+          if (catPac.tipoPaciente) {
+            p.tipoPaciente = catPac.tipoPaciente;
+          }
           setPaciente(p);
         }
       } catch {
