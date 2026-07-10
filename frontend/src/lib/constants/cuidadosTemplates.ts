@@ -51,5 +51,58 @@ export const CUIDADOS_TEMPLATES = [
     </tbody>
   </table>
 </div>`
+  },
+  {
+    id: 'dieta',
+    label: 'DIETA',
+    html: `<div style="font-family: Arial; font-size: 8pt; line-height: 1.1;">
+  <p style="text-align: center; font-size: 10pt; margin: 0 0 6px 0;"><strong>Dieta de protección Postoperatoria</strong></p>
+  <p style="margin: 4px 0 2px 0;"><strong>Recomendaciones generales:</strong></p>
+  <ul style="margin: 0 0 6px 0; padding-left: 20px;">
+    <li style="margin-bottom: 2px;">Coma lentamente y mastique bien. Coma en pequeñas cantidades.</li>
+    <li style="margin-bottom: 2px;">Evite las grasas en todas sus formas.</li>
+    <li style="margin-bottom: 2px;">Evite los alimentos que producen gases (algunas legumbres: alubias y garbanzos, y verduras: coles, repollo, cebollas, pimientos, pepinos) y evite el estreñimiento.</li>
+    <li style="margin-bottom: 2px;">Cocción al horno, agua o vapor y a la plancha (sin tostar en exceso). No freír.</li>
+  </ul>
+  <p style="margin: 4px 0 2px 0;"><strong>Alimentos permitidos:</strong></p>
+  <ul style="margin: 0 0 6px 0; padding-left: 20px;">
+    <li style="margin-bottom: 2px;">Agua. Infusiones suaves: manzanilla. Malta.</li>
+    <li style="margin-bottom: 2px;">Sopas o papillas:
+      <ul style="margin: 0; padding-left: 20px;">
+        <li style="margin-bottom: 2px;">Sopa de caldo vegetal bien cocidas, de tapioca, arroz blanco, fideos, pastas italianas.</li>
+        <li style="margin-bottom: 2px;">Papillas muy cocidas de harina de avena, de maíz, etc.</li>
+      </ul>
+    </li>
+    <li style="margin-bottom: 2px;">Purés: Puré de papas, papas cocidas con agua, al horno</li>
+    <li style="margin-bottom: 2px;">Pastas: Tallarines, macarrones, etc.</li>
+    <li style="margin-bottom: 2px;">Carnes: Pollo y carnes rojas sin piel, sin grasas, sin hueso; a la plancha o al vapor, tiernas y divididas en pequeños trozos.</li>
+    <li style="margin-bottom: 2px;">Pescados: Pescado blanco y fresco, cocidos en agua, sazonados con un poco de aceite de oliva a la plancha o al vapor.</li>
+    <li style="margin-bottom: 2px;">Postres: peras y manzanas cocidas, licuadas o en compota.</li>
+    <li style="margin-bottom: 2px;">Pan integral.</li>
+    <li style="margin-bottom: 2px;">El aceite crudo de oliva, se tolera mucho mejor que el aceite de fritura que es desaconsejable.</li>
+    <li style="margin-bottom: 2px;">Clara de huevo.</li>
+    <li style="margin-bottom: 2px;">A partir del mes: Leche descremada en pequeñas cantidades y aumentando progresivamente. Yogur descremado.</li>
+  </ul>
+  <p style="margin: 4px 0 2px 0;"><strong>Evitar los alimentos grasos:</strong></p>
+  <ul style="margin: 0 0 6px 0; padding-left: 20px;">
+    <li style="margin-bottom: 2px;">Cacao (chocolate).</li>
+    <li style="margin-bottom: 2px;">La leche y sus derivados debe tomarlos descremados. Todos los quesos contienen grasas y por tanto están desaconsejados.</li>
+    <li style="margin-bottom: 2px;">Carne y derivados:
+      <ul style="margin: 0; padding-left: 20px;">
+        <li style="margin-bottom: 2px;">Cordero, cerdo, todos los embutidos. Tocino. Paté. Foie gras. Sesos. Vísceras (hígado, corazón, riñón, molleja). Piel de pollo. Pato.</li>
+        <li style="margin-bottom: 2px;">Embutidos.</li>
+      </ul>
+    </li>
+    <li style="margin-bottom: 2px;">Pescados: Pescado azul o pescado graso (salmón, trucha, sardinas, anchoa, jurel, caballa, atún).</li>
+    <li style="margin-bottom: 2px;">Pulpo. Marisco.</li>
+    <li style="margin-bottom: 2px;">Conservas en aceite - enlatados (atún – sardinas).</li>
+    <li style="margin-bottom: 2px;">Yema de los huevos.</li>
+    <li style="margin-bottom: 2px;">Pasta al huevo.</li>
+    <li style="margin-bottom: 2px;">Mantecas, margarinas vegetales y mantequillas.</li>
+    <li style="margin-bottom: 2px;">Frutos secos. Aceitunas.</li>
+    <li style="margin-bottom: 2px;">Mayonesa.</li>
+  </ul>
+  <p style="margin: 4px 0 0 0;"><strong>También debe evitar:</strong> bebidas alcohólicas, salsas, especias, picantes, snacks, aperitivos, dulce de leche, leche condensada, aceite de palma y coco, repostería, pastelería, bollería. Bebidas gaseosas. Flan. Comidas precocinadas y recalentadas. Crema. Café. Helados. Natillas.</p>
+</div>`
   }
 ];
