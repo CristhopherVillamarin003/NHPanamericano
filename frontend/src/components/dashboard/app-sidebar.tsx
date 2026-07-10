@@ -11,6 +11,7 @@ import {
   LogOut,
   FolderHeart,
   Trash2,
+  Pencil,
   MoreHorizontal,
 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -19,27 +20,27 @@ import {
   getCategorias,
   createCategoria,
   deleteCategoria,
+  updateCategoria,
 } from '@/lib/services/categorias';
 
 // ─── Dropdown flotante via portal ────────────────────────────────────────────
 
 interface DropdownMenuProps {
   anchorRect: DOMRect;
+  onEdit: () => void;
   onDelete: () => void;
   onClose: () => void;
 }
 
-function DropdownMenu({ anchorRect, onDelete, onClose }: DropdownMenuProps) {
+function DropdownMenu({ anchorRect, onEdit, onDelete, onClose }: DropdownMenuProps) {
   const menuRef = React.useRef<HTMLDivElement>(null);
 
-  // Cierra al hacer click fuera
   React.useEffect(() => {
     const handle = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         onClose();
       }
     };
-    // Pequeño delay para no capturar el mismo click que abrió el menú
     const id = setTimeout(() => document.addEventListener('mousedown', handle), 0);
     return () => {
       clearTimeout(id);
@@ -47,7 +48,6 @@ function DropdownMenu({ anchorRect, onDelete, onClose }: DropdownMenuProps) {
     };
   }, [onClose]);
 
-  // Cierra con Escape
   React.useEffect(() => {
     const handle = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handle);
@@ -55,7 +55,7 @@ function DropdownMenu({ anchorRect, onDelete, onClose }: DropdownMenuProps) {
   }, [onClose]);
 
   const top = anchorRect.bottom + 6;
-  const left = anchorRect.right - 140; // alinea el borde derecho del menú con el botón
+  const left = anchorRect.right - 140;
 
   return createPortal(
     <div
@@ -76,7 +76,34 @@ function DropdownMenu({ anchorRect, onDelete, onClose }: DropdownMenuProps) {
     >
       <button
         type="button"
-        onMouseDown={(e) => {
+        onClick={(e) => {
+          e.stopPropagation();
+          onEdit();
+        }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          width: '100%',
+          padding: '9px 14px',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          fontSize: '0.82rem',
+          fontWeight: 500,
+          color: '#3f3f46',
+          transition: 'background 0.1s',
+          textAlign: 'left',
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = '#f4f4f5')}
+        onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+      >
+        <Pencil size={14} />
+        Editar
+      </button>
+      <button
+        type="button"
+        onClick={(e) => {
           e.stopPropagation();
           onDelete();
         }}
@@ -119,8 +146,9 @@ export function AppSidebar() {
   const [categoryToDelete, setCategoryToDelete] = React.useState<number | null>(null);
   const [deleting, setDeleting] = React.useState(false);
 
-  // Menú flotante: guarda el id abierto y el rect del botón disparador
-  const [menuState, setMenuState] = React.useState<{ id: number; rect: DOMRect } | null>(null);
+  const [editingId, setEditingId] = React.useState<number | null>(null);
+  const [editingName, setEditingName] = React.useState('');
+  const [menuState, setMenuState] = React.useState<{ id: number; rect: DOMRect; cat: Categoria } | null>(null);
 
   const fetchCategorias = React.useCallback(async () => {
     try {
@@ -149,18 +177,42 @@ export function AppSidebar() {
     if (e.key === 'Escape') { setCreating(false); setNewName(''); }
   };
 
-  const handleMenuToggle = (e: React.MouseEvent<HTMLButtonElement>, id: number) => {
+  const startEditing = (cat: Categoria) => {
+    setEditingId(cat.id);
+    setEditingName(cat.nombre);
+  };
+
+  const handleMenuToggle = (e: React.MouseEvent<HTMLButtonElement>, cat: Categoria) => {
     e.stopPropagation();
-    if (menuState?.id === id) {
+    if (menuState?.id === cat.id) {
       setMenuState(null);
     } else {
       const rect = e.currentTarget.getBoundingClientRect();
-      setMenuState({ id, rect });
+      setMenuState({ id: cat.id, rect, cat });
     }
   };
 
-  const handleDeleteFromMenu = (id: number) => {
-    setMenuState(null);
+  const handleEditSubmit = async (id: number) => {
+    const trimmed = editingName.trim();
+    if (!trimmed) {
+      setEditingId(null);
+      return;
+    }
+    setLoading(true);
+    try {
+      await updateCategoria(id, trimmed);
+      setEditingId(null);
+      await fetchCategorias();
+    } catch { /* silently fail */ }
+    finally { setLoading(false); }
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent, id: number) => {
+    if (e.key === 'Enter') { e.preventDefault(); handleEditSubmit(id); }
+    if (e.key === 'Escape') { setEditingId(null); }
+  };
+
+  const handleDeleteClick = (id: number) => {
     setCategoryToDelete(id);
   };
 
@@ -254,17 +306,31 @@ export function AppSidebar() {
                   }}
                 >
                   <span className="sidebar-category-dot" />
-                  <span className="sidebar-category-name">{cat.nombre}</span>
-
-                  {/* Botón 3 puntos */}
-                  <button
-                    type="button"
-                    className={`sidebar-category-menu-btn ${menuState?.id === cat.id ? 'open' : ''}`}
-                    onClick={(e) => handleMenuToggle(e, cat.id)}
-                    title="Más opciones"
-                  >
-                    <MoreHorizontal size={14} />
-                  </button>
+                  {editingId === cat.id ? (
+                    <input
+                      type="text"
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      onKeyDown={(e) => handleEditKeyDown(e, cat.id)}
+                      onBlur={() => handleEditSubmit(cat.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      autoFocus
+                      disabled={loading}
+                      className="sidebar-input edit-inline-input"
+                    />
+                  ) : (
+                    <>
+                      <span className="sidebar-category-name">{cat.nombre}</span>
+                      <button
+                        type="button"
+                        className={`sidebar-category-menu-btn ${menuState?.id === cat.id ? 'open' : ''}`}
+                        onClick={(e) => handleMenuToggle(e, cat)}
+                        title="Más opciones"
+                      >
+                        <MoreHorizontal size={14} />
+                      </button>
+                    </>
+                  )}
                 </div>
               ))}
 
@@ -284,11 +350,17 @@ export function AppSidebar() {
         </button>
       </div>
 
-      {/* Dropdown flotante */}
       {menuState && (
         <DropdownMenu
           anchorRect={menuState.rect}
-          onDelete={() => handleDeleteFromMenu(menuState.id)}
+          onEdit={() => {
+            setMenuState(null);
+            startEditing(menuState.cat);
+          }}
+          onDelete={() => {
+            setMenuState(null);
+            handleDeleteClick(menuState.id);
+          }}
           onClose={() => setMenuState(null)}
         />
       )}

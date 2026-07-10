@@ -317,6 +317,13 @@ body {
   background: rgba(0, 0, 0, 0.07);
 }
 
+.edit-inline-input {
+  flex: 1;
+  padding: 2px 4px;
+  font-size: 0.8125rem;
+  margin-left: -4px;
+}
+
 /* Animación del dropdown flotante */
 @keyframes dropdownFadeIn {
   from { opacity: 0; transform: translateY(-4px) scale(0.97); }

@@ -14,3 +14,8 @@ export async function createCategoria(nombre: string): Promise<Categoria> {
 export async function deleteCategoria(id: number): Promise<void> {
   await api.delete(`/categorias/${id}`);
 }
+
+export async function updateCategoria(id: number, nombre: string): Promise<Categoria> {
+  const res = await api.patch(`/categorias/${id}`, { nombre });
+  return res.data;
+}
