@@ -796,7 +796,7 @@ export default function AtencionPage() {
         </div>
 
         {/* Liquidaciones — condicional */}
-        {userEmail === 'administracion@hospitalpanamericano.com.ec' && (
+        {(userEmail === 'administracion@hospitalpanamericano.com.ec' || userEmail === 'wvalenzuela2012@gmail.com') && (
           <div className="seccion-card">
             <div className="seccion-card-header">
               <div className="seccion-card-title">
