@@ -31,8 +31,6 @@ export default function RichTextEvolucion({
       StarterKit.configure({
         heading: false,
         bulletList: false,
-        orderedList: false,
-        listItem: false,
         blockquote: false,
         codeBlock: false,
         horizontalRule: false,
@@ -108,6 +106,23 @@ export default function RichTextEvolucion({
           >
             B
           </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            style={{
+              padding: "2px 8px",
+              fontSize: "12px",
+              fontWeight: "bold",
+              background: editor.isActive("orderedList") ? "#d1d5db" : "#fff",
+              border: "1px solid #ccc",
+              borderRadius: "4px",
+              cursor: "pointer",
+              color: "#000",
+            }}
+            title="Lista numerada"
+          >
+            1. 2. 3.
+          </button>
         </div>
       )}
       <div style={{ position: "relative" }}>
@@ -130,6 +145,18 @@ export default function RichTextEvolucion({
           }
           .rich-text-editor-content p:last-child {
             margin: 0;
+          }
+          .rich-text-editor-content ol {
+            list-style-type: decimal;
+            padding-left: 1.5em;
+            margin: 0 0 0.5em 0;
+          }
+          .rich-text-editor-content li {
+            margin-bottom: 2px;
+          }
+          .rich-text-editor-content li p {
+            margin: 0;
+            display: inline;
           }
         `}</style>
         <EditorContent editor={editor} />

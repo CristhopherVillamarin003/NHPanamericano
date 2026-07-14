@@ -92,6 +92,21 @@ function htmlToRichText(html: string): any {
   parsed = parsed.replace(/<p[^>]*>/gi, '');
   parsed = parsed.replace(/<\/p>/gi, '');
   
+  let counter = 1;
+  parsed = parsed.replace(/<ol[^>]*>|<\/ol>|<ul[^>]*>|<\/ul>|<li[^>]*>|<\/li>/gi, (match) => {
+    const lower = match.toLowerCase();
+    if (lower.startsWith('<ol')) {
+      counter = 1; return '';
+    }
+    if (lower.startsWith('</ol') || lower.startsWith('<ul') || lower.startsWith('</ul') || lower.startsWith('</li')) {
+      return '';
+    }
+    if (lower.startsWith('<li')) {
+      return `\n${counter++}. `;
+    }
+    return '';
+  });
+  
   parsed = parsed.replace(/<br\s*\/?>/gi, '\n');
   
   parsed = parsed.replace(/&nbsp;/gi, ' ');

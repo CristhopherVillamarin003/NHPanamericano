@@ -4,6 +4,53 @@ import React, { useState, useImperativeHandle, useEffect } from "react";
 import RichTextEvolucion from "../ui/RichTextEvolucion";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
 
+function stripMedicoData(html: string): string {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const nodes = Array.from(doc.body.childNodes);
+    
+    const isDoctorNode = new Array(nodes.length).fill(false);
+    
+    for (let i = 0; i < nodes.length; i++) {
+      const text = (nodes[i].textContent || '').trim().toUpperCase();
+      
+      const hasCI = text.includes('CI:') || text.includes('C.I:') || text.includes('C.I.:');
+      const hasDr = text.startsWith('DR. ') || text.startsWith('DRA. ') || text.startsWith('MD. ') || text.startsWith('M.D. ') || text.startsWith('MÉDICO TRATANTE') || text.startsWith('MEDICO TRATANTE') || text.startsWith('DR ') || text.startsWith('DRA ');
+      
+      if (hasCI || hasDr) {
+        isDoctorNode[i] = true;
+        
+        if (text.startsWith('CI:') || text.startsWith('C.I:') || text.startsWith('C.I.:')) {
+           if (i > 0) {
+             const prevText = (nodes[i-1].textContent || '').trim();
+             if (prevText.length > 0 && prevText.length < 100) isDoctorNode[i - 1] = true;
+           }
+           if (i < nodes.length - 1) {
+             const nextText = (nodes[i+1].textContent || '').trim();
+             if (nextText.length > 0 && nextText.length < 100) isDoctorNode[i + 1] = true;
+           }
+        }
+      }
+    }
+    
+    let cleanedHtml = '';
+    for (let i = 0; i < nodes.length; i++) {
+      if (!isDoctorNode[i]) {
+        if (nodes[i].nodeType === Node.ELEMENT_NODE) {
+          cleanedHtml += (nodes[i] as Element).outerHTML;
+        } else if (nodes[i].nodeType === Node.TEXT_NODE) {
+          cleanedHtml += nodes[i].textContent || '';
+        }
+      }
+    }
+    
+    return cleanedHtml.replace(/(<p>\s*<\/p>|<p><\/p>|<p><br><\/p>)+$/, '');
+  } catch (e) {
+    return html;
+  }
+}
+
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 /** Un solo bloque de evolución (A + B). La hoja repite este bloque 5 veces. */
@@ -453,7 +500,12 @@ const PLANTILLA_INGRESO = `<p><strong>NOTA DE INGRESO</strong></p>
 <p><strong>EXAMEN FISICO:</strong>&nbsp;</p>
 <p><strong>SIGNOS VITALES:</strong>&nbsp;</p>
 <p><strong>TA:</strong>&nbsp;</p>
+<p><strong>FC:</strong>&nbsp;</p>
+<p><strong>FR:</strong>&nbsp;</p>
+<p><strong>SPO2:</strong>&nbsp;</p>
 <p><strong>T°:</strong>&nbsp;</p>
+<p><strong>PESO:</strong>&nbsp;</p>
+<p><strong>TALLA:</strong>&nbsp;</p>
 <p><strong>NOTA:</strong>&nbsp;</p>
 <p><strong>PLAN:</strong>&nbsp;</p>
 <p><strong>DIAGNOSTICO:</strong>&nbsp;</p>`;
@@ -597,7 +649,8 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
         return { bloques };
       });
       if (idx === 0 && campo === "farmacoterapia") {
-        window.dispatchEvent(new CustomEvent("sync_plan_tratamiento", { detail: { source: "evolucion", value: valor } }));
+        const cleanedValue = stripMedicoData(valor);
+        window.dispatchEvent(new CustomEvent("sync_plan_tratamiento", { detail: { source: "evolucion", value: cleanedValue } }));
       }
       if (idx === 0 && campo === "notas_evolucion") {
         try {
@@ -678,7 +731,7 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
                html = html.replace(/<strong[^>]*>\s*EXAMEN FISICO:\s*<\/strong>\s*/i, '');
                html = html.replace(/EXAMEN FISICO:\s*/i, '');
                
-               const isExcluded = text.includes('SIGNOS VITALES:') || /(^|\s)TA:/.test(text) || /(^|\s)T°:/.test(text);
+               const isExcluded = text.includes('SIGNOS VITALES:') || /(^|\s)TA:/.test(text) || /(^|\s)FC:/.test(text) || /(^|\s)FR:/.test(text) || /(^|\s)SPO2:/.test(text) || /(^|\s)T°:/.test(text) || /(^|\s)PESO:/.test(text) || /(^|\s)TALLA:/.test(text);
                if (!isExcluded && html.replace(/<[^>]*>/g, '').trim() !== '') {
                  contentEF += html;
                }
@@ -686,7 +739,7 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
             }
 
             if (extractingEF) {
-              const isExcluded = text.includes('SIGNOS VITALES:') || /(^|\s)TA:/.test(text) || /(^|\s)T°:/.test(text);
+              const isExcluded = text.includes('SIGNOS VITALES:') || /(^|\s)TA:/.test(text) || /(^|\s)FC:/.test(text) || /(^|\s)FR:/.test(text) || /(^|\s)SPO2:/.test(text) || /(^|\s)T°:/.test(text) || /(^|\s)PESO:/.test(text) || /(^|\s)TALLA:/.test(text);
               if (isExcluded) continue;
 
               if (node.nodeType === Node.ELEMENT_NODE) {

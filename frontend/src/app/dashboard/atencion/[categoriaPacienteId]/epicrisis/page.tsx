@@ -18,14 +18,23 @@ function cleanExtractedHtml(html: string): string {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
-    const nodes = Array.from(doc.body.childNodes);
     
+    const pTags = doc.body.querySelectorAll('p');
+    for (let i = 0; i < pTags.length; i++) {
+      const p = pTags[i];
+      const text = p.textContent?.trim() || '';
+      const hasMedia = p.querySelector('img, table, iframe');
+      if (text === '' && !hasMedia) {
+        p.remove();
+      }
+    }
+
+    const nodes = Array.from(doc.body.childNodes);
     while (nodes.length > 0) {
       const node = nodes[0];
       const text = node.textContent?.trim() || '';
       const isBr = node.nodeName === 'BR';
-      const isEmptyP = node.nodeName === 'P' && (!text && !(node as Element).querySelector('img, table, iframe'));
-      if (text === '' && (node.nodeType === Node.TEXT_NODE || isBr || isEmptyP)) {
+      if (text === '' && (node.nodeType === Node.TEXT_NODE || isBr)) {
         nodes.shift();
       } else {
         break;
@@ -35,8 +44,7 @@ function cleanExtractedHtml(html: string): string {
       const node = nodes[nodes.length - 1];
       const text = node.textContent?.trim() || '';
       const isBr = node.nodeName === 'BR';
-      const isEmptyP = node.nodeName === 'P' && (!text && !(node as Element).querySelector('img, table, iframe'));
-      if (text === '' && (node.nodeType === Node.TEXT_NODE || isBr || isEmptyP)) {
+      if (text === '' && (node.nodeType === Node.TEXT_NODE || isBr)) {
         nodes.pop();
       } else {
         break;
@@ -55,6 +63,23 @@ function cleanExtractedHtml(html: string): string {
   } catch(e) {
     return html.replace(/[\r\n]+/g, ' ');
   }
+}
+
+function injectTitleAndCompact(titleText: string, htmlContent: string): string {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, 'text/html');
+    const firstP = doc.body.querySelector('p');
+    if (firstP) {
+      let inner = firstP.innerHTML.trim();
+      while (inner.startsWith('<br>') || inner.startsWith('<br/>') || inner.startsWith('<br />')) {
+        inner = inner.replace(/^<br\s*\/?>/, '').trim();
+      }
+      firstP.innerHTML = `<strong>${titleText}</strong><br>` + inner;
+      return doc.body.innerHTML;
+    }
+  } catch (e) {}
+  return `<p style="margin-bottom: 0; padding-bottom: 0;"><strong>${titleText}</strong></p>` + htmlContent;
 }
 
 export default function EpicrisisPage() {
@@ -194,12 +219,7 @@ export default function EpicrisisPage() {
             }
 
             const titleText = `${formattedDate} ${firstLine.trim()} ${secondLine.trim()} ${formattedHora}`;
-            const headerHtml = `<p><strong>${titleText}</strong></p>`;
-
-            aggregatedHtml += headerHtml + filteredHtml;
-            if (idx < evolucionBloques.length - 1) {
-              aggregatedHtml += '<p><br></p>';
-            }
+            aggregatedHtml += injectTitleAndCompact(titleText, filteredHtml);
           }
           epicrisisDatos.resumen_evolucion = aggregatedHtml;
         }
@@ -235,8 +255,6 @@ export default function EpicrisisPage() {
             const formattedHora = (bloque.hora || '').replace(':', 'H');
 
             const titleText = `${formattedDate} ${firstLine.trim()} ${secondLine.trim()} ${formattedHora}`;
-            const headerHtml = `<p><strong>${titleText}</strong></p>`;
-
             let filteredFarmaHtml = bloque.farmacoterapia;
             try {
               const parser = new DOMParser();
@@ -247,7 +265,7 @@ export default function EpicrisisPage() {
               for (let i = 0; i < pTagsFarma.length; i++) {
                 const p = pTagsFarma[i];
                 const text = p.textContent || '';
-                if (text.trim().startsWith('CI: ') && /\d/.test(text)) {
+                if (text.trim().startsWith('CI: ') && /\\d/.test(text)) {
                   const prev = p.previousElementSibling;
                   const next = p.nextElementSibling;
                   p.remove();
@@ -273,7 +291,6 @@ export default function EpicrisisPage() {
                 }
               }
               
-              // Si no se encontró la palabra 'INDICACIONES', usar todo el contenido (ya limpio del médico)
               if (foundIndicaciones) {
                 filteredFarmaHtml = cleanExtractedHtml(contentHtml);
               } else {
@@ -283,10 +300,7 @@ export default function EpicrisisPage() {
               console.error("Error parsing HTML for FARMACOTERAPIA INDICACIONES:", e);
             }
 
-            aggregatedTratamientoHtml += headerHtml + filteredFarmaHtml;
-            if (idx < evolucionBloques.length - 1) {
-              aggregatedTratamientoHtml += '<p><br></p>';
-            }
+            aggregatedTratamientoHtml += injectTitleAndCompact(titleText, filteredFarmaHtml);
           }
           epicrisisDatos.resumen_tratamiento = aggregatedTratamientoHtml;
         }
@@ -323,19 +337,18 @@ export default function EpicrisisPage() {
             const formattedHora = (bloque.hora || '').replace(':', 'H');
 
             const titleText = `${formattedDate} ${firstLine.trim()} ${secondLine.trim()} ${formattedHora}`;
-            const headerHtml = `<p><strong>${titleText}</strong></p>`;
 
             let filteredFarmaHtml = '';
             try {
               const parser = new DOMParser();
               const doc = parser.parseFromString(bloque.farmacoterapia, 'text/html');
 
-              // Eliminar los datos del médico insertados (Nombre, CI, Especialidad)
+              // Eliminar los datos del médico
               const pTagsFarma = doc.body.querySelectorAll('p');
               for (let i = 0; i < pTagsFarma.length; i++) {
                 const p = pTagsFarma[i];
                 const text = p.textContent || '';
-                if (text.trim().startsWith('CI: ') && /\d/.test(text)) {
+                if (text.trim().startsWith('CI: ') && /\\d/.test(text)) {
                   const prev = p.previousElementSibling;
                   const next = p.nextElementSibling;
                   p.remove();
@@ -370,12 +383,10 @@ export default function EpicrisisPage() {
               console.error("Error parsing HTML for INDICACIONES DE ALTA:", e);
             }
 
-            if (aggregatedIndicacionesHtml.length > 0 && filteredFarmaHtml.trim() !== '') {
-              aggregatedIndicacionesHtml += '<p><br></p>';
-            }
             if (filteredFarmaHtml.trim() !== '') {
-              aggregatedIndicacionesHtml += headerHtml + filteredFarmaHtml;
+              aggregatedIndicacionesHtml += injectTitleAndCompact(titleText, filteredFarmaHtml);
             }
+
           }
           epicrisisDatos.indicaciones_alta = aggregatedIndicacionesHtml;
         }
