@@ -143,12 +143,7 @@ export default function LoginPage() {
             </Button>
           </Field>
 
-          <div className="text-center text-sm text-zinc-600">
-            ¿No tienes cuenta?{' '}
-            <Link href="/auth/register" className="font-medium hover:underline">
-              Regístrate
-            </Link>
-          </div>
+
         </FieldGroup>
       </form>
     </AuthSplitLayout>

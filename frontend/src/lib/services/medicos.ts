@@ -21,7 +21,15 @@ export const LISTA_MEDICOS: Medico[] = [
   { nombre: "Dr. FRANCISCO JAVIER TORRES MANZANO", especialidad: "GINECOLOGO – OBSTETRA", identificacion: "1707137228", correo: "nhpanamericano.vlc@gmail.com" },
   { nombre: "Dr. GONZALO ROBERTO PALOMO ALLAUCA", especialidad: "GINECOLOGO – OBSTETRA", identificacion: "1713628434", correo: "gpalomoallauca@yahoo.es" },
   { nombre: "DR. LUIS RAMIRO PILATASIG LEMA", especialidad: "GINECOLOGÍA Y OBSTETRICIA", identificacion: "1706378534", correo: "rpmedical@hotmail.com" },
-  { nombre: "DRA. ANGELITA JANNETH ESPINOZA MEJIA", especialidad: "DERMATOLOGIA", identificacion: "2100050190", correo: "dra.aespinoza@gmail.com" }
+  { nombre: "DRA. ANGELITA JANNETH ESPINOZA MEJIA", especialidad: "DERMATOLOGIA", identificacion: "2100050190", correo: "dra.aespinoza@gmail.com" },
+  { nombre: "DR. HENRY FABRICIO AGUILAR ROGEL", especialidad: "MEDICO ESPECIALISTA EN COLOPROCTOLOGIA", identificacion: "1724098668", correo: "hfars1989aguilar@gmail.com" },
+  { nombre: "DR. EDWIN VICENTE GUALACATA QUISNIA", especialidad: "CIRUJANO GENERAL", identificacion: "1709992679", correo: "egualacata@gmail.com" },
+  { nombre: "DR. IVAN ALEJANDRO VEINTIMILLA ALMEIDA", especialidad: "MEDICO GENERAL", identificacion: "1704915469", correo: "" },
+  { nombre: "DRA. PATRICIA JEANETH GUZMAN PROAÑO", especialidad: "MEDICA NEUROCIRUJANA", identificacion: "1707671135", correo: "patriciagu1963@yahoo.com" },
+  { nombre: "DR. LUIS EDUARDO MALES VINUEZA", especialidad: "TERAPIA INTENSIVA", identificacion: "1708023146", correo: "edumales@outlook.es" },
+  { nombre: "DR. WILSON DAVID QUIMBITA PANCHI", especialidad: "MEDICO TRATANTE DE MEDICINA CRITICA Y TERAPIA INTENSIVA", identificacion: "1719022475", correo: "" },
+  { nombre: "DR. ROLANDO JAVIER CHILUISA ALOMIA", especialidad: "MEDICO TRATANTE DE TERAPIA INTENSIVA", identificacion: "1803741204", correo: "" }
+
 ];
 
 export async function buscarMedicos(q: string): Promise<Medico[]> {
