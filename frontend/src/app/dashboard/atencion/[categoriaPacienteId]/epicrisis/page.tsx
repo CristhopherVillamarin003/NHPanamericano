@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { ArrowLeft } from 'lucide-react';
 import { findOrCreateAtencion, upsertSeccion, exportarSeccion } from '@/lib/services/atencion';
 import type { Paciente } from '@/types';
+import { stripMedicoData } from '@/components/atencion/HistoriaClinicaEvolucionForm';
 
 const EpicrisisForm: any = dynamic(
   () => import('@/components/atencion/EpicrisisForm'),
@@ -255,24 +256,10 @@ export default function EpicrisisPage() {
             const formattedHora = (bloque.hora || '').replace(':', 'H');
 
             const titleText = `${formattedDate} ${firstLine.trim()} ${secondLine.trim()} ${formattedHora}`;
-            let filteredFarmaHtml = bloque.farmacoterapia;
+            let filteredFarmaHtml = stripMedicoData(bloque.farmacoterapia);
             try {
               const parser = new DOMParser();
-              const doc = parser.parseFromString(bloque.farmacoterapia, 'text/html');
-
-              // Eliminar los datos del médico insertados (Nombre, CI, Especialidad)
-              const pTagsFarma = doc.body.querySelectorAll('p');
-              for (let i = 0; i < pTagsFarma.length; i++) {
-                const p = pTagsFarma[i];
-                const text = p.textContent || '';
-                if (text.trim().startsWith('CI: ') && /\\d/.test(text)) {
-                  const prev = p.previousElementSibling;
-                  const next = p.nextElementSibling;
-                  p.remove();
-                  if (prev) prev.remove();
-                  if (next) next.remove();
-                }
-              }
+              const doc = parser.parseFromString(filteredFarmaHtml, 'text/html');
 
               let foundIndicaciones = false;
               let contentHtml = '';
@@ -338,24 +325,10 @@ export default function EpicrisisPage() {
 
             const titleText = `${formattedDate} ${firstLine.trim()} ${secondLine.trim()} ${formattedHora}`;
 
-            let filteredFarmaHtml = '';
+            let filteredFarmaHtml = stripMedicoData(bloque.farmacoterapia);
             try {
               const parser = new DOMParser();
-              const doc = parser.parseFromString(bloque.farmacoterapia, 'text/html');
-
-              // Eliminar los datos del médico
-              const pTagsFarma = doc.body.querySelectorAll('p');
-              for (let i = 0; i < pTagsFarma.length; i++) {
-                const p = pTagsFarma[i];
-                const text = p.textContent || '';
-                if (text.trim().startsWith('CI: ') && /\\d/.test(text)) {
-                  const prev = p.previousElementSibling;
-                  const next = p.nextElementSibling;
-                  p.remove();
-                  if (prev) prev.remove();
-                  if (next) next.remove();
-                }
-              }
+              const doc = parser.parseFromString(filteredFarmaHtml, 'text/html');
 
               let foundIndicaciones = false;
               let contentHtml = '';

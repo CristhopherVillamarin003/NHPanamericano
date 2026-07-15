@@ -83,22 +83,19 @@ const SECTION_MAPS: Record<string, Record<string, { sheet: string; cell: string 
   liquidaciones:               LIQUIDACIONES_MAP,
 };
 
-function htmlToRichText(html: string): any {
-  if (!html || !html.includes('<')) {
-    return html ? String(html).toUpperCase() : '';
-  }
-
-  let parsed = html.replace(/<\/p>\s*<p[^>]*>/gi, '\n');
-  parsed = parsed.replace(/<p[^>]*>/gi, '');
-  parsed = parsed.replace(/<\/p>/gi, '');
+function cleanHtmlText(html: string): string {
+  let parsed = html;
   
+  parsed = parsed.replace(/<\/p>|<br\s*\/?>|<\/ol>|<\/ul>/gi, '\n');
+  parsed = parsed.replace(/<p[^>]*>/gi, '');
+
   let counter = 1;
-  parsed = parsed.replace(/<ol[^>]*>|<\/ol>|<ul[^>]*>|<\/ul>|<li[^>]*>|<\/li>/gi, (match) => {
+  parsed = parsed.replace(/<ol[^>]*>|<ul[^>]*>|<li[^>]*>|<\/li>/gi, (match) => {
     const lower = match.toLowerCase();
     if (lower.startsWith('<ol')) {
       counter = 1; return '';
     }
-    if (lower.startsWith('</ol') || lower.startsWith('<ul') || lower.startsWith('</ul') || lower.startsWith('</li')) {
+    if (lower.startsWith('<ul')) {
       return '';
     }
     if (lower.startsWith('<li')) {
@@ -106,13 +103,23 @@ function htmlToRichText(html: string): any {
     }
     return '';
   });
-  
-  parsed = parsed.replace(/<br\s*\/?>/gi, '\n');
-  
+
   parsed = parsed.replace(/&nbsp;/gi, ' ');
   parsed = parsed.replace(/&amp;/gi, '&');
   parsed = parsed.replace(/&lt;/gi, '<');
   parsed = parsed.replace(/&gt;/gi, '>');
+
+  return parsed.replace(/\n+/g, '\n').trim();
+}
+
+function htmlToRichText(html: string): any {
+  if (!html || !html.includes('<')) {
+    return html ? String(html).toUpperCase() : '';
+  }
+
+  let parsed = cleanHtmlText(html);
+  
+
 
   const parts = parsed.split(/(<strong[^>]*>|<\/strong>|<b[^>]*>|<\/b>)/i);
   const richText: any[] = [];
@@ -524,26 +531,7 @@ export class ExportService {
       }
 
       if (strValor.includes('<') && strValor.includes('>')) {
-        let cleanHtml = strValor;
-        // Basic list conversion
-        cleanHtml = cleanHtml.replace(/<ul>/gi, '');
-        cleanHtml = cleanHtml.replace(/<\/ul>/gi, '');
-        cleanHtml = cleanHtml.replace(/<ol>/gi, '');
-        cleanHtml = cleanHtml.replace(/<\/ol>/gi, '');
-        cleanHtml = cleanHtml.replace(/<li[^>]*>/gi, '\n• ');
-        cleanHtml = cleanHtml.replace(/<\/li>/gi, '');
-        
-        // Paragraph conversion
-        cleanHtml = cleanHtml.replace(/<\/p>\s*<p[^>]*>/gi, '\n');
-        cleanHtml = cleanHtml.replace(/<p[^>]*>/gi, '');
-        cleanHtml = cleanHtml.replace(/<\/p>/gi, '');
-        cleanHtml = cleanHtml.replace(/<br\s*\/?>/gi, '\n');
-        
-        // Entities
-        cleanHtml = cleanHtml.replace(/&nbsp;/gi, ' ');
-        cleanHtml = cleanHtml.replace(/&amp;/gi, '&');
-        cleanHtml = cleanHtml.replace(/&lt;/gi, '<');
-        cleanHtml = cleanHtml.replace(/&gt;/gi, '>');
+        let cleanHtml = cleanHtmlText(strValor);
 
         // Extraer formato del párrafo original (pPr) si existe
         const originalPPr = p.getElementsByTagName("w:pPr")[0];
@@ -692,23 +680,7 @@ export class ExportService {
       let isHtml = valorText.includes('<') && valorText.includes('>');
 
       if (isHtml) {
-        let cleanHtml = valorText;
-        cleanHtml = cleanHtml.replace(/<ul>/gi, '');
-        cleanHtml = cleanHtml.replace(/<\/ul>/gi, '');
-        cleanHtml = cleanHtml.replace(/<ol>/gi, '');
-        cleanHtml = cleanHtml.replace(/<\/ol>/gi, '');
-        cleanHtml = cleanHtml.replace(/<li[^>]*>/gi, '\n• ');
-        cleanHtml = cleanHtml.replace(/<\/li>/gi, '');
-        
-        cleanHtml = cleanHtml.replace(/<\/p>\s*<p[^>]*>/gi, '\n');
-        cleanHtml = cleanHtml.replace(/<p[^>]*>/gi, '');
-        cleanHtml = cleanHtml.replace(/<\/p>/gi, '');
-        cleanHtml = cleanHtml.replace(/<br\s*\/?>/gi, '\n');
-        
-        cleanHtml = cleanHtml.replace(/&nbsp;/gi, ' ');
-        cleanHtml = cleanHtml.replace(/&amp;/gi, '&');
-        cleanHtml = cleanHtml.replace(/&lt;/gi, '<');
-        cleanHtml = cleanHtml.replace(/&gt;/gi, '>');
+        let cleanHtml = cleanHtmlText(valorText);
 
         lines = cleanHtml.split('\n');
       } else {

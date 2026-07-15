@@ -4,7 +4,7 @@ import React, { useState, useImperativeHandle, useEffect } from "react";
 import RichTextEvolucion from "../ui/RichTextEvolucion";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
 
-function stripMedicoData(html: string): string {
+export function stripMedicoData(html: string): string {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
@@ -481,34 +481,39 @@ function EvolucionBloque({
 // ─── Plantillas de Notas de Evolución ─────────────────────────────────────────
 
 const PLANTILLA_INGRESO = `<p><strong>NOTA DE INGRESO</strong></p>
-<p><strong>CIRUGIA GENERAL</strong></p>
+<p><strong>CIRUGÍA GENERAL</strong></p>
 <p><strong>INGRESO:</strong>&nbsp;</p>
+<p>&nbsp;</p>
 <p><strong>HABITACION:</strong>&nbsp;</p>
 <p><strong>DH:</strong>&nbsp;</p>
-<p><strong>SEGURO:</strong>&nbsp;</p>
-<p><strong>APP:</strong>&nbsp;</p>
-<p><strong>MEDICACION:</strong>&nbsp;</p>
-<p><strong>AGO:</strong>&nbsp;</p>
-<p><strong>APF:</strong>&nbsp;</p>
-<p><strong>AQX:</strong>&nbsp;</p>
-<p><strong>INMUNIZACIONES:</strong>&nbsp;</p>
-<p><strong>ALERGIAS:</strong>&nbsp;</p>
-<p><strong>HABITOS:</strong>&nbsp;</p>
-<p><strong>MOTIVO DE CONSULTA:</strong>&nbsp;</p>
-<p><strong>ENFERMEDAD ACTUAL:</strong>&nbsp;</p>
-<p><strong>NOTA:</strong>&nbsp;</p>
-<p><strong>EXAMEN FISICO:</strong>&nbsp;</p>
-<p><strong>SIGNOS VITALES:</strong>&nbsp;</p>
-<p><strong>TA:</strong>&nbsp;</p>
-<p><strong>FC:</strong>&nbsp;</p>
-<p><strong>FR:</strong>&nbsp;</p>
-<p><strong>SPO2:</strong>&nbsp;</p>
-<p><strong>T°:</strong>&nbsp;</p>
-<p><strong>PESO:</strong>&nbsp;</p>
-<p><strong>TALLA:</strong>&nbsp;</p>
-<p><strong>NOTA:</strong>&nbsp;</p>
-<p><strong>PLAN:</strong>&nbsp;</p>
-<p><strong>DIAGNOSTICO:</strong>&nbsp;</p>`;
+<p><strong>SEGURO:</strong> PARTICULAR</p>
+<p>&nbsp;</p>
+<p>PACIENTE FEMENINA DE 63 AÑOS, NACIDA Y RESIDENTE EN MACHACHI; ESTADO CIVIL: CASADA; OCUPACION: QQDD; INSTRUCCION: BACHILLER; RELIGIÓN: CATOLICA; ETNIA: MESTIZA; LATERALIDAD: DIESTRA; GRUPO SANGUINEO: A RH (+)</p>
+<p><strong>APP:</strong> HIPOTIROIDISMO</p>
+<p><strong>MEDICACION:</strong> LEVOTIROXINA 25MCG VO QD AM</p>
+<p><strong>APF:</strong> MADRE FALLECIDA POR CANCER DE ESTOMAGO, PADRE FALLECIDO POR CANCER PULMONAR</p>
+<p><strong>AQX:</strong> NO REFIERE</p>
+<p><strong>AGO:</strong> G:4 P:3 C:0 A:1 HV:2: MENARQUIA: 12 AÑOS; MENOPAUSIA: 48 AÑOS</p>
+<p><strong>ALERGIAS:</strong> NO REFIERE</p>
+<p><strong>INMUNIZACION:</strong> 2 DOSIS DE COVID 19</p>
+<p><strong>HABITOS:</strong> ALCOHOL: NIEGA; TABACO: NIEGA; DROGAS: NIEGA</p>
+<p>INFORMACION REFERIDA VERBALMENTE POR PACIENTE</p>
+<p>&nbsp;</p>
+<p><strong>MOTIVO DE CONSULTA:</strong> CIRUGIA PROGRAMADA</p>
+<p>&nbsp;</p>
+<p><strong>ENFERMEDAD ACTUAL:</strong> PACIENTE REFIERE DESDE HACE ALGUNOS MESES PRESENTA DOLOR A NIVEL DE REGION DE HIPOCONDRIO DERECHO POSTERIOR A LA INGESTA DE COMIDA COPIOSA POR LO QUE SE REALIZA ECOGRAFIA DE ABDOMEN SUPERIOR DONDE SE EVIDENCIA LITIASIS VESICULAR POR LO QUE DECIDE PROGRAMACION DE RESOLUCION QUIRURGICA.</p>
+<p>&nbsp;</p>
+<p><strong>EXAMEN FISICO:</strong></p>
+<p><strong>SIGNOS VITALES:</strong></p>
+<p><strong>TA:</strong> 125/76 MMHG &nbsp;<strong>FC:</strong> 65 LPM &nbsp;<strong>FR:</strong> 20 RPM &nbsp;<strong>SPO2:</strong> 85% AA</p>
+<p><strong>T°:</strong> 35.5°C</p>
+<p>PACIENTE CONSCIENTE, ORIENTADA, SEMIHIDRATADA. CABEZA: NORMOCEFALICA. OJOS: PUPILAS ISOCORICAS, ANICTERICAS. CARA: BOCA: MUCOSA ORAL SEMIHUMEDA. CUELLO: SIMETRICO, MOVIL, NO ADENOPATÍAS VISIBLES O PALPABLES. TÓRAX: BUENA MECANICA VENTILATORIA, MV CONSERVADOS, NO RUIDOS AGREGADOS. CORAZON: RSCSRS. ABDOMEN: BLANDO, DEPRESIBLE, RHA PRESENTES, NO DOLOROSO A LA PALPACION SUPERFICIAL NI PROFUNDA, MURPHY (-), NO SIGNOS DE IRRITACION PERITONEAL. RIG: FEMENINOS NORMOCONFIGURADOS. EXTREMIDADES: MOVILES, SIMETRICAS, FUNCION NEUROVASCULAR CONSERVADA, NO EDEMAS.</p>
+<p>&nbsp;</p>
+<p><strong>PLAN:</strong> COLELAP</p>
+<p>&nbsp;</p>
+<p><strong>DIAGNOSTICOS:</strong></p>
+<p>CALCULO DE LA VESICULA BILIAR SIN COLECISTITIS (CIE10: K802)</p>
+<p>HIPOTIRODISMO, NO ESPECIFICADO (CIE10: E039)</p>`;
 
 const PLANTILLA_POSTQUIRURGICA = `<p><strong>NOTA POSTQUIRURGICA</strong></p>
 <p><strong>CIRUGIA GENERAL</strong></p>
@@ -566,6 +571,42 @@ const PLANTILLA_FARMACOTERAPIA = `<p><strong>A. ENFERMERIA</strong></p>
 <p><strong>E. VENTILACION</strong></p>
 <p><strong>F. PROCEDIMIENTOS</strong></p>`;
 
+const PLANTILLA_FARMACOTERAPIA_INGRESO = `<p><strong>INDICACIONES</strong></p>
+<p>&nbsp;</p>
+<p><strong>A. ENFERMERIA</strong></p>
+<ol>
+<li><p>CONTROL DE SIGNOS VITALES + SAT O2 CADA 8 HORAS</p></li>
+<li><p>CABECERA ELEVADA A 45 GRADOS</p></li>
+<li><p>CUIDADOS HABITUALES DE ENFERMERIA</p></li>
+<li><p>CUIDADOS DE VIAS Y ABORDAJES</p></li>
+<li><p>APLICAR PROTOCOLOS DE PREVENCION DE ETE, CAIDAS, IDENTIFICACION Y ULCERAS POR PRESION</p></li>
+<li><p>CONTROL DE INGESTA Y EXCRETA</p></li>
+</ol>
+<p><strong>B. NUTRICION</strong></p>
+<ol>
+<li><p>NPO</p></li>
+</ol>
+<p><strong>C. INFUSIONES</strong></p>
+<ol>
+<li><p>LACTATO DE RINGER 1000ML, VIA IV, A 80CC/HORA</p></li>
+</ol>
+<p><strong>D. MEDICACION</strong></p>
+<ol>
+<li><p>AMPICILINA MAS SULBACTAM 3G, VIA IV, STAT</p></li>
+<li><p>OMEPRAZOL 40MG, VIA IV, STAT</p></li>
+</ol>
+<p><strong>E. VENTILACION</strong></p>
+<ol>
+<li><p>AIRE AMBIENTE</p></li>
+</ol>
+<p><strong>F. PROCEDIMIENTOS</strong></p>
+<ol>
+<li><p>LABORATORIOS: BIOMETRIA HEMATICA, GLUCOSA, UREA, CREATININA, TIEMPOS DE COAGULACION - STAT</p></li>
+<li><p>IMAGENOLOGIA: ELECTROCARDIOGRAMA - STAT</p></li>
+<li><p>FIRMA DE CONSENTIMIENTOS INFORMADOS</p></li>
+<li><p>COMUNICAR NOVEDADES</p></li>
+</ol>`;
+
 export type TipoNota = "INGRESO" | "POSTQUIRURGICA" | "EVOLUCION" | "ALTA";
 
 function getPlantillaNota(tipo: TipoNota): string {
@@ -602,7 +643,7 @@ function crearBloqueVacio(paciente?: Props["paciente"], tipoNota: TipoNota = "IN
     fecha: today,
     hora: nowTime,
     notas_evolucion: getPlantillaNota(tipoNota),
-    farmacoterapia: tipoNota !== "ALTA" ? PLANTILLA_FARMACOTERAPIA : "<p><strong>INDICACIONES</strong></p>",
+    farmacoterapia: tipoNota === "INGRESO" ? PLANTILLA_FARMACOTERAPIA_INGRESO : (tipoNota !== "ALTA" ? PLANTILLA_FARMACOTERAPIA : "<p><strong>INDICACIONES</strong></p>"),
     administrar_farmacos: "",
   };
 }
@@ -625,9 +666,27 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
     });
 
     const handleAddBloque = (tipoNota: TipoNota) => {
-      setDatos((prev) => ({
-        bloques: [...prev.bloques, crearBloqueVacio(paciente, tipoNota)],
-      }));
+      setDatos((prev) => {
+        const newBloque = crearBloqueVacio(paciente, tipoNota);
+        if (prev.bloques.length > 0) {
+          const b0 = prev.bloques[0];
+          let copiaHtml = b0.notas_evolucion;
+          
+          let tituloNuevo = "NOTA DE INGRESO";
+          if (tipoNota === "POSTQUIRURGICA") tituloNuevo = "NOTA POSTQUIRURGICA";
+          else if (tipoNota === "EVOLUCION") tituloNuevo = "NOTA DE EVOLUCIÓN";
+          else if (tipoNota === "ALTA") tituloNuevo = "NOTA DE ALTA";
+
+          // Reemplazar la ocurrencia de "NOTA DE INGRESO" por el título correspondiente
+          copiaHtml = copiaHtml.replace(/NOTA DE INGRESO/i, tituloNuevo);
+
+          newBloque.notas_evolucion = copiaHtml;
+          newBloque.farmacoterapia = b0.farmacoterapia;
+        }
+        return {
+          bloques: [...prev.bloques, newBloque],
+        };
+      });
     };
 
     const handleRemoveBloque = (idx: number) => {
@@ -637,22 +696,16 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
       }));
     };
 
-    /** Actualiza un campo de un bloque específico */
-    const handleChange = (
-      idx: number,
-      campo: keyof BloqueEvolucion,
-      valor: string
-    ) => {
-      setDatos((prev) => {
-        const bloques = [...prev.bloques];
-        bloques[idx] = { ...bloques[idx], [campo]: valor };
-        return { bloques };
-      });
-      if (idx === 0 && campo === "farmacoterapia") {
+
+    /** Dispara los eventos de sincronización a otras hojas */
+    const fireSyncEvents = (idx: number, campo: keyof BloqueEvolucion, valor: string) => {
+      if (idx !== 0) return;
+
+      if (campo === "farmacoterapia") {
         const cleanedValue = stripMedicoData(valor);
         window.dispatchEvent(new CustomEvent("sync_plan_tratamiento", { detail: { source: "evolucion", value: cleanedValue } }));
       }
-      if (idx === 0 && campo === "notas_evolucion") {
+      if (campo === "notas_evolucion") {
         try {
           const parser = new DOMParser();
           const doc = parser.parseFromString(valor, 'text/html');
@@ -756,6 +809,35 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
         }
       }
     };
+
+    /** Actualiza un campo de un bloque específico */
+    const handleChange = (
+      idx: number,
+      campo: keyof BloqueEvolucion,
+      valor: string
+    ) => {
+      setDatos((prev) => {
+        const bloques = [...prev.bloques];
+        bloques[idx] = { ...bloques[idx], [campo]: valor };
+        return { bloques };
+      });
+      fireSyncEvents(idx, campo, valor);
+    };
+
+    // Sincronizar los valores predeterminados de la nota de INGRESO al iniciar si es un paciente nuevo
+    useEffect(() => {
+      if (!initialData?.bloques || initialData.bloques.length === 0) {
+        // Un pequeño retraso para asegurar que las otras pestañas (como Emergencia)
+        // ya se hayan montado y registrado sus event listeners.
+        setTimeout(() => {
+          if (datos.bloques.length > 0) {
+            fireSyncEvents(0, "farmacoterapia", datos.bloques[0].farmacoterapia);
+            fireSyncEvents(0, "notas_evolucion", datos.bloques[0].notas_evolucion);
+          }
+        }, 500);
+      }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
       const handleSync = (e: CustomEvent) => {
