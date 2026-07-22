@@ -53,6 +53,7 @@ import { HISTORIA_CLINICA_INTERCONSULTA_MAP } from './historia-clinica-intercons
 import { PROTOCOLO_MAP } from './protocolo.map';
 import { MAPEO_CERTIFICADO } from './certificado.map';
 import { LIQUIDACIONES_MAP } from './liquidaciones.map';
+import { ENFERMERIA_MAP } from './enfermeria.map';
 
 // Campos que contienen imágenes en Base64 y su posición en el Excel
 // Nota: el nombre de hoja y el rango cambian según la plantilla.
@@ -81,14 +82,26 @@ const SECTION_MAPS: Record<string, Record<string, { sheet: string; cell: string 
   historia_clinica_interconsulta: HISTORIA_CLINICA_INTERCONSULTA_MAP,
   protocolo:                   PROTOCOLO_MAP,
   liquidaciones:               LIQUIDACIONES_MAP,
+  enfermeria:                  ENFERMERIA_MAP,
 };
 
-function cleanHtmlText(html: string): string {
+function cleanHtmlText(html: string, isEpicrisis: boolean = false): string {
+  if (!html) return '';
   let parsed = html;
   
+  // 1. Eliminar caracteres invisibles de Quill y saltos de línea físicos del código fuente HTML
+  parsed = parsed.replace(/[\u200B]/g, '');
+  parsed = parsed.replace(/\r?\n/g, '');
+
+  // 2. Extraer <p> de adentro de <li> para evitar el doble salto de línea en listas de Quill
+  parsed = parsed.replace(/<li>\s*<p[^>]*>/gi, '<li>');
+  parsed = parsed.replace(/<\/p>\s*<\/li>/gi, '</li>');
+
+  // 3. Convertir etiquetas de bloque a saltos de línea lógicos
   parsed = parsed.replace(/<\/p>|<br\s*\/?>|<\/ol>|<\/ul>/gi, '\n');
   parsed = parsed.replace(/<p[^>]*>/gi, '');
 
+  // 4. Procesar listas
   let counter = 1;
   parsed = parsed.replace(/<ol[^>]*>|<ul[^>]*>|<li[^>]*>|<\/li>/gi, (match) => {
     const lower = match.toLowerCase();
@@ -104,12 +117,20 @@ function cleanHtmlText(html: string): string {
     return '';
   });
 
+  // 5. Limpiar entidades
   parsed = parsed.replace(/&nbsp;/gi, ' ');
   parsed = parsed.replace(/&amp;/gi, '&');
   parsed = parsed.replace(/&lt;/gi, '<');
   parsed = parsed.replace(/&gt;/gi, '>');
 
-  return parsed.replace(/\n+/g, '\n').trim();
+  // 6. Permitiremos múltiples saltos de línea (puestos intencionalmente por el usuario), 
+  // pero limitaremos el exceso a un máximo de 3 (\n\n\n = 2 líneas en blanco).
+  if (isEpicrisis) {
+    // Aplastamos todos los saltos de línea y cualquier espacio en blanco que haya entre ellos
+    // (Ej: saltos creados por <p>&nbsp;</p> que se vuelven \n \n)
+    return parsed.replace(/(?:\n\s*)+/g, '\n').trim();
+  }
+  return parsed.replace(/\n{4,}/g, '\n\n\n').trim();
 }
 
 function htmlToRichText(html: string): any {
@@ -456,6 +477,61 @@ function injectEvolucionMatematica(workbook: ExcelJS.Workbook, bloques: any[]) {
   }
 }
 
+function injectEnfermeriaMatematica(workbook: ExcelJS.Workbook, bloques: any[]) {
+  const sheet = workbook.getWorksheet('ENFERMERIA');
+  if (!sheet) return;
+
+  if (!Array.isArray(bloques)) bloques = [];
+
+  const setCell = (sheet: ExcelJS.Worksheet, cellRef: string, val: any) => {
+    const match = cellRef.match(/^([A-Z]+)(\d+)$/);
+    if (!match) return;
+    const col = match[1];
+    const row = parseInt(match[2], 10);
+    const cell = sheet.getCell(`${col}${row}`);
+    
+    if (val !== undefined && val !== null && val !== '') {
+      if (typeof val === 'string' && val.includes('<')) {
+        cell.value = htmlToRichText(val);
+      } else {
+        cell.value = String(val).toUpperCase();
+      }
+    } else {
+      cell.value = '';
+    }
+    
+    cell.numFmt = '@';
+    const prevAlign = cell.alignment || {};
+    cell.alignment = { ...prevAlign, wrapText: true, vertical: 'top' };
+  };
+
+  const START_ROW = 21; // Comienza en la fila 21
+  const ROW_OFFSET = 7; // Cada bloque toma 7 filas (21, 28, 35...)
+  const MAX_BLOQUES = 12; // Máximo de bloques en la plantilla
+
+  bloques.forEach((bloque, index) => {
+    if (index >= MAX_BLOQUES) return;
+    const row1 = START_ROW + (index * ROW_OFFSET);
+    const row2 = START_ROW + 1 + (index * ROW_OFFSET);
+
+    setCell(sheet, `A${row1}`, bloque.nota_evolucion);
+    setCell(sheet, `A${row2}`, bloque.nota_fecha);
+    setCell(sheet, `B${row2}`, bloque.nota_hora);
+    setCell(sheet, `D${row2}`, bloque.nota_descripcion);
+  });
+
+  // Ocultar los bloques no utilizados
+  for (let i = bloques.length; i < MAX_BLOQUES; i++) {
+    const startRow = START_ROW + (i * ROW_OFFSET);
+    // Cada bloque consta de 7 filas (ej. de la 21 a la 27 inclusive)
+    const endRow = startRow + ROW_OFFSET - 1;
+    for (let r = startRow; r <= endRow; r++) {
+      const rowObj = sheet.getRow(r);
+      rowObj.hidden = true;
+    }
+  }
+}
+
 @Injectable()
 export class ExportService {
   private readonly uploadsDir = path.join(process.cwd(), 'uploads', 'plantillas');
@@ -531,7 +607,7 @@ export class ExportService {
       }
 
       if (strValor.includes('<') && strValor.includes('>')) {
-        let cleanHtml = cleanHtmlText(strValor);
+        let cleanHtml = cleanHtmlText(strValor, seccion === 'epicrisis');
 
         // Extraer formato del párrafo original (pPr) si existe
         const originalPPr = p.getElementsByTagName("w:pPr")[0];
@@ -680,7 +756,7 @@ export class ExportService {
       let isHtml = valorText.includes('<') && valorText.includes('>');
 
       if (isHtml) {
-        let cleanHtml = cleanHtmlText(valorText);
+        let cleanHtml = cleanHtmlText(valorText, seccion === 'epicrisis');
 
         lines = cleanHtml.split('\n');
       } else {
@@ -1033,6 +1109,11 @@ export class ExportService {
       injectImagenologiaMatematica(workbook, datos.bloques || []);
       const buffer = await workbook.xlsx.writeBuffer();
       return Buffer.from(buffer);
+    }
+
+    // Si es SÓLO Enfermería
+    if (seccion === 'enfermeria') {
+      injectEnfermeriaMatematica(workbook, datos.bloques || []);
     }
 
     const cellMap = SECTION_MAPS[seccion];

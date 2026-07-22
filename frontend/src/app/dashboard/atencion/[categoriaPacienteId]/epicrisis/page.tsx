@@ -23,7 +23,7 @@ function cleanExtractedHtml(html: string): string {
     const pTags = doc.body.querySelectorAll('p');
     for (let i = 0; i < pTags.length; i++) {
       const p = pTags[i];
-      const text = p.textContent?.trim() || '';
+      const text = p.textContent?.replace(/[\u200B\s]/g, '') || '';
       const hasMedia = p.querySelector('img, table, iframe');
       if (text === '' && !hasMedia) {
         p.remove();
@@ -33,7 +33,7 @@ function cleanExtractedHtml(html: string): string {
     const nodes = Array.from(doc.body.childNodes);
     while (nodes.length > 0) {
       const node = nodes[0];
-      const text = node.textContent?.trim() || '';
+      const text = node.textContent?.replace(/[\u200B\s]/g, '') || '';
       const isBr = node.nodeName === 'BR';
       if (text === '' && (node.nodeType === Node.TEXT_NODE || isBr)) {
         nodes.shift();
@@ -43,7 +43,7 @@ function cleanExtractedHtml(html: string): string {
     }
     while (nodes.length > 0) {
       const node = nodes[nodes.length - 1];
-      const text = node.textContent?.trim() || '';
+      const text = node.textContent?.replace(/[\u200B\s]/g, '') || '';
       const isBr = node.nodeName === 'BR';
       if (text === '' && (node.nodeType === Node.TEXT_NODE || isBr)) {
         nodes.pop();
@@ -67,20 +67,7 @@ function cleanExtractedHtml(html: string): string {
 }
 
 function injectTitleAndCompact(titleText: string, htmlContent: string): string {
-  try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlContent, 'text/html');
-    const firstP = doc.body.querySelector('p');
-    if (firstP) {
-      let inner = firstP.innerHTML.trim();
-      while (inner.startsWith('<br>') || inner.startsWith('<br/>') || inner.startsWith('<br />')) {
-        inner = inner.replace(/^<br\s*\/?>/, '').trim();
-      }
-      firstP.innerHTML = `<strong>${titleText}</strong><br>` + inner;
-      return doc.body.innerHTML;
-    }
-  } catch (e) {}
-  return `<p style="margin-bottom: 0; padding-bottom: 0;"><strong>${titleText}</strong></p>` + htmlContent;
+  return `<p style="margin-bottom: 0; padding-bottom: 0;"><strong>${titleText}</strong></p>${htmlContent}`;
 }
 
 export default function EpicrisisPage() {
@@ -144,25 +131,34 @@ export default function EpicrisisPage() {
             try {
               const parser = new DOMParser();
               const doc = parser.parseFromString(firstEvo, 'text/html');
-              let foundSeguro = false;
-              let resultHtml = '';
+              const nodesToRemove = [];
               for (let i = 0; i < doc.body.childNodes.length; i++) {
                 const node = doc.body.childNodes[i];
-                if (!foundSeguro) {
-                  if (node.textContent?.toUpperCase().includes('SEGURO:')) {
-                    foundSeguro = true;
-                  }
+                const rawText = node.textContent?.replace(/[\u200B]/g, '').trim().toUpperCase() || '';
+                const text = rawText.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                if (
+                  text === '' ||
+                  text.includes('NOTA POST QUIRURGICA') ||
+                  text.includes('NOTA POSTQUIRURGICA') ||
+                  text.includes('NOTA DE EVOLUCION') ||
+                  text.includes('NOTA DE ALTA') ||
+                  text.includes('NOTA DE INGRESO') ||
+                  text.includes('CIRUGIA GENERAL') ||
+                  text.startsWith('INGRESO') ||
+                  text.startsWith('HABITACION') ||
+                  text.startsWith('HAB:') ||
+                  text.startsWith('HAB ') ||
+                  text.startsWith('DH:') ||
+                  text.startsWith('DH ') ||
+                  text.startsWith('SEGURO')
+                ) {
+                  nodesToRemove.push(node);
                 } else {
-                  if (node.nodeType === Node.ELEMENT_NODE) {
-                    resultHtml += (node as Element).outerHTML;
-                  } else if (node.nodeType === Node.TEXT_NODE) {
-                    resultHtml += node.textContent || '';
-                  }
+                  break;
                 }
               }
-              if (foundSeguro) {
-                filteredEvolucion = cleanExtractedHtml(resultHtml);
-              }
+              nodesToRemove.forEach(n => n.remove());
+              filteredEvolucion = cleanExtractedHtml(doc.body.innerHTML);
             } catch (e) {
               console.error("Error parsing HTML for SEGURO:", e);
             }
@@ -196,25 +192,34 @@ export default function EpicrisisPage() {
               if (pTags.length > 0) firstLine = pTags[0].textContent || '';
               if (pTags.length > 1) secondLine = pTags[1].textContent || '';
 
-              let foundSeguro = false;
-              let contentHtml = '';
+              const nodesToRemove = [];
               for (let i = 0; i < doc.body.childNodes.length; i++) {
                 const node = doc.body.childNodes[i];
-                if (!foundSeguro) {
-                  if (node.textContent?.toUpperCase().includes('SEGURO:')) {
-                    foundSeguro = true;
-                  }
+                const rawText = node.textContent?.replace(/[\u200B]/g, '').trim().toUpperCase() || '';
+                const text = rawText.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                if (
+                  text === '' ||
+                  text.includes('NOTA POST QUIRURGICA') ||
+                  text.includes('NOTA POSTQUIRURGICA') ||
+                  text.includes('NOTA DE EVOLUCION') ||
+                  text.includes('NOTA DE ALTA') ||
+                  text.includes('NOTA DE INGRESO') ||
+                  text.includes('CIRUGIA GENERAL') ||
+                  text.startsWith('INGRESO') ||
+                  text.startsWith('HABITACION') ||
+                  text.startsWith('HAB:') ||
+                  text.startsWith('HAB ') ||
+                  text.startsWith('DH:') ||
+                  text.startsWith('DH ') ||
+                  text.startsWith('SEGURO')
+                ) {
+                  nodesToRemove.push(node);
                 } else {
-                  if (node.nodeType === Node.ELEMENT_NODE) {
-                    contentHtml += (node as Element).outerHTML;
-                  } else if (node.nodeType === Node.TEXT_NODE) {
-                    contentHtml += node.textContent || '';
-                  }
+                  break;
                 }
               }
-              if (foundSeguro) {
-                filteredHtml = cleanExtractedHtml(contentHtml);
-              }
+              nodesToRemove.forEach(n => n.remove());
+              filteredHtml = cleanExtractedHtml(doc.body.innerHTML);
             } catch (e) {
               console.error("Error parsing HTML for EVOLUCION SEGURO:", e);
             }

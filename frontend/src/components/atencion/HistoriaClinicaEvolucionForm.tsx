@@ -515,62 +515,6 @@ const PLANTILLA_INGRESO = `<p><strong>NOTA DE INGRESO</strong></p>
 <p>CALCULO DE LA VESICULA BILIAR SIN COLECISTITIS (CIE10: K802)</p>
 <p>HIPOTIRODISMO, NO ESPECIFICADO (CIE10: E039)</p>`;
 
-const PLANTILLA_POSTQUIRURGICA = `<p><strong>NOTA POSTQUIRURGICA</strong></p>
-<p><strong>CIRUGIA GENERAL</strong></p>
-<p><strong>INGRESO:</strong>&nbsp;</p>
-<p><strong>HABITACION:</strong>&nbsp;</p>
-<p><strong>DH:</strong>&nbsp;</p>
-<p><strong>SEGURO:</strong>&nbsp;</p>
-<p><strong>DIAGNOSTICO PREOPERATORIO:</strong>&nbsp;</p>
-<p><strong>DIAGNOSTICO POSTOPERATORIO:</strong>&nbsp;</p>
-<p><strong>CIRUGIA PROYECTADA:</strong>&nbsp;</p>
-<p><strong>CIRUGIA REALIZADA:</strong>&nbsp;</p>
-<p><strong>HALLAZGOS:</strong>&nbsp;</p>
-<p><strong>TEAM:</strong>&nbsp;</p>
-<p><strong>CIRUJANO 1:</strong>&nbsp;</p>
-<p><strong>AYUDANTE:</strong>&nbsp;</p>
-<p><strong>ANESTESIOLOGO:</strong>&nbsp;</p>
-<p><strong>INSTRUMENTISTA:</strong>&nbsp;</p>
-<p><strong>COMPLICACIONES:</strong>&nbsp;</p>
-<p><strong>DRENAJE:</strong>&nbsp;</p>
-<p><strong>HISTOPATOLOGICO:</strong>&nbsp;</p>
-<p><strong>SANGRADO:</strong>&nbsp;</p>`;
-
-const PLANTILLA_EVOLUCION = `<p><strong>NOTA DE EVOLUCIÓN</strong></p>
-<p><strong>CIRUGIA GENERAL</strong></p>
-<p><strong>INGRESO:</strong>&nbsp;</p>
-<p><strong>HABITACION:</strong>&nbsp;</p>
-<p><strong>DH:</strong>&nbsp;</p>
-<p><strong>SEGURO:</strong>&nbsp;</p>
-<p><strong>DIAGNOSTICO POSTOPERATORIO:</strong>&nbsp;</p>
-<p><strong>DIAGNOSTICOS SECUNDARIOS:</strong>&nbsp;</p>
-<p><strong>PROCEDIMIENTO REALIZADO:</strong>&nbsp;</p>
-<p><strong>SUBJETIVO:</strong>&nbsp;</p>
-<p><strong>OBJETIVO:</strong>&nbsp;</p>
-<p><strong>SIGNOS VITALES:</strong>&nbsp;</p>
-<p><strong>TA:</strong>&nbsp;</p>
-<p><strong>T°:</strong>&nbsp;</p>
-<p><strong>EXAMEN FISICO:</strong>&nbsp;</p>
-<p><strong>ANALISIS:</strong>&nbsp;</p>
-<p><strong>PLAN:</strong>&nbsp;</p>`;
-
-const PLANTILLA_ALTA = `<p><strong>NOTA DE ALTA</strong></p>
-<p><strong>CIRUGIA GENERAL</strong></p>
-<p><strong>INGRESO:</strong>&nbsp;</p>
-<p><strong>HABITACION:</strong>&nbsp;</p>
-<p><strong>DH:</strong>&nbsp;</p>
-<p><strong>SEGURO:</strong>&nbsp;</p>
-<p><strong>DIAGNOSTICO POSTOPERATORIO:</strong>&nbsp;</p>
-<p><strong>PROCEDIMIENTO REALIZADO:</strong>&nbsp;</p>
-<p><strong>AL EXAMEN FISICO:</strong>&nbsp;</p>`;
-
-const PLANTILLA_FARMACOTERAPIA = `<p><strong>A. ENFERMERIA</strong></p>
-<p><strong>B. NUTRICION</strong></p>
-<p><strong>C. INFUSIONES</strong></p>
-<p><strong>D. MEDICACION</strong></p>
-<p><strong>E. VENTILACION</strong></p>
-<p><strong>F. PROCEDIMIENTOS</strong></p>`;
-
 const PLANTILLA_FARMACOTERAPIA_INGRESO = `<p><strong>INDICACIONES</strong></p>
 <p>&nbsp;</p>
 <p><strong>A. ENFERMERIA</strong></p>
@@ -607,15 +551,290 @@ const PLANTILLA_FARMACOTERAPIA_INGRESO = `<p><strong>INDICACIONES</strong></p>
 <li><p>COMUNICAR NOVEDADES</p></li>
 </ol>`;
 
+const PLANTILLA_POSTQUIRURGICA_TEXTO = `<p><strong>NOTA POST QUIRURGICA</strong></p>
+<p><strong>CIRUGIA GENERAL</strong></p>
+<p><strong>INGRESO:</strong>&nbsp;</p>
+<p>&nbsp;</p>
+<p>PACIENTE FEMENINA DE 64 AÑOS DE EDAD</p>
+<p>&nbsp;</p>
+<p><strong>DIAGNOSTICO PREOPERATORIO:</strong></p>
+<p>CALCULO DE LA VESICULA BILIAR SIN COLECISTITIS (CIE10: K802)</p>
+<p>&nbsp;</p>
+<p><strong>DIAGNOSTICO POST OPERATORIO:</strong></p>
+<p>CALCULO DE LA VESICULA BILIAR SIN COLECISTITIS (CIE10: K802)</p>
+<p>&nbsp;</p>
+<p><strong>CIRUGIA PROYECTADA:</strong> COLELAP</p>
+<p>&nbsp;</p>
+<p><strong>CIRUGIA REALIZADA:</strong> COLELAP</p>
+<p>&nbsp;</p>
+<p><strong>HALLAZGOS:</strong></p>
+<ol>
+<li><p>VESICULA BILIAR CON PAREDES ENGROSADAS Y FIBROSADAS CON MULTIPLES LITOS DE APROXIMADAMENTE 1CM EN SU INTERIOR</p></li>
+<li><p>CONDUCTO CORTO Y FINO</p></li>
+<li><p>VIA BILIAR NORMAL</p></li>
+<li><p>HIGADO GRADO</p></li>
+<li><p>RESTO DE EXPLORACION SIN PATOLOGIA</p></li>
+</ol>
+<p>&nbsp;</p>
+<p><strong>TEAM:</strong></p>
+<p><strong>CIRUJANO:</strong> DR. JOSE CAMPUZANO</p>
+<p><strong>AYUDANTE:</strong> DRA. KARLA CUCHIPE</p>
+<p><strong>ANESTESIOLOGO:</strong> DR. WILLIAM VALENZUELA</p>
+<p><strong>INSTRUMENTISTA:</strong> TLGA. KARLA YUNGAN</p>
+<p>&nbsp;</p>
+<p><strong>COMPLICACIONES:</strong> NINGUNA</p>
+<p><strong>DRENAJE:</strong> NO</p>
+<p><strong>HISTOPATOLOGICO:</strong> NO</p>
+<p><strong>SANGRADO:</strong> ESCASO</p>
+<p>&nbsp;</p>
+<p>MATERIAL BLANCO COMPLETO</p>`;
+
+const PLANTILLA_POSTQUIRURGICA_FARMACO = `<p><strong>INDICACIONES</strong></p>
+<p>&nbsp;</p>
+<p><strong>A. ENFERMERIA</strong></p>
+<ol>
+<li><p>MONITOREO CONTINUO DE SIGNOS VITALES CADA 15 MINUTOS POR 2 HORAS Y LUEGO</p></li>
+<li><p>CONTROL DE SIGNOS VITALES + SAT O2 CADA 8 HORAS</p></li>
+<li><p>CABECERA ELEVADA A 45 GRADOS</p></li>
+<li><p>CUIDADOS HABITUALES DE ENFERMERIA</p></li>
+<li><p>DEAMBULACION TEMPRANA</p></li>
+<li><p>CUIDADOS DE VIAS Y ABORDAJES</p></li>
+<li><p>APLICAR PROTOCOLOS DE PREVENCION DE ETE, CAIDAS, IDENTIFICACION Y ULCERAS POR PRESION</p></li>
+<li><p>CONTROL DE INGESTA Y EXCRETA</p></li>
+</ol>
+<p><strong>B. NUTRICION</strong></p>
+<ol>
+<li><p>NPO POR 6 HORAS, LUEGO PROBAR TOLERANCIA A LIQUIDOS CLAROS, SI TOLERA PASAR</p></li>
+<li><p>01 DIETA LIQUIDA AMPLIA (MERIENDA)</p></li>
+</ol>
+<p><strong>C. INFUSIONES</strong></p>
+<ol>
+<li><p>SOLUCION SALINA 0.9% 1000ML, VIA IV, A 80CC/H</p></li>
+</ol>
+<p><strong>D. MEDICACION</strong></p>
+<ol>
+<li><p>AMPICILINA MAS SULBACTAM 1.5G, VIA IV, CADA 6 HORAS (D:0)</p></li>
+<li><p>PARACETAMOL 1G, VIA IV, CADA 8 HORAS</p></li>
+<li><p>KETOROLACO 30MG, VIA IV, CADA 8 HORAS (ALTERNANDO CON PARACETAMOL)</p></li>
+<li><p>OMEPRAZOL 40MG, VIA IV, CADA DIA</p></li>
+<li><p>METAMIZOL 2G, VIA IV, PRN</p></li>
+<li><p>ONDANSETRON 8 MG, VIA IV, PRN</p></li>
+</ol>
+<p><strong>E. VENTILACION</strong></p>
+<ol>
+<li><p>AIRE AMBIENTE</p></li>
+</ol>
+<p><strong>F. PROCEDIMIENTOS</strong></p>
+<ol>
+<li><p>CURACION DE HERIDAS: QD Y PRN</p></li>
+<li><p>HISTOPATOLOGICO: NO</p></li>
+<li><p>COMUNICAR NOVEDADES</p></li>
+</ol>`;
+
+const PLANTILLA_EVO_NOCHE_TEXTO = `<p><strong>NOTA DE EVOLUCION DE LA NOCHE</strong></p>
+<p><strong>CIRUGIA GENERAL</strong></p>
+<p><strong>INGRESO:</strong>&nbsp;</p>
+<p>&nbsp;</p>
+<p><strong>HAB:</strong>&nbsp;</p>
+<p><strong>DH:</strong>&nbsp;</p>
+<p><strong>SEGURO:</strong> PARTICULAR</p>
+<p>&nbsp;</p>
+<p>PACIENTE FEMENINA DE 64 AÑOS DE EDAD</p>
+<p>&nbsp;</p>
+<p><strong>DIAGNOSTICO POST OPERATORIO:</strong></p>
+<p>CALCULO DE LA VESICULA BILIAR SIN COLECISTITIS (CIE10: K802)</p>
+<p>&nbsp;</p>
+<p><strong>DIAGNOSTICO SECUNDARIO:</strong></p>
+<p>OBESIDAD, NO ESPECIFICADA (CIE10: E669)</p>
+<p>&nbsp;</p>
+<p><strong>CIRUGIA REALIZADA:</strong> COLELAP</p>
+<p>&nbsp;</p>
+<p><strong>SUBJETIVO:</strong> PACIENTE DESCANSANDO, REFIERE LEVES MOLESTIAS EN SITIO QUIRURGICO.</p>
+<p>&nbsp;</p>
+<p><strong>OBJETIVO:</strong></p>
+<p><strong>SIGNOS VITALES:</strong></p>
+<p><strong>PA:</strong> 120/68 MMHG &nbsp;<strong>FC:</strong> 76 LPM &nbsp;<strong>FR:</strong> 18 RPM &nbsp;<strong>SPO2:</strong> 90% AA</p>
+<p><strong>T°:</strong> 37.0°C</p>
+<p>PACIENTE CONSCIENTE, ORIENTADA, SEMIHIDRATADA. CABEZA: NORMOCEFALICA. OJOS: PUPILAS ISOCORICAS, ANICTERICAS. CARA: BOCA: MUCOSA ORAL SEMIHUMEDA. CUELLO: SIMETRICO, MOVIL, NO ADENOPATÍAS VISIBLES O PALPABLES. TÓRAX: BUENA MECANICA VENTILATORIA, MV CONSERVADOS, NO RUIDOS AGREGADOS. CORAZON: RSCSRS. ABDOMEN: ABUNDANTE PANICULO ADIPOSO, BLANDO, DEPRESIBLE, RHA PRESENTES, LEVEMENTE DOLOROSO EN SITIOS QUIRURGICOS, NO SIGNOS DE IRRITACION PERITONEAL. RIG: FEMENINOS NORMOCONFIGURADOS. EXTREMIDADES: MOVILES, SIMETRICAS, FUNCION NEUROVASCULAR CONSERVADA, NO EDEMAS.</p>
+<p>&nbsp;</p>
+<p><strong>ANALISIS:</strong> PACIENTE POSTQUIRURGICA DE COLELAP, EN CONDICIONES FAVORABLES, AFEBRIL, CON BUEN MANEJO DE DOLOR, INICIA TOLERANCIA A DIETA LIQUIDA SIN COMPLICACION, PERMANECE EN OBSERVACION.</p>
+<p>&nbsp;</p>
+<p><strong>PLAN:</strong> INDICACIONES</p>`;
+
+const PLANTILLA_EVO_NOCHE_FARMACO = `<p><strong>INDICACIONES</strong></p>
+<p>&nbsp;</p>
+<p><strong>A. ENFERMERIA</strong></p>
+<ol>
+<li><p>CONTROL DE SIGNOS VITALES + SAT O2 CADA 8 HORAS</p></li>
+<li><p>CABECERA ELEVADA A 45 GRADOS</p></li>
+<li><p>CUIDADOS HABITUALES DE ENFERMERIA</p></li>
+<li><p>DEAMBULACION TEMPRANA</p></li>
+<li><p>CUIDADOS DE VIAS Y ABORDAJES</p></li>
+<li><p>APLICAR PROTOCOLOS DE PREVENCION DE ETE, CAIDAS, IDENTIFICACION Y ULCERAS POR PRESION</p></li>
+<li><p>CONTROL DE INGESTA Y EXCRETA</p></li>
+</ol>
+<p><strong>B. NUTRICION</strong></p>
+<ol>
+<li><p>DIETA LIQUIDA AMPLIA (MERIENDA)</p></li>
+<li><p>DIETA BLANDA INTESTINAL (DESAYUNO)</p></li>
+</ol>
+<p><strong>C. INFUSIONES</strong></p>
+<ol>
+<li><p>SOLUCION SALINA 0.9% 1000ML, VIA IV, A 80CC/H, TERMINAR PRESENTE SOLUCION Y PASAR A</p></li>
+<li><p>DISH</p></li>
+</ol>
+<p><strong>D. MEDICACION</strong></p>
+<ol>
+<li><p>AMPICILINA MAS SULBACTAM 1.5G, VIA IV, CADA 6 HORAS (D:0)</p></li>
+<li><p>PARACETAMOL 1G, VIA IV, CADA 8 HORAS</p></li>
+<li><p>KETOROLACO 30MG, VIA IV, CADA 8 HORAS (ALTERNANDO CON PARACETAMOL)</p></li>
+<li><p>OMEPRAZOL 40MG, VIA IV, CADA DIA</p></li>
+<li><p>METAMIZOL 2G, VIA IV, PRN</p></li>
+<li><p>ONDANSETRON 8 MG, VIA IV, PRN</p></li>
+</ol>
+<p><strong>E. VENTILACION</strong></p>
+<ol>
+<li><p>AIRE AMBIENTE</p></li>
+</ol>
+<p><strong>F. PROCEDIMIENTOS</strong></p>
+<ol>
+<li><p>CURACION DE HERIDAS: QD Y PRN</p></li>
+<li><p>COMUNICAR NOVEDADES</p></li>
+</ol>`;
+
+const PLANTILLA_EVO_MANANA_TEXTO = `<p><strong>NOTA DE EVOLUCION DE LA MAÑANA</strong></p>
+<p><strong>CIRUGIA GENERAL</strong></p>
+<p><strong>INGRESO:</strong>&nbsp;</p>
+<p>&nbsp;</p>
+<p><strong>HAB:</strong>&nbsp;</p>
+<p><strong>DH:</strong>&nbsp;</p>
+<p><strong>SEGURO:</strong> PARTICULAR</p>
+<p>&nbsp;</p>
+<p>PACIENTE FEMENINA DE 64 AÑOS DE EDAD</p>
+<p>&nbsp;</p>
+<p><strong>DIAGNOSTICO POST OPERATORIO:</strong></p>
+<p>CALCULO DE LA VESICULA BILIAR SIN COLECISTITIS (CIE10: K802)</p>
+<p>&nbsp;</p>
+<p><strong>DIAGNOSTICO SECUNDARIO:</strong></p>
+<p>OBESIDAD, NO ESPECIFICADA (CIE10: E669)</p>
+<p>&nbsp;</p>
+<p><strong>CIRUGIA REALIZADA:</strong> COLELAP</p>
+<p>&nbsp;</p>
+<p><strong>SUBJETIVO:</strong> PACIENTE DESCANSA TODA LA NOCHE, REFIERE LEVE DOLOR EN HIPOCONDRIO DERECHO.</p>
+<p>&nbsp;</p>
+<p><strong>OBJETIVO:</strong></p>
+<p><strong>SIGNOS VITALES:</strong></p>
+<p><strong>PA:</strong> 105/59 MMHG &nbsp;<strong>FC:</strong> 74 LPM &nbsp;<strong>FR:</strong> 15 RPM &nbsp;<strong>SPO2:</strong> 90% AA</p>
+<p><strong>T°:</strong> 36.3°C</p>
+<p>PACIENTE CONSCIENTE, ORIENTADA, SEMIHIDRATADA. CABEZA: NORMOCEFALICA. OJOS: PUPILAS ISOCORICAS, ANICTERICAS. CARA: BOCA: MUCOSA ORAL SEMIHUMEDA. CUELLO: SIMETRICO, MOVIL, NO ADENOPATÍAS VISIBLES O PALPABLES. TÓRAX: BUENA MECANICA VENTILATORIA, MV CONSERVADOS, NO RUIDOS AGREGADOS. CORAZON: RSCSRS. ABDOMEN: ABUNDANTE PANICULO ADIPOSO, BLANDO, DEPRESIBLE, RHA PRESENTES, LEVEMENTE DOLOROSO EN SITIOS QUIRURGICOS, NO SIGNOS DE IRRITACION PERITONEAL. RIG: FEMENINOS NORMOCONFIGURADOS. EXTREMIDADES: MOVILES, SIMETRICAS, FUNCION NEUROVASCULAR CONSERVADA, NO EDEMAS.</p>
+<p>&nbsp;</p>
+<p><strong>ANALISIS:</strong> PACIENTE PERMANECE HEMODINAMICAMENTE ESTABLE, AFEBRIL, CON ADECUADA TOLERANCIA ORAL, BUEN MANEJO DE DOLOR, INICIA DEAMBULACION SIN DIFICULTAD, PERMANECE EN OBSERVACION, SE PROGRESA DIETA PARA DEFINIR CONDUCTA.</p>
+<p>&nbsp;</p>
+<p><strong>PLAN:</strong> INDICACIONES</p>
+<p>&nbsp;</p>
+<p><strong>INGESTA:</strong> 2500CC</p>
+<p><strong>EXCRETA:</strong> 1100CC</p>
+<p><strong>BH:</strong> +1400CC</p>`;
+
+const PLANTILLA_EVO_MANANA_FARMACO = `<p><strong>INDICACIONES</strong></p>
+<p>&nbsp;</p>
+<p><strong>A. ENFERMERIA</strong></p>
+<ol>
+<li><p>CONTROL DE SIGNOS VITALES + SAT O2 CADA 8 HORAS</p></li>
+<li><p>CABECERA ELEVADA A 45 GRADOS</p></li>
+<li><p>CUIDADOS HABITUALES DE ENFERMERIA</p></li>
+<li><p>DEAMBULACION ASISTIDA</p></li>
+<li><p>CUIDADOS DE VIAS Y ABORDAJES</p></li>
+<li><p>APLICAR PROTOCOLOS DE PREVENCION DE ETE, CAIDAS, IDENTIFICACION Y ULCERAS POR PRESION</p></li>
+<li><p>CONTROL DE INGESTA Y EXCRETA</p></li>
+</ol>
+<p><strong>B. NUTRICION</strong></p>
+<ol>
+<li><p>01 DIETA BLANDA INTESTINAL (DESAYUNO)</p></li>
+</ol>
+<p><strong>C. INFUSIONES</strong></p>
+<ol>
+<li><p>DISH</p></li>
+</ol>
+<p><strong>D. MEDICACION</strong></p>
+<ol>
+<li><p>AMPICILINA MAS SULBACTAM 1.5G, VIA IV, CADA 6 HORAS (D:1)</p></li>
+<li><p>PARACETAMOL 1G, VIA IV, CADA 8 HORAS</p></li>
+<li><p>KETOROLACO 30MG, VIA IV, CADA 8 HORAS (ALTERNANDO CON PARACETAMOL)</p></li>
+<li><p>OMEPRAZOL 40MG, VIA IV, CADA DIA</p></li>
+</ol>
+<p><strong>E. VENTILACION</strong></p>
+<ol>
+<li><p>AIRE AMBIENTE</p></li>
+</ol>
+<p><strong>F. PROCEDIMIENTOS</strong></p>
+<ol>
+<li><p>CURACION DE HERIDAS: QD Y PRN</p></li>
+<li><p>COMUNICAR NOVEDADES</p></li>
+</ol>`;
+
+const PLANTILLA_ALTA_TEXTO = `<p><strong>NOTA DE ALTA</strong></p>
+<p><strong>CIRUGIA GENERAL</strong></p>
+<p><strong>INGRESO:</strong>&nbsp;</p>
+<p>&nbsp;</p>
+<p><strong>HAB:</strong>&nbsp;</p>
+<p><strong>DH:</strong>&nbsp;</p>
+<p><strong>SEGURO:</strong> PARTICULAR</p>
+<p>&nbsp;</p>
+<p>PACIENTE FEMENINA DE 64 AÑOS DE EDAD</p>
+<p>&nbsp;</p>
+<p><strong>DIAGNOSTICO POST OPERATORIO:</strong></p>
+<p>CALCULO DE LA VESICULA BILIAR SIN COLECISTITIS (CIE10: K802)</p>
+<p>&nbsp;</p>
+<p><strong>DIAGNOSTICO SECUNDARIO:</strong></p>
+<p>OBESIDAD, NO ESPECIFICADA (CIE10: E669)</p>
+<p>&nbsp;</p>
+<p><strong>CIRUGIA REALIZADA:</strong> COLELAP</p>
+<p>&nbsp;</p>
+<p>PACIENTE FEMENINA QUE CURSA SU RECUPERACION POSTQUIRURGICA EN BUENAS CONDICIONES, CON BUEN MANEJO DEL DOLOR, NO HA REALIZADO ALZAS TERMICAS, DIURESIS ESPONTANEA, RHA (+), CANALIZA FLATOS, CON BUENA TOLERANCIA A DIETA ORAL IMPLEMENTADA, NO SIGNOS DE IRRITACION PERITONEAL.</p>
+<p>&nbsp;</p>
+<p>POSTERIOR A VALORACION DE MEDICO TRATANTE SE DECIDE ALTA MEDICA HOY CON INDICACIONES AMBULATORIAS.</p>
+<p>AL EXAMEN FISICO:</p>
+<p>ABDOMEN: RSHS (+), SUAVE, DEPRESIBLE, LEVEMENTE DOLOROSO A LA PALPACION A NIVEL SITIOS QUIRURGICOS, HERIDAS QUIRURGICAS EN BUENAS CONDICIONES.</p>
+<p>PACIENTE QUE EGRESA DE ESTA CASA DE SALUD EN BUENAS CONDICIONES, VIVA, DEAMBULANDO SIN DIFICULTAD, EN COMPAÑIA DE SUS FAMILIARES, SE INFORMA INDICACIONES DE ALTA + SIGNOS DE ALARMA</p>
+<p>&nbsp;</p>
+<p><strong>P:</strong> ALTA + INDICACIONES</p>`;
+
+const PLANTILLA_ALTA_FARMACO = `<p><strong>INDICACIONES</strong></p>
+<ol>
+<li><p>ALTA MEDICA</p></li>
+<li><p>SULTAMICILINA TABLETAS 750 MG TOMAR 1 TABLETA CADA 12 HORAS POR 5 DIAS</p></li>
+<li><p>PARACETAMOL (ANALGAN) TABLETAS 1G: TOMAR 1 TABLETA VIA ORAL CADA 8 HORAS POR 5 DIAS. (6AM - 14PM - 22PM)</p></li>
+<li><p>IBUPROFENO (IBUFEN) TABLETAS 600MG: TOMAR 1 TABLETA VIA ORAL CADA 8 HORAS POR 5 DIAS. (8AM - 16PM - 23PM)</p></li>
+<li><p>DIGESTOTAL FORTE (ENZIMAS DIGESTIVAS MAS SIMETICONA) TOMAR 1 CAPSULA VIA ORAL CADA 8 HORAS POR 10 DIAS</p></li>
+<li><p>OMEPRAZOL 20MG: UNA TABLETA 30 MINUTOS ANTES DEL DESAYUNO POR 5 DIAS</p></li>
+<li><p>DIETA: BLANDA, RICA EN PROTEÍNAS (CARNES BLANCAS, PESCADO), EVITAR: GRASAS, LACTEOS, CONDIMENTOS, ALIMENTOS PROCESADOS, GRANOS POR 5 DIAS.</p></li>
+<li><p>BEBER ABUNDANTES LIQUIDOS.</p></li>
+<li><p>CUIDADOS DE HERIDAS: LIMPIEZA DIARIA DE HERIDAS CON AGUA Y JABON.</p></li>
+<li><p>SIGNOS DE ALARMA: FIEBRE, DOLOR ABDOMINAL INTENSO, SALIDA DE SECRECIÓN POR HERIDAS QUIRURGICAS.</p></li>
+<li><p>CONTROL POR CONSULTA EXTERNA 20/07/2026</p></li>
+<li><p>COMUNICAR NOVEDADES 0997006406</p></li>
+</ol>`;
+
 export type TipoNota = "INGRESO" | "POSTQUIRURGICA" | "EVOLUCION" | "ALTA";
 
 function getPlantillaNota(tipo: TipoNota): string {
   switch (tipo) {
     case "INGRESO": return PLANTILLA_INGRESO;
-    case "POSTQUIRURGICA": return PLANTILLA_POSTQUIRURGICA;
-    case "EVOLUCION": return PLANTILLA_EVOLUCION;
-    case "ALTA": return PLANTILLA_ALTA;
+    case "POSTQUIRURGICA": return PLANTILLA_POSTQUIRURGICA_TEXTO;
+    case "EVOLUCION": return PLANTILLA_EVO_NOCHE_TEXTO;
+    case "ALTA": return PLANTILLA_ALTA_TEXTO;
     default: return "";
+  }
+}
+
+function getPlantillaFarmaco(tipo: TipoNota): string {
+  switch (tipo) {
+    case "INGRESO": return PLANTILLA_FARMACOTERAPIA_INGRESO;
+    case "POSTQUIRURGICA": return PLANTILLA_POSTQUIRURGICA_FARMACO;
+    case "EVOLUCION": return PLANTILLA_EVO_NOCHE_FARMACO;
+    case "ALTA": return PLANTILLA_ALTA_FARMACO;
+    default: return "<p><strong>INDICACIONES</strong></p>";
   }
 }
 
@@ -643,9 +862,16 @@ function crearBloqueVacio(paciente?: Props["paciente"], tipoNota: TipoNota = "IN
     fecha: today,
     hora: nowTime,
     notas_evolucion: getPlantillaNota(tipoNota),
-    farmacoterapia: tipoNota === "INGRESO" ? PLANTILLA_FARMACOTERAPIA_INGRESO : (tipoNota !== "ALTA" ? PLANTILLA_FARMACOTERAPIA : "<p><strong>INDICACIONES</strong></p>"),
+    farmacoterapia: getPlantillaFarmaco(tipoNota),
     administrar_farmacos: "",
   };
+}
+
+function crearBloquePersonalizado(paciente: Props["paciente"] | undefined, notasHtml: string, farmacoHtml: string): BloqueEvolucion {
+  const bloque = crearBloqueVacio(paciente, "INGRESO");
+  bloque.notas_evolucion = notasHtml;
+  bloque.farmacoterapia = farmacoHtml;
+  return bloque;
 }
 
 const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
@@ -655,7 +881,15 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
       if (initialData?.bloques && initialData.bloques.length > 0) {
         return { bloques: [...initialData.bloques] };
       }
-      return { bloques: [crearBloqueVacio(paciente)] };
+      return { 
+        bloques: [
+          crearBloqueVacio(paciente, "INGRESO"),
+          crearBloquePersonalizado(paciente, PLANTILLA_POSTQUIRURGICA_TEXTO, PLANTILLA_POSTQUIRURGICA_FARMACO),
+          crearBloquePersonalizado(paciente, PLANTILLA_EVO_NOCHE_TEXTO, PLANTILLA_EVO_NOCHE_FARMACO),
+          crearBloquePersonalizado(paciente, PLANTILLA_EVO_MANANA_TEXTO, PLANTILLA_EVO_MANANA_FARMACO),
+          crearBloquePersonalizado(paciente, PLANTILLA_ALTA_TEXTO, PLANTILLA_ALTA_FARMACO),
+        ] 
+      };
     });
 
     const { isDirty, clearAutosave } = useFormAutosaveAndWarn({
@@ -668,23 +902,19 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
     const handleAddBloque = (tipoNota: TipoNota) => {
       setDatos((prev) => {
         const newBloque = crearBloqueVacio(paciente, tipoNota);
-        if (prev.bloques.length > 0) {
-          const b0 = prev.bloques[0];
-          let copiaHtml = b0.notas_evolucion;
-          
-          let tituloNuevo = "NOTA DE INGRESO";
-          if (tipoNota === "POSTQUIRURGICA") tituloNuevo = "NOTA POSTQUIRURGICA";
-          else if (tipoNota === "EVOLUCION") tituloNuevo = "NOTA DE EVOLUCIÓN";
-          else if (tipoNota === "ALTA") tituloNuevo = "NOTA DE ALTA";
-
-          // Reemplazar la ocurrencia de "NOTA DE INGRESO" por el título correspondiente
-          copiaHtml = copiaHtml.replace(/NOTA DE INGRESO/i, tituloNuevo);
-
-          newBloque.notas_evolucion = copiaHtml;
-          newBloque.farmacoterapia = b0.farmacoterapia;
-        }
         return {
           bloques: [...prev.bloques, newBloque],
+        };
+      });
+    };
+
+    const handleInsertBloque = (idx: number) => {
+      setDatos((prev) => {
+        const newBloque = crearBloqueVacio(paciente, "EVOLUCION");
+        const newBloques = [...prev.bloques];
+        newBloques.splice(idx + 1, 0, newBloque);
+        return {
+          bloques: newBloques,
         };
       });
     };
@@ -903,9 +1133,31 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
                   X Eliminar Bloque
                 </button>
               )}
+              
+              <div style={{ display: "flex", justifyContent: "center", marginTop: "10px", marginBottom: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => handleInsertBloque(idx)}
+                  style={{
+                    background: "#f8fafc",
+                    color: "#475569",
+                    border: "1px dashed #94a3b8",
+                    padding: "6px 16px",
+                    borderRadius: "16px",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                    transition: "all 0.2s"
+                  }}
+                  title="Inserta una nueva Nota de Evolución justo debajo de este bloque"
+                >
+                  + Insertar Evolución Aquí
+                </button>
+              </div>
             </div>
           ))}
 
+          {/* COMENTADO TEMPORALMENTE A PETICIÓN DEL USUARIO: Botones inferiores de agregar nota
           <div style={{ display: "flex", justifyContent: "center", gap: "12px", padding: "16px", borderTop: "2px dashed #ccc", marginTop: "10px", flexWrap: "wrap" }}>
             <button
               type="button"
@@ -956,6 +1208,7 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
               + NOTA DE ALTA
             </button>
           </div>
+          */}
         </div>
       </div>
     );

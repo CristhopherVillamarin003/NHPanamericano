@@ -494,8 +494,9 @@ export default function AtencionPage() {
 
       {/* Secciones */}
       <div className="atencion-secciones">
-
-        {/* ── Consentimientos ─────────────────────────────────────── */}
+        {userEmail !== 'enfermeria@hospitalpanamericano.com.ec' && (
+          <>
+            {/* ── Consentimientos ─────────────────────────────────────── */}
         <div className="seccion-card">
           <div className="seccion-card-header">
             <div className="seccion-card-title">
@@ -846,6 +847,47 @@ export default function AtencionPage() {
             </div>
           </div>
         ))}
+          </>
+        )}
+
+        {/* Enfermería — condicional */}
+        {userEmail === 'enfermeria@hospitalpanamericano.com.ec' && (
+          <div className="seccion-card">
+            <div className="seccion-card-header">
+              <div className="seccion-card-title">
+                <FolderOpen className="w-4 h-4 text-sky-500" />
+                <span>Enfermería</span>
+                {atencion?.enfermeria && (
+                  <span className="seccion-badge">1</span>
+                )}
+              </div>
+              <button
+                type="button"
+                className="btn-create"
+                onClick={() => router.push(`/dashboard/atencion/${categoriaPacienteId}/enfermeria`)}
+              >
+                <ArrowRight className="w-4 h-4" />
+                Ingresar
+              </button>
+            </div>
+            {atencion?.enfermeria && (
+              <div className="seccion-items">
+                <div className="seccion-item">
+                  <span className="seccion-item-name" style={{ cursor: 'default', textDecoration: 'none', color: '#18181b' }}>
+                    Registros de Enfermería
+                  </span>
+                  <div className="seccion-item-estado">
+                    {atencion.enfermeria.estado !== 'borrador' && (
+                      <span className={`estado-badge estado-${atencion.enfermeria.estado}`}>
+                        {atencion.enfermeria.estado}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Modal crear consentimiento */}

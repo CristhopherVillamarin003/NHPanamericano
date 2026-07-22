@@ -176,6 +176,7 @@ model Atencion {
   receta              Receta?
   certificado         Certificado?
   liquidacion         Liquidacion?
+  enfermeria          Enfermeria?
 
   @@map("atencion")
   @@schema("hospital")
@@ -202,6 +203,7 @@ model Plantilla {
   recetas         Receta[]
   certificados    Certificado[]
   liquidaciones   Liquidacion[]
+  enfermerias     Enfermeria[]
 
   @@map("plantilla")
   @@schema("hospital")
@@ -344,5 +346,21 @@ model Cie10 {
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@map("cie10")
+  @@schema("hospital")
+}
+
+model Enfermeria {
+  id          Int      @id @default(autoincrement())
+  atencionId  Int      @unique @map("atencion_id")
+  plantillaId Int      @map("plantilla_id")
+  datos       Json     @default("{}")
+  estado      String   @default("borrador")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+
+  @@map("enfermeria")
   @@schema("hospital")
 }

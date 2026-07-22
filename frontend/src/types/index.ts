@@ -49,6 +49,7 @@ export interface Atencion {
   receta: SeccionUnica | null;
   certificado: SeccionUnica | null;
   liquidacion: SeccionUnica | null;
+  enfermeria: SeccionUnica | null;
 }
 
 export interface Consentimiento {

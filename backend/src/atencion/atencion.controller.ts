@@ -180,4 +180,22 @@ export class AtencionController {
       dto.estado,
     );
   }
+
+  @Put(':atencionId/enfermeria')
+  upsertEnfermeria(
+    @Param('atencionId', ParseIntPipe) atencionId: number,
+    @Body() dto: SeccionDto,
+  ) {
+    return this.atencionService.upsertEnfermeria(
+      atencionId,
+      dto.plantillaId,
+      dto.datos ?? {},
+      dto.estado,
+    );
+  }
+
+  @Delete(':atencionId/enfermeria')
+  deleteEnfermeria(@Param('atencionId', ParseIntPipe) atencionId: number) {
+    return this.atencionService.deleteEnfermeria(atencionId);
+  }
 }
