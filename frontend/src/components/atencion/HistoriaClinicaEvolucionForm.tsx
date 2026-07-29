@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useImperativeHandle, useEffect } from "react";
+import { ArrowDown } from "lucide-react";
 import RichTextEvolucion from "../ui/RichTextEvolucion";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
 
@@ -899,6 +900,8 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
       onRestore: (saved) => setDatos(p => ({ ...p, ...saved })),
     });
 
+    const [toastMsg, setToastMsg] = useState<{texto: string, color: string} | null>(null);
+
     const handleAddBloque = (tipoNota: TipoNota) => {
       setDatos((prev) => {
         const newBloque = crearBloqueVacio(paciente, tipoNota);
@@ -908,22 +911,37 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
       });
     };
 
-    const handleInsertBloque = (idx: number) => {
+    const handleInsertBloque = (idx: number, tipoNota: TipoNota) => {
       setDatos((prev) => {
-        const newBloque = crearBloqueVacio(paciente, "EVOLUCION");
+        const newBloque = crearBloqueVacio(paciente, tipoNota);
         const newBloques = [...prev.bloques];
         newBloques.splice(idx + 1, 0, newBloque);
         return {
           bloques: newBloques,
         };
       });
+      
+      let nombre = "DE EVOLUCIÓN";
+      let color = "#16a34a"; // green
+      if (tipoNota === "POSTQUIRURGICA") {
+        nombre = "POST QUIRÚRGICA";
+        color = "#3b82f6"; // blue
+      } else if (tipoNota === "ALTA") {
+        nombre = "DE ALTA";
+        color = "#dc2626"; // red
+      }
+      
+      setToastMsg({ texto: `NOTA ${nombre} INSERTADA`, color });
+      setTimeout(() => setToastMsg(null), 3000);
     };
 
     const handleRemoveBloque = (idx: number) => {
-      if (datos.bloques.length <= 1) return;
+      if (datos.bloques.length <= 1 || idx === 0) return;
       setDatos((prev) => ({
         bloques: prev.bloques.filter((_, i) => i !== idx),
       }));
+      setToastMsg({ texto: "BLOQUE ELIMINADO", color: "#ef4444" });
+      setTimeout(() => setToastMsg(null), 3000);
     };
 
 
@@ -1110,7 +1128,7 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
                 bloque={bloque}
                 onChange={(campo, valor) => handleChange(idx, campo, valor)}
               />
-              {datos.bloques.length > 1 && (
+              {idx > 0 && (
                 <button
                   type="button"
                   onClick={() => handleRemoveBloque(idx)}
@@ -1134,81 +1152,67 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
                 </button>
               )}
               
-              <div style={{ display: "flex", justifyContent: "center", marginTop: "10px", marginBottom: "10px" }}>
+              <div style={{ display: "flex", justifyContent: "center", padding: "10px", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+                <span style={{ fontSize: "11px", color: "#64748b", fontWeight: "bold" }}>+ Insertar debajo:</span>
                 <button
                   type="button"
-                  onClick={() => handleInsertBloque(idx)}
-                  style={{
-                    background: "#f8fafc",
-                    color: "#475569",
-                    border: "1px dashed #94a3b8",
-                    padding: "6px 16px",
-                    borderRadius: "16px",
-                    fontSize: "12px",
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                    transition: "all 0.2s"
-                  }}
-                  title="Inserta una nueva Nota de Evolución justo debajo de este bloque"
+                  onClick={() => handleInsertBloque(idx, "POSTQUIRURGICA")}
+                  style={{ background: "#eff6ff", color: "#3b82f6", border: "1px dashed #bfdbfe", padding: "4px 12px", borderRadius: "16px", fontSize: "11px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s" }}
+                  title="Inserta una nueva Nota Post Quirúrgica debajo"
                 >
-                  + Insertar Evolución Aquí
+                  Post Quirúrgica
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInsertBloque(idx, "EVOLUCION")}
+                  style={{ background: "#f0fdf4", color: "#16a34a", border: "1px dashed #bbf7d0", padding: "4px 12px", borderRadius: "16px", fontSize: "11px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s" }}
+                  title="Inserta una nueva Nota de Evolución debajo"
+                >
+                  Evolución
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInsertBloque(idx, "ALTA")}
+                  style={{ background: "#fef2f2", color: "#dc2626", border: "1px dashed #fecaca", padding: "4px 12px", borderRadius: "16px", fontSize: "11px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s" }}
+                  title="Inserta una nueva Nota de Alta debajo"
+                >
+                  Alta
                 </button>
               </div>
             </div>
           ))}
 
-          {/* COMENTADO TEMPORALMENTE A PETICIÓN DEL USUARIO: Botones inferiores de agregar nota
-          <div style={{ display: "flex", justifyContent: "center", gap: "12px", padding: "16px", borderTop: "2px dashed #ccc", marginTop: "10px", flexWrap: "wrap" }}>
-            <button
-              type="button"
-              onClick={() => handleAddBloque("POSTQUIRURGICA")}
-              style={{
-                background: "#eff6ff",
-                color: "#3b82f6",
-                border: "1px solid #bfdbfe",
-                padding: "8px 16px",
-                borderRadius: "6px",
-                fontSize: "14px",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              + NOTA POSTQUIRURGICA
-            </button>
-            <button
-              type="button"
-              onClick={() => handleAddBloque("EVOLUCION")}
-              style={{
-                background: "#f0fdf4",
-                color: "#16a34a",
-                border: "1px solid #bbf7d0",
-                padding: "8px 16px",
-                borderRadius: "6px",
-                fontSize: "14px",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              + NOTA DE EVOLUCIÓN
-            </button>
-            <button
-              type="button"
-              onClick={() => handleAddBloque("ALTA")}
-              style={{
-                background: "#fef2f2",
-                color: "#dc2626",
-                border: "1px solid #fecaca",
-                padding: "8px 16px",
-                borderRadius: "6px",
-                fontSize: "14px",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
-            >
-              + NOTA DE ALTA
-            </button>
-          </div>
-          */}
+          <style jsx>{`
+            @keyframes slideIn {
+              from { transform: translateY(100%) opacity(0); }
+              to { transform: translateY(0) opacity(1); }
+            }
+          `}</style>
+          {toastMsg && (
+            <div style={{
+              position: "fixed",
+              bottom: "30px",
+              right: "30px",
+              background: "white",
+              borderLeft: `5px solid ${toastMsg.color}`,
+              boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+              padding: "16px 24px",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              zIndex: 9999,
+              animation: "slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+            }}>
+              {!toastMsg.texto.includes("ELIMINADO") && (
+                <ArrowDown color={toastMsg.color} size={24} strokeWidth={2.5} />
+              )}
+              <span style={{ fontWeight: "700", color: "#1e293b", fontSize: "14px", letterSpacing: "0.02em" }}>
+                {toastMsg.texto}
+              </span>
+            </div>
+          )}
+
         </div>
       </div>
     );

@@ -852,41 +852,94 @@ export default function AtencionPage() {
 
         {/* Enfermería — condicional */}
         {userEmail === 'enfermeria@hospitalpanamericano.com.ec' && (
-          <div className="seccion-card">
-            <div className="seccion-card-header">
-              <div className="seccion-card-title">
-                <FolderOpen className="w-4 h-4 text-sky-500" />
-                <span>Enfermería</span>
-                {atencion?.enfermeria && (
-                  <span className="seccion-badge">1</span>
-                )}
+          <>
+            <div className="seccion-card">
+              <div className="seccion-card-header">
+                <div className="seccion-card-title">
+                  <FolderOpen className="w-4 h-4 text-sky-500" />
+                  <span>Enfermería</span>
+                  {atencion?.enfermeria && (
+                    <span className="seccion-badge">1</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="btn-create"
+                  onClick={() => router.push(`/dashboard/atencion/${categoriaPacienteId}/enfermeria`)}
+                >
+                  <ArrowRight className="w-4 h-4" />
+                  Ingresar
+                </button>
               </div>
-              <button
-                type="button"
-                className="btn-create"
-                onClick={() => router.push(`/dashboard/atencion/${categoriaPacienteId}/enfermeria`)}
-              >
-                <ArrowRight className="w-4 h-4" />
-                Ingresar
-              </button>
-            </div>
-            {atencion?.enfermeria && (
-              <div className="seccion-items">
-                <div className="seccion-item">
-                  <span className="seccion-item-name" style={{ cursor: 'default', textDecoration: 'none', color: '#18181b' }}>
-                    Registros de Enfermería
-                  </span>
-                  <div className="seccion-item-estado">
-                    {atencion.enfermeria.estado !== 'borrador' && (
-                      <span className={`estado-badge estado-${atencion.enfermeria.estado}`}>
-                        {atencion.enfermeria.estado}
-                      </span>
-                    )}
+              {atencion?.enfermeria && (
+                <div className="seccion-items">
+                  <div className="seccion-item">
+                    <span className="seccion-item-name" style={{ cursor: 'default', textDecoration: 'none', color: '#18181b' }}>
+                      Registros de Enfermería
+                    </span>
+                    <div className="seccion-item-estado">
+                      {atencion.enfermeria.estado !== 'borrador' && (
+                        <span className={`estado-badge estado-${atencion.enfermeria.estado}`}>
+                          {atencion.enfermeria.estado}
+                        </span>
+                      )}
+                    </div>
+                    <div className="table-actions">
+                      <ConsentimientoActionsMenu
+                        onEdit={() => {}}
+                        onDelete={() => setDeleteSeccionTarget('enfermeria')}
+                        hideEdit
+                      />
+                    </div>
                   </div>
                 </div>
+              )}
+            </div>
+
+            {/* Escala de Riesgo */}
+            <div className="seccion-card">
+              <div className="seccion-card-header">
+                <div className="seccion-card-title">
+                  <FolderOpen className="w-4 h-4 text-sky-500" />
+                  <span>Escala de Riesgo</span>
+                  {atencion?.escalaRiesgo && (
+                    <span className="seccion-badge">1</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="btn-create"
+                  onClick={() => router.push(`/dashboard/atencion/${categoriaPacienteId}/escala-riesgo`)}
+                >
+                  <ArrowRight className="w-4 h-4" />
+                  Ingresar
+                </button>
               </div>
-            )}
-          </div>
+              {atencion?.escalaRiesgo && (
+                <div className="seccion-items">
+                  <div className="seccion-item">
+                    <span className="seccion-item-name" style={{ cursor: 'default', textDecoration: 'none', color: '#18181b' }}>
+                      Escala MACDEMS
+                    </span>
+                    <div className="seccion-item-estado">
+                      {atencion.escalaRiesgo.estado !== 'borrador' && (
+                        <span className={`estado-badge estado-${atencion.escalaRiesgo.estado}`}>
+                          {atencion.escalaRiesgo.estado}
+                        </span>
+                      )}
+                    </div>
+                    <div className="table-actions">
+                      <ConsentimientoActionsMenu
+                        onEdit={() => {}}
+                        onDelete={() => setDeleteSeccionTarget('escala_riesgo')}
+                        hideEdit
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
 

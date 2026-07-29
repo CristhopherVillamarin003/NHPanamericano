@@ -198,4 +198,22 @@ export class AtencionController {
   deleteEnfermeria(@Param('atencionId', ParseIntPipe) atencionId: number) {
     return this.atencionService.deleteEnfermeria(atencionId);
   }
+
+  @Put(':atencionId/escala_riesgo')
+  upsertEscalaRiesgo(
+    @Param('atencionId', ParseIntPipe) atencionId: number,
+    @Body() dto: SeccionDto,
+  ) {
+    return this.atencionService.upsertEscalaRiesgo(
+      atencionId,
+      dto.plantillaId,
+      dto.datos ?? {},
+      dto.estado,
+    );
+  }
+
+  @Delete(':atencionId/escala_riesgo')
+  deleteEscalaRiesgo(@Param('atencionId', ParseIntPipe) atencionId: number) {
+    return this.atencionService.deleteEscalaRiesgo(atencionId);
+  }
 }

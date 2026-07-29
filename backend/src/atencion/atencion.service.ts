@@ -18,6 +18,7 @@ export class AtencionService {
     certificado:       { include: { plantilla: true } },
     liquidacion:       { include: { plantilla: true } },
     enfermeria:        { include: { plantilla: true } },
+    escalaRiesgo:      { include: { plantilla: true } },
   };
 
   async findOrCreate(categoriaPacienteId: number) {
@@ -184,5 +185,21 @@ export class AtencionService {
     const record = await this.prisma.enfermeria.findUnique({ where: { atencionId } });
     if (!record) throw new NotFoundException('Sección Enfermería no encontrada');
     return this.prisma.enfermeria.delete({ where: { atencionId } });
+  }
+
+  async upsertEscalaRiesgo(atencionId: number, plantillaId: number, datos: object, estado?: string) {
+    await this.getAtencion(atencionId);
+    return this.prisma.escalaRiesgo.upsert({
+      where: { atencionId },
+      create: { atencionId, plantillaId, datos, ...(estado ? { estado } : {}) },
+      update: { datos, ...(estado ? { estado } : {}), plantillaId },
+      include: { plantilla: true },
+    });
+  }
+
+  async deleteEscalaRiesgo(atencionId: number) {
+    const record = await this.prisma.escalaRiesgo.findUnique({ where: { atencionId } });
+    if (!record) throw new NotFoundException('Sección Escala de Riesgo no encontrada');
+    return this.prisma.escalaRiesgo.delete({ where: { atencionId } });
   }
 }

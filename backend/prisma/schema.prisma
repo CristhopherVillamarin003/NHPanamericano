@@ -177,6 +177,7 @@ model Atencion {
   certificado         Certificado?
   liquidacion         Liquidacion?
   enfermeria          Enfermeria?
+  escalaRiesgo        EscalaRiesgo?
 
   @@map("atencion")
   @@schema("hospital")
@@ -204,6 +205,7 @@ model Plantilla {
   certificados    Certificado[]
   liquidaciones   Liquidacion[]
   enfermerias     Enfermeria[]
+  escalasRiesgo   EscalaRiesgo[]
 
   @@map("plantilla")
   @@schema("hospital")
@@ -362,5 +364,21 @@ model Enfermeria {
   plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
 
   @@map("enfermeria")
+  @@schema("hospital")
+}
+
+model EscalaRiesgo {
+  id          Int      @id @default(autoincrement())
+  atencionId  Int      @unique @map("atencion_id")
+  plantillaId Int      @map("plantilla_id")
+  datos       Json     @default("{}")
+  estado      String   @default("borrador")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+
+  @@map("escala_riesgo")
   @@schema("hospital")
 }

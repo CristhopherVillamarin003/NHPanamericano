@@ -50,6 +50,7 @@ export interface Atencion {
   certificado: SeccionUnica | null;
   liquidacion: SeccionUnica | null;
   enfermeria: SeccionUnica | null;
+  escalaRiesgo: SeccionUnica | null;
 }
 
 export interface Consentimiento {

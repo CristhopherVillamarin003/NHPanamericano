@@ -54,6 +54,20 @@ import { PROTOCOLO_MAP } from './protocolo.map';
 import { MAPEO_CERTIFICADO } from './certificado.map';
 import { LIQUIDACIONES_MAP } from './liquidaciones.map';
 import { ENFERMERIA_MAP } from './enfermeria.map';
+import {
+  NOMBRE_PACIENTE_MACDEM,
+  PUNTAJES_MACDEM,
+  PUNTUACION_FINAL,
+  ACCIONES_MACDEM,
+  calcularNivelRiesgo,
+} from './macdem.map';
+import {
+  NOMBRE_PACIENTE_MORSE,
+  PUNTAJES_MORSE,
+  PUNTUACION_FINAL_MORSE,
+  ACCIONES_MORSE,
+  calcularNivelRiesgoMorse,
+} from './morse.map';
 
 // Campos que contienen imágenes en Base64 y su posición en el Excel
 // Nota: el nombre de hoja y el rango cambian según la plantilla.
@@ -1676,6 +1690,292 @@ export class ExportService {
 
     const buffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(buffer);
+  }
+
+  // ─── generarDocxMacdem ───────────────────────────────────────────────────────
+
+  async generarDocxMacdem(
+    rutaArchivo: string,
+    seccion: string,
+    datos: Record<string, any>,
+    nombrePaciente?: string,
+  ): Promise<Buffer> {
+    const filePath = path.join(this.uploadsDir, path.basename(rutaArchivo));
+    if (!fs.existsSync(filePath)) {
+      throw new NotFoundException(`Archivo de plantilla no encontrado: ${rutaArchivo}`);
+    }
+
+    const content = fs.readFileSync(filePath);
+    const zip = new PizZip(content);
+
+    const docXmlStr = zip.file("word/document.xml")?.asText();
+    if (!docXmlStr) {
+      throw new InternalServerErrorException("No se pudo leer word/document.xml");
+    }
+
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(docXmlStr, "text/xml");
+    const body = this.getBody(xmlDoc);
+
+    const rootParagraphs = this.childrenByLocal(body, "p");
+    const rootTables = this.childrenByLocal(body, "tbl");
+
+    // 1. Inyectar Nombre del Paciente
+    if (nombrePaciente) {
+      const p = rootParagraphs[NOMBRE_PACIENTE_MACDEM.parrafo];
+      if (p) {
+        const run = xmlDoc.createElement("w:r");
+        const t = xmlDoc.createElement("w:t");
+        t.setAttribute("xml:space", "preserve");
+        t.textContent = ` ${nombrePaciente.toUpperCase()}`;
+        
+        const rPr = xmlDoc.createElement("w:rPr");
+        const b = xmlDoc.createElement("w:b");
+        rPr.appendChild(b);
+        run.appendChild(rPr);
+        run.appendChild(t);
+        
+        // Agregar después del label existente
+        p.appendChild(run);
+      }
+    }
+
+    const table = rootTables[0]; // Todo está en la primera tabla
+    if (table) {
+      const rows = this.childrenByLocal(table, "tr");
+
+      let puntajeTotal = 0;
+
+      // 2. Colorear celdas seleccionadas y calcular puntaje
+      PUNTAJES_MACDEM.forEach(mapEntry => {
+        const valorSeleccionado = datos[mapEntry.variable];
+        if (valorSeleccionado === mapEntry.descripcion) {
+          puntajeTotal += mapEntry.puntaje;
+
+          const row = rows[mapEntry.fila];
+          if (row) {
+            const cells = this.childrenByLocal(row, "tc");
+            const cell = cells[mapEntry.celda];
+            if (cell) {
+              let tcPr = this.childrenByLocal(cell, "tcPr")[0];
+              if (!tcPr) {
+                tcPr = xmlDoc.createElement("w:tcPr");
+                cell.insertBefore(tcPr, cell.firstChild);
+              }
+              
+              let shd = this.childrenByLocal(tcPr, "shd")[0];
+              if (!shd) {
+                shd = xmlDoc.createElement("w:shd");
+                tcPr.appendChild(shd);
+              }
+              
+              shd.setAttribute("w:val", "clear");
+              shd.setAttribute("w:color", "auto");
+              shd.setAttribute("w:fill", "FFFF00"); // Amarillo
+            }
+          }
+        }
+      });
+
+      // 3. Inyectar Puntuación Final
+      const rowTotal = rows[PUNTUACION_FINAL.fila];
+      if (rowTotal) {
+        const cells = this.childrenByLocal(rowTotal, "tc");
+        const cell = cells[PUNTUACION_FINAL.celda];
+        if (cell) {
+          const p = this.childrenByLocal(cell, "p")[0];
+          if (p) {
+            const run = xmlDoc.createElement("w:r");
+            const t = xmlDoc.createElement("w:t");
+            t.textContent = ` ${puntajeTotal}`;
+            
+            const rPr = xmlDoc.createElement("w:rPr");
+            const b = xmlDoc.createElement("w:b");
+            rPr.appendChild(b);
+            run.appendChild(rPr);
+            run.appendChild(t);
+            p.appendChild(run);
+          }
+        }
+      }
+
+      // 4. Inyectar Acción ('X')
+      const nivel = calcularNivelRiesgo(puntajeTotal);
+      const mapAccion = ACCIONES_MACDEM[nivel];
+      const rowAccion = rows[mapAccion.fila];
+      if (rowAccion) {
+        const cells = this.childrenByLocal(rowAccion, "tc");
+        const cell = cells[mapAccion.celda];
+        if (cell) {
+          const p = this.childrenByLocal(cell, "p")[0];
+          if (p) {
+            const run = xmlDoc.createElement("w:r");
+            const t = xmlDoc.createElement("w:t");
+            t.setAttribute("xml:space", "preserve");
+            t.textContent = " X";
+            
+            const rPr = xmlDoc.createElement("w:rPr");
+            const b = xmlDoc.createElement("w:b");
+            const sz = xmlDoc.createElement("w:sz");
+            sz.setAttribute("w:val", "28"); // Tamaño 14pt
+            rPr.appendChild(b);
+            rPr.appendChild(sz);
+            run.appendChild(rPr);
+            run.appendChild(t);
+            p.appendChild(run);
+          }
+        }
+      }
+    }
+
+    const serializer = new XMLSerializer();
+    const newDocXmlStr = serializer.serializeToString(xmlDoc);
+    
+    zip.file("word/document.xml", newDocXmlStr);
+    return Buffer.from(zip.generate({ type: "nodebuffer", compression: "DEFLATE" }));
+  }
+
+  // ─── generarDocxMorse ────────────────────────────────────────────────────────
+
+  async generarDocxMorse(
+    rutaArchivo: string,
+    seccion: string,
+    datos: Record<string, any>,
+    nombrePaciente?: string,
+  ): Promise<Buffer> {
+    const filePath = path.join(this.uploadsDir, path.basename(rutaArchivo));
+    if (!fs.existsSync(filePath)) {
+      throw new NotFoundException(`Archivo de plantilla no encontrado: ${rutaArchivo}`);
+    }
+
+    const content = fs.readFileSync(filePath);
+    const zip = new PizZip(content);
+
+    const docXmlStr = zip.file("word/document.xml")?.asText();
+    if (!docXmlStr) {
+      throw new InternalServerErrorException("No se pudo leer word/document.xml");
+    }
+
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(docXmlStr, "text/xml");
+    const body = this.getBody(xmlDoc);
+
+    const rootParagraphs = this.childrenByLocal(body, "p");
+    const rootTables = this.childrenByLocal(body, "tbl");
+
+    // 1. Inyectar Nombre del Paciente
+    if (nombrePaciente) {
+      const p = rootParagraphs[NOMBRE_PACIENTE_MORSE.parrafo];
+      if (p) {
+        const run = xmlDoc.createElement("w:r");
+        const t = xmlDoc.createElement("w:t");
+        t.setAttribute("xml:space", "preserve");
+        t.textContent = ` ${nombrePaciente.toUpperCase()}`;
+        
+        const rPr = xmlDoc.createElement("w:rPr");
+        const b = xmlDoc.createElement("w:b");
+        rPr.appendChild(b);
+        run.appendChild(rPr);
+        run.appendChild(t);
+        
+        // Agregar después del label existente
+        p.appendChild(run);
+      }
+    }
+
+    const table = rootTables[0]; // Todo está en la primera tabla
+    if (table) {
+      const rows = this.childrenByLocal(table, "tr");
+
+      let puntajeTotal = 0;
+
+      // 2. Colorear celdas seleccionadas y calcular puntaje
+      PUNTAJES_MORSE.forEach(mapEntry => {
+        const valorSeleccionado = datos[mapEntry.variable];
+        if (valorSeleccionado === mapEntry.descripcion) {
+          puntajeTotal += mapEntry.puntaje;
+
+          const row = rows[mapEntry.fila];
+          if (row) {
+            const cells = this.childrenByLocal(row, "tc");
+            const cell = cells[mapEntry.celda];
+            if (cell) {
+              let tcPr = this.childrenByLocal(cell, "tcPr")[0];
+              if (!tcPr) {
+                tcPr = xmlDoc.createElement("w:tcPr");
+                cell.insertBefore(tcPr, cell.firstChild);
+              }
+              
+              let shd = this.childrenByLocal(tcPr, "shd")[0];
+              if (!shd) {
+                shd = xmlDoc.createElement("w:shd");
+                tcPr.appendChild(shd);
+              }
+              
+              shd.setAttribute("w:val", "clear");
+              shd.setAttribute("w:color", "auto");
+              shd.setAttribute("w:fill", "FFFF00"); // Amarillo
+            }
+          }
+        }
+      });
+
+      // 3. Inyectar Puntuación Final
+      const rowTotal = rows[PUNTUACION_FINAL_MORSE.fila];
+      if (rowTotal) {
+        const cells = this.childrenByLocal(rowTotal, "tc");
+        const cell = cells[PUNTUACION_FINAL_MORSE.celda];
+        if (cell) {
+          const p = this.childrenByLocal(cell, "p")[0];
+          if (p) {
+            const run = xmlDoc.createElement("w:r");
+            const t = xmlDoc.createElement("w:t");
+            t.textContent = ` ${puntajeTotal}`;
+            
+            const rPr = xmlDoc.createElement("w:rPr");
+            const b = xmlDoc.createElement("w:b");
+            rPr.appendChild(b);
+            run.appendChild(rPr);
+            run.appendChild(t);
+            p.appendChild(run);
+          }
+        }
+      }
+
+      // 4. Inyectar Acción ('X')
+      const nivel = calcularNivelRiesgoMorse(puntajeTotal);
+      const mapAccion = ACCIONES_MORSE[nivel];
+      const rowAccion = rows[mapAccion.fila];
+      if (rowAccion) {
+        const cells = this.childrenByLocal(rowAccion, "tc");
+        const cell = cells[mapAccion.celda];
+        if (cell) {
+          const p = this.childrenByLocal(cell, "p")[0];
+          if (p) {
+            const run = xmlDoc.createElement("w:r");
+            const t = xmlDoc.createElement("w:t");
+            t.setAttribute("xml:space", "preserve");
+            t.textContent = " X";
+            
+            const rPr = xmlDoc.createElement("w:rPr");
+            const b = xmlDoc.createElement("w:b");
+            const sz = xmlDoc.createElement("w:sz");
+            sz.setAttribute("w:val", "28"); // Tamaño 14pt
+            rPr.appendChild(b);
+            rPr.appendChild(sz);
+            run.appendChild(rPr);
+            run.appendChild(t);
+            p.appendChild(run);
+          }
+        }
+      }
+    }
+
+    const serializer = new XMLSerializer();
+    const newDocXmlStr = serializer.serializeToString(xmlDoc);
+    
+    zip.file("word/document.xml", newDocXmlStr);
+    return Buffer.from(zip.generate({ type: "nodebuffer", compression: "DEFLATE" }));
   }
 
   listarArchivos(): string[] {

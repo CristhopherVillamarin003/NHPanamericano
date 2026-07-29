@@ -138,6 +138,30 @@ export class PlantillaController {
           plantilla.seccion,
           datos ?? {},
         );
+      } else if (plantilla.seccion === 'escala-macdem') {
+        const nombrePaciente = (datos ?? {}).nombres_completos || (datos ?? {}).paciente || "";
+        if ((datos ?? {}).tipo_escala === 'MACDEMS') {
+          buffer = await this.exportService.generarDocxMacdem(
+            plantilla.rutaArchivo!,
+            plantilla.seccion,
+            datos ?? {},
+            nombrePaciente
+          );
+        } else {
+          buffer = await this.exportService.generarDocx(datos ?? {});
+        }
+      } else if (plantilla.seccion === 'escala-morse') {
+        const nombrePaciente = (datos ?? {}).nombres_completos || (datos ?? {}).paciente || "";
+        if ((datos ?? {}).tipo_escala === 'MORSE') {
+          buffer = await this.exportService.generarDocxMorse(
+            plantilla.rutaArchivo!,
+            plantilla.seccion,
+            datos ?? {},
+            nombrePaciente
+          );
+        } else {
+          buffer = await this.exportService.generarDocx(datos ?? {});
+        }
       } else {
         buffer = await this.exportService.generarDocx(datos ?? {});
       }
