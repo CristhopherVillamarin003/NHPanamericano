@@ -5,8 +5,8 @@ import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
-type TipoNota = "NOTA POSTQUIRURGICA" | "NOTA DE LA MAÑANA" | "NOTA DE LA TARDE" | "NOTA DE LA NOCHE";
-export const TIPOS: TipoNota[] = ["NOTA POSTQUIRURGICA", "NOTA DE LA MAÑANA", "NOTA DE LA TARDE", "NOTA DE LA NOCHE"];
+type TipoNota = "NOTA POSTQUIRURGICA" | "NOTA DE LA MAÑANA" | "NOTA DE LA TARDE" | "NOTA DE LA NOCHE" | "NOTA DE ALTA";
+export const TIPOS: TipoNota[] = ["NOTA POSTQUIRURGICA", "NOTA DE LA MAÑANA", "NOTA DE LA TARDE", "NOTA DE LA NOCHE", "NOTA DE ALTA"];
 
 export interface BloqueEnfermeria {
   id: string; // Útil para las keys de React
@@ -101,6 +101,8 @@ const secTitleStyle = (tipo: string): React.CSSProperties => ({
     ? "#fff3cd"
     : tipo === "NOTA DE LA TARDE"
     ? "#d4edda"
+    : tipo === "NOTA DE ALTA"
+    ? "#f8d7da"
     : "#cfe2ff",
   fontWeight: 700, fontSize: "11px", fontFamily: "Arial, sans-serif",
   padding: "5px 10px", border, letterSpacing: "0.04em",
@@ -576,12 +578,13 @@ const EnfermeriaForm = forwardRef<EnfermeriaFormRef, Props>(({ paciente, initial
                       tipo === "NOTA POSTQUIRURGICA" ? "#6c757d"
                       : tipo === "NOTA DE LA MAÑANA" ? "#856404"
                       : tipo === "NOTA DE LA TARDE" ? "#155724"
+                      : tipo === "NOTA DE ALTA" ? "#721c24"
                       : "#084298",
                       true
                     ),
                     opacity: (formData.bloques || []).length >= MAX_BLOQUES ? 0.4 : 1,
                   }}>
-                  {tipo === "NOTA POSTQUIRURGICA" ? "⚕️" : tipo === "NOTA DE LA MAÑANA" ? "🌅" : tipo === "NOTA DE LA TARDE" ? "☀️" : "🌙"} {tipo}
+                  {tipo === "NOTA POSTQUIRURGICA" ? "⚕️" : tipo === "NOTA DE LA MAÑANA" ? "🌅" : tipo === "NOTA DE LA TARDE" ? "☀️" : tipo === "NOTA DE ALTA" ? "📝" : "🌙"} {tipo}
                 </button>
               ))}
               {(formData.bloques || []).length > 0 && (
