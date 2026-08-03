@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Post, Req, Res, Headers } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -24,23 +24,31 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.register(dto);
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+    @Headers('user-agent') userAgent = 'unknown',
+  ) {
+    const result = await this.authService.register(dto, userAgent);
     this.setRefreshCookie(res, result.refreshToken);
     return { usuario: result.usuario, accessToken: result.accessToken };
   }
 
   @Post('login')
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.login(dto);
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+    @Headers('user-agent') userAgent = 'unknown',
+  ) {
+    const result = await this.authService.login(dto, userAgent);
     this.setRefreshCookie(res, result.refreshToken);
     return { usuario: result.usuario, accessToken: result.accessToken };
   }
 
   @Post('refresh')
-  refresh(@Req() req: Request) {
+  refresh(@Req() req: Request, @Headers('user-agent') userAgent = 'unknown') {
     const refreshToken = req.cookies?.refresh_token;
-    return this.authService.refresh(refreshToken);
+    return this.authService.refresh(refreshToken, userAgent);
   }
 
   @Post('logout')

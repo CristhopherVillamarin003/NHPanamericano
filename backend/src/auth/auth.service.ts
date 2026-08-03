@@ -61,20 +61,14 @@ export class AuthService {
     return bcrypt.compare(password, passwordHash);
   }
 
-  private async signAccessToken(payload: { sub: number; email: string }) {
-    const expiresIn = this.accessExpiresIn();
-    return this.jwt.signAsync(
-      payload,
-      expiresIn ? { expiresIn: expiresIn as any } : {},
-    );
+  private async signAccessToken(payload: any) {
+    const secret = this.config.get<string>('JWT_ACCESS_SECRET') ?? 'dev_access_secret';
+    // 1 hora de token por defecto (suficiente para trabajo)
+    return this.jwt.signAsync(payload, { secret, expiresIn: '1h' });
   }
 
-  async register(input: {
-    email: string;
-    password: string;
-    nombres?: string;
-    apellidos?: string;
-  }) {
+  async register(input: any, userAgent = 'unknown') {
+    // Hashear password y crear
     const passwordHash = await this.hashPassword(input.password);
 
     const usuario = await this.usuariosService.createUsuario({
@@ -87,6 +81,7 @@ export class AuthService {
     const accessToken = await this.signAccessToken({
       sub: usuario.id,
       email: usuario.email,
+      userAgent,
     });
 
     const refreshToken = await this.createRefreshToken(usuario.id);
@@ -103,7 +98,7 @@ export class AuthService {
     };
   }
 
-  async login(input: { email: string; password: string }) {
+  async login(input: { email: string; password: string }, userAgent = 'unknown') {
     const usuario = await this.usuariosService.findByEmail(input.email);
 
     if (!usuario) throw new UnauthorizedException('Credenciales inválidas');
@@ -115,6 +110,7 @@ export class AuthService {
     const accessToken = await this.signAccessToken({
       sub: usuario.id,
       email: usuario.email,
+      userAgent,
     });
 
     const refreshToken = await this.createRefreshToken(usuario.id);
@@ -146,7 +142,7 @@ export class AuthService {
     return token;
   }
 
-  async refresh(refreshToken: string) {
+  async refresh(refreshToken: string, userAgent = 'unknown') {
     if (!refreshToken) throw new UnauthorizedException('Refresh token requerido');
     const record = await this.prisma.refreshToken.findFirst({
       where: {
@@ -170,6 +166,7 @@ export class AuthService {
     const accessToken = await this.signAccessToken({
       sub: record.usuario.id,
       email: record.usuario.email,
+      userAgent,
     });
 
     return {
