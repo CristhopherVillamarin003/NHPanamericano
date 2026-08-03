@@ -451,6 +451,9 @@ const AnamnesisForm = React.forwardRef<HistoriaClinicaAnamnesisHandle, Props>(
     if (field === "desc_antecedentes_personales") {
       window.dispatchEvent(new CustomEvent("sync_antecedentes", { detail: { source: "anamnesis", value: v } }));
     }
+    if (field === "motivo_consulta_1") {
+      window.dispatchEvent(new CustomEvent("sync_motivo_consulta", { detail: { source: "anamnesis", value: v } }));
+    }
     if (field === "enfermedad_actual") {
       window.dispatchEvent(new CustomEvent("sync_enfermedad_actual", { detail: { source: "anamnesis", value: v } }));
     }
@@ -510,17 +513,24 @@ const AnamnesisForm = React.forwardRef<HistoriaClinicaAnamnesisHandle, Props>(
         setDatos(p => ({ ...p, plan_tratamiento: e.detail.value }));
       }
     };
+    const handleSyncMotivoConsulta = (e: CustomEvent) => {
+      if (e.detail.source !== "anamnesis") {
+        setDatos(p => ({ ...p, motivo_consulta_1: e.detail.value }));
+      }
+    };
     window.addEventListener("sync_antecedentes", handleSyncAnt as EventListener);
     window.addEventListener("sync_enfermedad_actual", handleSyncEA as EventListener);
     window.addEventListener("sync_examen_fisico", handleSyncEF as EventListener);
     window.addEventListener("sync_constante_vital", handleSyncConstante as EventListener);
     window.addEventListener("sync_plan_tratamiento", handleSyncPlanTratamiento as EventListener);
+    window.addEventListener("sync_motivo_consulta", handleSyncMotivoConsulta as EventListener);
     return () => {
       window.removeEventListener("sync_antecedentes", handleSyncAnt as EventListener);
       window.removeEventListener("sync_enfermedad_actual", handleSyncEA as EventListener);
       window.removeEventListener("sync_examen_fisico", handleSyncEF as EventListener);
       window.removeEventListener("sync_constante_vital", handleSyncConstante as EventListener);
       window.removeEventListener("sync_plan_tratamiento", handleSyncPlanTratamiento as EventListener);
+      window.removeEventListener("sync_motivo_consulta", handleSyncMotivoConsulta as EventListener);
     };
   }, []);
 

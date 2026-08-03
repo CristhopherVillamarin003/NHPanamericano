@@ -465,6 +465,9 @@ const EmergenciaForm008 = React.forwardRef<HistoriaClinicaEmergenciaHandle, Prop
     if (["presion_arterial", "pulso", "frecuencia_respiratoria", "pulsioximetria", "perimetro_cefalico", "peso", "talla"].includes(k as string)) {
       window.dispatchEvent(new CustomEvent("sync_constante_vital", { detail: { source: "emergencia", field: k, value: v } }));
     }
+    if (k === "motivo_atencion") {
+      window.dispatchEvent(new CustomEvent("sync_motivo_consulta", { detail: { source: "emergencia", value: v } }));
+    }
   };
   const updDx = (t: "dx_presuntivos" | "dx_definitivos", i: number, f: "descripcion" | "cie", v: string) =>
     setD((p) => { const a = [...p[t]]; a[i] = { ...a[i], [f]: v }; return { ...p, [t]: a }; });
@@ -500,15 +503,22 @@ const EmergenciaForm008 = React.forwardRef<HistoriaClinicaEmergenciaHandle, Prop
         setD(p => ({ ...p, [e.detail.field]: e.detail.value }));
       }
     };
+    const handleSyncMotivoConsulta = (e: CustomEvent) => {
+      if (e.detail.source !== "emergencia") {
+        setD(p => ({ ...p, motivo_atencion: e.detail.value }));
+      }
+    };
     window.addEventListener("sync_antecedentes", handleSyncAnt as EventListener);
     window.addEventListener("sync_enfermedad_actual", handleSyncEA as EventListener);
     window.addEventListener("sync_examen_fisico", handleSyncEF as EventListener);
     window.addEventListener("sync_constante_vital", handleSyncConstante as EventListener);
+    window.addEventListener("sync_motivo_consulta", handleSyncMotivoConsulta as EventListener);
     return () => {
       window.removeEventListener("sync_antecedentes", handleSyncAnt as EventListener);
       window.removeEventListener("sync_enfermedad_actual", handleSyncEA as EventListener);
       window.removeEventListener("sync_examen_fisico", handleSyncEF as EventListener);
       window.removeEventListener("sync_constante_vital", handleSyncConstante as EventListener);
+      window.removeEventListener("sync_motivo_consulta", handleSyncMotivoConsulta as EventListener);
     };
   }, []);
 

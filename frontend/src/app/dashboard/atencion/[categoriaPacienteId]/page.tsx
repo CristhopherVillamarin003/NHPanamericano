@@ -111,6 +111,7 @@ export default function AtencionPage() {
   useEffect(() => {
     setUserEmail(localStorage.getItem('user_email'));
   }, []);
+  const isReadOnlyUser = userEmail === 'administracion@hospitalpanamericano.com.ec' || userEmail === 'laboratorio@hospitalpanamericano.com.ec';
 
   // Modal crear consentimiento
   const [createOpen, setCreateOpen] = useState(false);
@@ -504,7 +505,7 @@ export default function AtencionPage() {
               <span>Consentimientos</span>
               <span className="seccion-badge">{atencion?.consentimientos?.length ?? 0}</span>
             </div>
-            {userEmail !== 'administracion@hospitalpanamericano.com.ec' && (
+            {!isReadOnlyUser && (
               <button
                 type="button"
                 className="btn-create"
@@ -530,7 +531,7 @@ export default function AtencionPage() {
                 >
                   {c.datos?.nombre ?? `Consentimiento #${c.id}`}
                 </button>
-                {userEmail !== 'administracion@hospitalpanamericano.com.ec' && (
+                {!isReadOnlyUser && (
                   <div className="table-actions">
                     <ConsentimientoActionsMenu
                       onEdit={() => {
@@ -595,7 +596,7 @@ export default function AtencionPage() {
                 <span className="seccion-badge">1</span>
               )}
             </div>
-            {!(userEmail === 'administracion@hospitalpanamericano.com.ec' && !atencion?.protocolo) && (
+            {!(isReadOnlyUser && !atencion?.protocolo) && (
               <button
                 type="button"
                 className="btn-create"
@@ -621,7 +622,7 @@ export default function AtencionPage() {
                 <span className="seccion-item-name" style={{ cursor: 'default', textDecoration: 'none', color: '#18181b' }}>
                   {atencion.protocolo.datos?.nombre || 'Protocolo'}
                 </span>
-                {userEmail !== 'administracion@hospitalpanamericano.com.ec' && (
+                {!isReadOnlyUser && (
                   <div className="table-actions">
                     <ConsentimientoActionsMenu
                       onEdit={() => {}}
@@ -645,7 +646,7 @@ export default function AtencionPage() {
                 <span className="seccion-badge">1</span>
               )}
             </div>
-            {!(userEmail === 'administracion@hospitalpanamericano.com.ec' && !atencion?.cuidado) && (
+            {!(isReadOnlyUser && !atencion?.cuidado) && (
               <button
                 type="button"
                 className="btn-create"
@@ -671,7 +672,7 @@ export default function AtencionPage() {
                 <span className="seccion-item-name" style={{ cursor: 'default', textDecoration: 'none', color: '#18181b' }}>
                   Documento de Cuidados
                 </span>
-                {userEmail !== 'administracion@hospitalpanamericano.com.ec' && (
+                {!isReadOnlyUser && (
                   <div className="table-actions">
                     <ConsentimientoActionsMenu
                       onEdit={() => {}}

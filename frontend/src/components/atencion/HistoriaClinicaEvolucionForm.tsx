@@ -844,6 +844,18 @@ function getPlantillaFarmaco(tipo: TipoNota): string {
 function crearBloqueVacio(paciente?: Props["paciente"], tipoNota: TipoNota = "INGRESO"): BloqueEvolucion {
   const today = new Date().toISOString().split("T")[0];
   const nowTime = new Date().toTimeString().slice(0, 5);
+  const [y, m, d] = today.split('-');
+  const formattedDate = `${d}/${m}/${y}`;
+  
+  const rawNotas = getPlantillaNota(tipoNota);
+  const notas_evolucion = rawNotas.replace(
+    /<p><strong>INGRESO:<\/strong>&nbsp;<\/p>/gi,
+    `<p><strong>INGRESO:</strong> ${formattedDate}</p>`
+  ).replace(
+    /<p><strong>INGRESO:<\/strong>\s*<\/p>/gi,
+    `<p><strong>INGRESO:</strong> ${formattedDate}</p>`
+  );
+
   return {
     institucion: paciente?.tipoPaciente ?? "PARTICULAR",
     unicodigo: "62858",
@@ -862,7 +874,7 @@ function crearBloqueVacio(paciente?: Props["paciente"], tipoNota: TipoNota = "IN
     condicion_edad: "A",
     fecha: today,
     hora: nowTime,
-    notas_evolucion: getPlantillaNota(tipoNota),
+    notas_evolucion,
     farmacoterapia: getPlantillaFarmaco(tipoNota),
     administrar_farmacos: "",
   };
@@ -870,7 +882,18 @@ function crearBloqueVacio(paciente?: Props["paciente"], tipoNota: TipoNota = "IN
 
 function crearBloquePersonalizado(paciente: Props["paciente"] | undefined, notasHtml: string, farmacoHtml: string): BloqueEvolucion {
   const bloque = crearBloqueVacio(paciente, "INGRESO");
-  bloque.notas_evolucion = notasHtml;
+  
+  const today = new Date().toISOString().split("T")[0];
+  const [y, m, d] = today.split('-');
+  const formattedDate = `${d}/${m}/${y}`;
+  
+  bloque.notas_evolucion = notasHtml.replace(
+    /<p><strong>INGRESO:<\/strong>&nbsp;<\/p>/gi,
+    `<p><strong>INGRESO:</strong> ${formattedDate}</p>`
+  ).replace(
+    /<p><strong>INGRESO:<\/strong>\s*<\/p>/gi,
+    `<p><strong>INGRESO:</strong> ${formattedDate}</p>`
+  );
   bloque.farmacoterapia = farmacoHtml;
   return bloque;
 }

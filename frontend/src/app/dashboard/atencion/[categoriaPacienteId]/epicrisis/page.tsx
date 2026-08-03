@@ -86,7 +86,7 @@ export default function EpicrisisPage() {
 
   useEffect(() => {
     async function load() {
-      setIsReadOnly(localStorage.getItem('user_email') === 'administracion@hospitalpanamericano.com.ec');
+      const userEmail = localStorage.getItem('user_email'); setIsReadOnly(userEmail === 'administracion@hospitalpanamericano.com.ec' || userEmail === 'laboratorio@hospitalpanamericano.com.ec');
       try {
         const atencionData = await findOrCreateAtencion(categoriaPacienteId);
         setAtencionId(atencionData.id);
