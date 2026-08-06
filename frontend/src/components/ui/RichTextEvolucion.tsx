@@ -5,6 +5,8 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Medico } from "@/lib/services/medicos";
 import { MedicoInput } from "../atencion/MedicoInput";
+import { type Cie10Item } from "@/lib/services/cie10";
+import { Cie10SearchInput } from "../atencion/Cie10SearchInput";
 
 interface RichTextEvolucionProps {
   value: string;
@@ -13,6 +15,7 @@ interface RichTextEvolucionProps {
   minHeight?: string;
   placeholder?: string;
   enableMedicoSelect?: boolean;
+  enableCie10Select?: boolean;
 }
 
 export default function RichTextEvolucion({
@@ -22,9 +25,12 @@ export default function RichTextEvolucion({
   minHeight = "120px",
   placeholder = "",
   enableMedicoSelect = false,
+  enableCie10Select = false,
 }: RichTextEvolucionProps) {
   const [medicoSearchAbierto, setMedicoSearchAbierto] = useState(false);
   const [medicoQuery, setMedicoQuery] = useState("");
+  const [cie10SearchAbierto, setCie10SearchAbierto] = useState(false);
+  const [cie10Query, setCie10Query] = useState("");
 
   const editor = useEditor({
     extensions: [
@@ -212,6 +218,67 @@ export default function RichTextEvolucion({
                 <button
                   type="button"
                   onClick={() => setMedicoSearchAbierto(false)}
+                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '10px', color: '#999', padding: '0 4px' }}
+                  title="Cancelar"
+                >
+                  ❌
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {enableCie10Select && !readOnly && (
+          <div style={{ position: 'absolute', bottom: '8px', right: enableMedicoSelect ? '100px' : '8px', zIndex: 10 }}>
+            {!cie10SearchAbierto ? (
+              <button
+                type="button"
+                onClick={() => setCie10SearchAbierto(true)}
+                style={{
+                  background: '#fce7f3',
+                  border: '1px solid #f9a8d4',
+                  borderRadius: '4px',
+                  padding: '4px 8px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  color: '#be185d',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+                title="Insertar CIE 10"
+              >
+                🩺 CIE 10 🔽
+              </button>
+            ) : (
+              <div style={{ 
+                background: '#fff', 
+                border: '1px solid #ccc', 
+                borderRadius: '4px', 
+                padding: '4px', 
+                width: '260px', 
+                display: 'flex', 
+                alignItems: 'center',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
+              }}>
+                <div style={{ flex: 1 }}>
+                  <Cie10SearchInput
+                    value={cie10Query}
+                    onChangeValue={setCie10Query}
+                    onSelectCie10={(item: Cie10Item) => {
+                      const textToInsert = `${item.descripcion} (CIE10: ${item.codigo})`;
+                      editor.chain().focus().insertContent(textToInsert).run();
+                      setCie10SearchAbierto(false);
+                      setCie10Query("");
+                    }}
+                    placeholder="Buscar CIE 10..."
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCie10SearchAbierto(false)}
                   style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '10px', color: '#999', padding: '0 4px' }}
                   title="Cancelar"
                 >

@@ -438,6 +438,7 @@ function EvolucionBloque({
                 onChange={(v) => onChange("notas_evolucion", v)}
                 minHeight="140px"
                 placeholder="Escriba las notas de evolución del paciente..."
+                enableCie10Select={numero === 1}
               />
             </td>
             <td colSpan={8} style={tdBase}>
@@ -847,6 +848,7 @@ function crearBloqueVacio(paciente?: Props["paciente"], tipoNota: TipoNota = "IN
   const [y, m, d] = today.split('-');
   const formattedDate = `${d}/${m}/${y}`;
   
+  const seguroStr = paciente?.tipoPaciente?.toUpperCase() === "SPPAT" ? "SPPAT" : "PARTICULAR";
   const rawNotas = getPlantillaNota(tipoNota);
   const notas_evolucion = rawNotas.replace(
     /<p><strong>INGRESO:<\/strong>&nbsp;<\/p>/gi,
@@ -854,11 +856,14 @@ function crearBloqueVacio(paciente?: Props["paciente"], tipoNota: TipoNota = "IN
   ).replace(
     /<p><strong>INGRESO:<\/strong>\s*<\/p>/gi,
     `<p><strong>INGRESO:</strong> ${formattedDate}</p>`
+  ).replace(
+    /<strong>SEGURO:<\/strong>\s*PARTICULAR/gi,
+    `<strong>SEGURO:</strong> ${seguroStr}`
   );
 
   return {
     institucion: paciente?.tipoPaciente ?? "PARTICULAR",
-    unicodigo: "62858",
+    unicodigo: "35865",
     establecimiento: "NUEVO HOSPITAL PANAMERICANO",
     numero_historia_clinica: paciente?.numero_historia_clinica ?? paciente?.cedula ?? "",
     numero_archivo: "",
@@ -887,12 +892,16 @@ function crearBloquePersonalizado(paciente: Props["paciente"] | undefined, notas
   const [y, m, d] = today.split('-');
   const formattedDate = `${d}/${m}/${y}`;
   
+  const seguroStr = paciente?.tipoPaciente?.toUpperCase() === "SPPAT" ? "SPPAT" : "PARTICULAR";
   bloque.notas_evolucion = notasHtml.replace(
     /<p><strong>INGRESO:<\/strong>&nbsp;<\/p>/gi,
     `<p><strong>INGRESO:</strong> ${formattedDate}</p>`
   ).replace(
     /<p><strong>INGRESO:<\/strong>\s*<\/p>/gi,
     `<p><strong>INGRESO:</strong> ${formattedDate}</p>`
+  ).replace(
+    /<strong>SEGURO:<\/strong>\s*PARTICULAR/gi,
+    `<strong>SEGURO:</strong> ${seguroStr}`
   );
   bloque.farmacoterapia = farmacoHtml;
   return bloque;
@@ -928,6 +937,18 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
     const handleAddBloque = (tipoNota: TipoNota) => {
       setDatos((prev) => {
         const newBloque = crearBloqueVacio(paciente, tipoNota);
+        if (prev.bloques.length > 0) {
+          const match = prev.bloques[0].notas_evolucion.match(/<strong>HABITACION:<\/strong>(.*?)<\/p>/i);
+          if (match) {
+            const habValue = match[1].replace(/&nbsp;/g, ' ').trim();
+            if (habValue) {
+              newBloque.notas_evolucion = newBloque.notas_evolucion.replace(
+                /<strong>HAB:<\/strong>.*?<\/p>/gi,
+                `<strong>HAB:</strong> ${habValue}</p>`
+              );
+            }
+          }
+        }
         return {
           bloques: [...prev.bloques, newBloque],
         };
@@ -937,6 +958,18 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
     const handleInsertBloque = (idx: number, tipoNota: TipoNota) => {
       setDatos((prev) => {
         const newBloque = crearBloqueVacio(paciente, tipoNota);
+        if (prev.bloques.length > 0) {
+          const match = prev.bloques[0].notas_evolucion.match(/<strong>HABITACION:<\/strong>(.*?)<\/p>/i);
+          if (match) {
+            const habValue = match[1].replace(/&nbsp;/g, ' ').trim();
+            if (habValue) {
+              newBloque.notas_evolucion = newBloque.notas_evolucion.replace(
+                /<strong>HAB:<\/strong>.*?<\/p>/gi,
+                `<strong>HAB:</strong> ${habValue}</p>`
+              );
+            }
+          }
+        }
         const newBloques = [...prev.bloques];
         newBloques.splice(idx + 1, 0, newBloque);
         return {
@@ -1090,6 +1123,20 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
       setDatos((prev) => {
         const bloques = [...prev.bloques];
         bloques[idx] = { ...bloques[idx], [campo]: valor };
+        
+        if (idx === 0 && campo === "notas_evolucion") {
+          const match = valor.match(/<strong>HABITACION:<\/strong>(.*?)<\/p>/i);
+          if (match) {
+            const habValue = match[1].replace(/&nbsp;/g, ' ').trim();
+            for (let i = 1; i < bloques.length; i++) {
+              bloques[i].notas_evolucion = bloques[i].notas_evolucion.replace(
+                /<strong>HAB:<\/strong>.*?<\/p>/gi,
+                `<strong>HAB:</strong> ${habValue}</p>`
+              );
+            }
+          }
+        }
+        
         return { bloques };
       });
       fireSyncEvents(idx, campo, valor);

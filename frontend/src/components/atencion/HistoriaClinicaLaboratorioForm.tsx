@@ -504,7 +504,7 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
   const nowTime = new Date().toTimeString().slice(0, 5);
 
   const [d, setD] = useState<DatosLaboratorio>({
-    institucion: paciente?.tipoPaciente ?? "PARTICULAR", unicodigo: "62858", establecimiento: "NUEVO HOSPITAL PANAMERICANO",
+    institucion: paciente?.tipoPaciente ?? "PARTICULAR", unicodigo: "35865", establecimiento: "NUEVO HOSPITAL PANAMERICANO",
     numero_historia_clinica: paciente?.numero_historia_clinica ?? paciente?.cedula ?? "",
     numero_archivo: "",
     primer_apellido: paciente?.primer_apellido ?? "",

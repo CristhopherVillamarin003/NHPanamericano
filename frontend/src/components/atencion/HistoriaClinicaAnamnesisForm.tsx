@@ -347,7 +347,7 @@ const AnamnesisForm = React.forwardRef<HistoriaClinicaAnamnesisHandle, Props>(
 
   const [initialState] = useState<DatosAnamnesis>(() => ({
     institucion: paciente?.tipoPaciente ?? "PARTICULAR",
-    unicodigo: "62858",
+    unicodigo: "35865",
     establecimiento: "NUEVO HOSPITAL PANAMERICANO",
     numero_historia_clinica: paciente?.numero_historia_clinica ?? paciente?.cedula ?? "",
     numero_archivo: "",
@@ -362,7 +362,7 @@ const AnamnesisForm = React.forwardRef<HistoriaClinicaAnamnesisHandle, Props>(
     edad: paciente?.edad?.toString() ?? "",
     condicion_edad: "A",
 
-    motivo_consulta_1: "", motivo_consulta_2: "", motivo_consulta_3: "",
+    motivo_consulta_1: "CIRUGIA PROGRAMADA", motivo_consulta_2: "", motivo_consulta_3: "",
     motivo_consulta_4: "", motivo_consulta_5: "", motivo_consulta_6: "",
 
     alergia_medicamentos: "", otras_alergias: "", vacunas: "",
@@ -389,10 +389,10 @@ const AnamnesisForm = React.forwardRef<HistoriaClinicaAnamnesisHandle, Props>(
     enfermedad_actual: "",
 
     revision_piel_anexos: false, revision_sentidos: false, revision_respiratorio: false,
-    revision_cardiovascular: false, revision_digestivo: false, revision_genitourinario: false,
+    revision_cardiovascular: false, revision_digestivo: true, revision_genitourinario: false,
     revision_musculo_esqueletico: false, revision_endocrino: false,
     revision_hemo_linatico: false, revision_nervioso: false,
-    desc_revision_organos: "",
+    desc_revision_organos: "LO REFERIDO",
 
     temperatura: "", presion_arterial: "", pulso: "", frecuencia_respiratoria: "",
     peso: "", talla: "", imc: "", perimetro_cefalico: "",
@@ -413,7 +413,7 @@ const AnamnesisForm = React.forwardRef<HistoriaClinicaAnamnesisHandle, Props>(
       // REEMPLAZAR ESTE TEXTO CON EL CÓDIGO BASE64 DE LA IMAGEN REAL 2
     ],
 
-    analisis: "",
+    analisis: "PACIENTE CON CUADRO DESCRITO; INGRESA PARA RESOLUCION QUIRURGICA",
 
     diagnostico_1: "", diagnostico_1_cie: "", diagnostico_1_pre: false, diagnostico_1_def: false,
     diagnostico_2: "", diagnostico_2_cie: "", diagnostico_2_pre: false, diagnostico_2_def: false,
