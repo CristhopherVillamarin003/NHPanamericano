@@ -14,11 +14,53 @@ export default function DashboardLayout({
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+    let bc: BroadcastChannel;
+    try {
+      bc = new BroadcastChannel('auth_sync');
+    } catch (e) {
+      // Fallback si no soporta BroadcastChannel
+      if (!getSessionCookie('access_token')) {
+        router.push('/auth/login');
+      } else {
+        setAuthorized(true);
+      }
+      return;
+    }
+
     const token = getSessionCookie('access_token');
+
+    bc.onmessage = (event) => {
+      if (event.data === 'request_token') {
+        const currentToken = getSessionCookie('access_token');
+        const currentEmail = getSessionCookie('user_email');
+        if (currentToken) {
+          bc.postMessage({ type: 'send_token', token: currentToken, email: currentEmail });
+        }
+      } else if (event.data.type === 'send_token' && !getSessionCookie('access_token')) {
+        sessionStorage.setItem('access_token', event.data.token);
+        if (event.data.email) sessionStorage.setItem('user_email', event.data.email);
+        if (isMounted) setAuthorized(true);
+      } else if (event.data === 'logout') {
+        sessionStorage.removeItem('access_token');
+        sessionStorage.removeItem('user_email');
+        router.push('/auth/login');
+      }
+    };
+
     if (!token) {
-      router.push('/auth/login');
+      bc.postMessage('request_token');
+      
+      const timeoutId = setTimeout(() => {
+        if (!getSessionCookie('access_token') && isMounted) {
+           router.push('/auth/login');
+        }
+      }, 500);
+      
+      return () => { isMounted = false; clearTimeout(timeoutId); bc.close(); };
     } else {
       setAuthorized(true);
+      return () => { isMounted = false; bc.close(); };
     }
   }, [router]);
 

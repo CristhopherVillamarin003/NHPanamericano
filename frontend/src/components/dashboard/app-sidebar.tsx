@@ -233,6 +233,11 @@ export function AppSidebar() {
   const handleLogout = () => {
     deleteSessionCookie('access_token');
     deleteSessionCookie('user_email');
+    try {
+      const bc = new BroadcastChannel('auth_sync');
+      bc.postMessage('logout');
+      bc.close();
+    } catch(e) {}
     router.push('/auth/login');
   };
 

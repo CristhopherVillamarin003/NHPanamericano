@@ -44,6 +44,11 @@ api.interceptors.response.use(
         // Si la renovación falla (ej: huella distinta, token viejo cerrado con la X)
         if (typeof window !== 'undefined') {
           deleteSessionCookie('access_token');
+          try {
+            const bc = new BroadcastChannel('auth_sync');
+            bc.postMessage('logout');
+            bc.close();
+          } catch(e) {}
           window.location.href = '/auth/login';
         }
         return Promise.reject(refreshError);
