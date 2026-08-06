@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { cn } from '@/lib/utils';
+import { cn, setSessionCookie } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -43,9 +43,9 @@ export default function RegisterPage() {
         apellidos: data.apellidos,
       });
 
-      localStorage.setItem('access_token', result.accessToken);
+      setSessionCookie('access_token', result.accessToken);
       if (result.usuario && result.usuario.email) {
-        localStorage.setItem('user_email', result.usuario.email);
+        setSessionCookie('user_email', result.usuario.email);
       }
       router.push('/dashboard');
     } catch (error) {

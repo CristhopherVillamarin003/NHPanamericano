@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppSidebar } from '@/components/dashboard/app-sidebar';
+import { getSessionCookie } from '@/lib/utils';
 
 export default function DashboardLayout({
   children,
@@ -13,7 +14,7 @@ export default function DashboardLayout({
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
+    const token = getSessionCookie('access_token');
     if (!token) {
       router.push('/auth/login');
     } else {

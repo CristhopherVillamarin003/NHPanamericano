@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getSessionCookie, setSessionCookie, deleteSessionCookie } from './utils';
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -7,7 +8,7 @@ export const api = axios.create({
 
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('access_token');
+    const token = getSessionCookie('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -33,7 +34,7 @@ api.interceptors.response.use(
         const newToken = res.data.accessToken;
 
         if (typeof window !== 'undefined') {
-          localStorage.setItem('access_token', newToken);
+          setSessionCookie('access_token', newToken);
         }
 
         // Si funciona, reintentamos la petición original con la nueva llave
@@ -42,7 +43,7 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Si la renovación falla (ej: huella distinta, token viejo cerrado con la X)
         if (typeof window !== 'undefined') {
-          localStorage.removeItem('access_token');
+          deleteSessionCookie('access_token');
           window.location.href = '/auth/login';
         }
         return Promise.reject(refreshError);

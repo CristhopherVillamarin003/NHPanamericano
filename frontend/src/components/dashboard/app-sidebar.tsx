@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter, usePathname } from 'next/navigation';
+import { deleteSessionCookie } from '@/lib/utils';
 import {
   ChevronDown,
   ChevronRight,
@@ -230,8 +231,8 @@ export function AppSidebar() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user_email');
+    deleteSessionCookie('access_token');
+    deleteSessionCookie('user_email');
     router.push('/auth/login');
   };
 

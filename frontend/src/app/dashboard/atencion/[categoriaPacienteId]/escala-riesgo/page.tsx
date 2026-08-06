@@ -39,7 +39,7 @@ export default function EscalaRiesgoPage() {
 
   useEffect(() => {
     async function load() {
-      const email = localStorage.getItem('user_email');
+      const email = getSessionCookie('user_email');
       setIsReadOnly(email !== 'enfermeria@hospitalpanamericano.com.ec');
       
       try {

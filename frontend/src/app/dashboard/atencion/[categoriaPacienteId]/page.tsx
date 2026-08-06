@@ -109,7 +109,7 @@ export default function AtencionPage() {
   // User email for conditional rendering
   const [userEmail, setUserEmail] = useState<string | null>(null);
   useEffect(() => {
-    setUserEmail(localStorage.getItem('user_email'));
+    setUserEmail(getSessionCookie('user_email'));
   }, []);
   const isReadOnlyUser = userEmail === 'administracion@hospitalpanamericano.com.ec' || userEmail === 'laboratorio@hospitalpanamericano.com.ec';
 
