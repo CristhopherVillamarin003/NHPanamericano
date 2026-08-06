@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { getSessionCookie } from '@/lib/utils';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { findOrCreateAtencion, updateConsentimiento, exportarConsentimiento } from '@/lib/services/atencion';

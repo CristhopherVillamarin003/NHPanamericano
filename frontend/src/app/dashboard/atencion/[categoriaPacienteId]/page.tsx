@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { getSessionCookie } from '@/lib/utils';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Plus, Pencil, Trash2, FolderOpen, ChevronDown, X, MoreHorizontal } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, useRef } from 'react';
+import { getSessionCookie } from '@/lib/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Save, Download } from 'lucide-react';
 import { findOrCreateAtencion, upsertSeccion, exportarSeccion } from '@/lib/services/atencion';
