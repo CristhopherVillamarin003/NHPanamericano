@@ -522,14 +522,14 @@ const AnamnesisForm = React.forwardRef<HistoriaClinicaAnamnesisHandle, Props>(
       if (e.detail.source !== "anamnesis") {
         const diagnosticos = e.detail.diagnosticos || [];
         setDatos(p => {
-          const updates: Partial<DatosAnamnesis> = {};
+          const updates: any = {};
           for (let i = 0; i < 6; i++) {
             const num = i + 1;
             if (diagnosticos[i]) {
-              updates[`diagnostico_${num}` as keyof DatosAnamnesis] = diagnosticos[i].descripcion as string;
-              updates[`diagnostico_${num}_cie` as keyof DatosAnamnesis] = diagnosticos[i].cie as string;
-              updates[`diagnostico_${num}_def` as keyof DatosAnamnesis] = true;
-              updates[`diagnostico_${num}_pre` as keyof DatosAnamnesis] = false;
+              updates[`diagnostico_${num}`] = diagnosticos[i].descripcion;
+              updates[`diagnostico_${num}_cie`] = diagnosticos[i].cie;
+              updates[`diagnostico_${num}_def`] = true;
+              updates[`diagnostico_${num}_pre`] = false;
             }
           }
           return { ...p, ...updates };
