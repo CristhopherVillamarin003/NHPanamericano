@@ -518,12 +518,31 @@ const AnamnesisForm = React.forwardRef<HistoriaClinicaAnamnesisHandle, Props>(
         setDatos(p => ({ ...p, motivo_consulta_1: e.detail.value }));
       }
     };
+    const handleSyncDiagnosticos = (e: CustomEvent) => {
+      if (e.detail.source !== "anamnesis") {
+        const diagnosticos = e.detail.diagnosticos || [];
+        setDatos(p => {
+          const updates: Partial<DatosAnamnesis> = {};
+          for (let i = 0; i < 6; i++) {
+            const num = i + 1;
+            if (diagnosticos[i]) {
+              updates[`diagnostico_${num}` as keyof DatosAnamnesis] = diagnosticos[i].descripcion as string;
+              updates[`diagnostico_${num}_cie` as keyof DatosAnamnesis] = diagnosticos[i].cie as string;
+              updates[`diagnostico_${num}_def` as keyof DatosAnamnesis] = true;
+              updates[`diagnostico_${num}_pre` as keyof DatosAnamnesis] = false;
+            }
+          }
+          return { ...p, ...updates };
+        });
+      }
+    };
     window.addEventListener("sync_antecedentes", handleSyncAnt as EventListener);
     window.addEventListener("sync_enfermedad_actual", handleSyncEA as EventListener);
     window.addEventListener("sync_examen_fisico", handleSyncEF as EventListener);
     window.addEventListener("sync_constante_vital", handleSyncConstante as EventListener);
     window.addEventListener("sync_plan_tratamiento", handleSyncPlanTratamiento as EventListener);
     window.addEventListener("sync_motivo_consulta", handleSyncMotivoConsulta as EventListener);
+    window.addEventListener("sync_diagnosticos", handleSyncDiagnosticos as EventListener);
     return () => {
       window.removeEventListener("sync_antecedentes", handleSyncAnt as EventListener);
       window.removeEventListener("sync_enfermedad_actual", handleSyncEA as EventListener);
@@ -531,6 +550,7 @@ const AnamnesisForm = React.forwardRef<HistoriaClinicaAnamnesisHandle, Props>(
       window.removeEventListener("sync_constante_vital", handleSyncConstante as EventListener);
       window.removeEventListener("sync_plan_tratamiento", handleSyncPlanTratamiento as EventListener);
       window.removeEventListener("sync_motivo_consulta", handleSyncMotivoConsulta as EventListener);
+      window.removeEventListener("sync_diagnosticos", handleSyncDiagnosticos as EventListener);
     };
   }, []);
 

@@ -842,6 +842,14 @@ function getPlantillaFarmaco(tipo: TipoNota): string {
 
 // ─── Componente Principal ─────────────────────────────────────────────────────
 
+const calcDH = (fechaInicial: string, fechaActual: string) => {
+  if (!fechaInicial || !fechaActual) return 1;
+  const d1 = new Date(fechaInicial);
+  const d2 = new Date(fechaActual);
+  const diffDays = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.max(1, diffDays + 1);
+};
+
 function crearBloqueVacio(paciente?: Props["paciente"], tipoNota: TipoNota = "INGRESO"): BloqueEvolucion {
   const today = new Date().toISOString().split("T")[0];
   const nowTime = new Date().toTimeString().slice(0, 5);
@@ -859,6 +867,9 @@ function crearBloqueVacio(paciente?: Props["paciente"], tipoNota: TipoNota = "IN
   ).replace(
     /<strong>SEGURO:<\/strong>\s*PARTICULAR/gi,
     `<strong>SEGURO:</strong> ${seguroStr}`
+  ).replace(
+    /<strong>DH:<\/strong>\s*&nbsp;/gi,
+    `<strong>DH:</strong> 1`
   );
 
   return {
@@ -902,6 +913,9 @@ function crearBloquePersonalizado(paciente: Props["paciente"] | undefined, notas
   ).replace(
     /<strong>SEGURO:<\/strong>\s*PARTICULAR/gi,
     `<strong>SEGURO:</strong> ${seguroStr}`
+  ).replace(
+    /<strong>DH:<\/strong>\s*&nbsp;/gi,
+    `<strong>DH:</strong> 1`
   );
   bloque.farmacoterapia = farmacoHtml;
   return bloque;
@@ -948,6 +962,12 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
               );
             }
           }
+          
+          const dhValue = calcDH(prev.bloques[0].fecha, newBloque.fecha);
+          newBloque.notas_evolucion = newBloque.notas_evolucion.replace(
+            /<strong>DH:<\/strong>.*?<\/p>/gi,
+            `<strong>DH:</strong> ${dhValue}</p>`
+          );
         }
         return {
           bloques: [...prev.bloques, newBloque],
@@ -969,6 +989,12 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
               );
             }
           }
+          
+          const dhValue = calcDH(prev.bloques[0].fecha, newBloque.fecha);
+          newBloque.notas_evolucion = newBloque.notas_evolucion.replace(
+            /<strong>DH:<\/strong>.*?<\/p>/gi,
+            `<strong>DH:</strong> ${dhValue}</p>`
+          );
         }
         const newBloques = [...prev.bloques];
         newBloques.splice(idx + 1, 0, newBloque);
@@ -1039,6 +1065,43 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
           }
           window.dispatchEvent(new CustomEvent("sync_antecedentes", { detail: { source: "evolucion", value: contentAnt } }));
 
+          // Extracción 1.5: Motivo de Consulta
+          let extractingMotivo = false;
+          let contentMotivo = '';
+          for (let i = 0; i < doc.body.childNodes.length; i++) {
+            const node = doc.body.childNodes[i];
+            const text = node.textContent?.toUpperCase() || '';
+            
+            if (text.includes('ENFERMEDAD ACTUAL:')) {
+               break;
+            }
+
+            if (!extractingMotivo && text.includes('MOTIVO DE CONSULTA:')) {
+               extractingMotivo = true;
+               let html = node.nodeType === Node.ELEMENT_NODE ? (node as Element).outerHTML : (node.textContent || '');
+               html = html.replace(/<strong[^>]*>\s*MOTIVO DE CONSULTA:\s*<\/strong>\s*/i, '');
+               html = html.replace(/MOTIVO DE CONSULTA:\s*/i, '');
+               contentMotivo += html;
+               continue;
+            }
+
+            if (extractingMotivo) {
+               if (node.nodeType === Node.ELEMENT_NODE) {
+                 contentMotivo += (node as Element).outerHTML;
+               } else if (node.nodeType === Node.TEXT_NODE) {
+                 contentMotivo += node.textContent || '';
+               }
+            }
+          }
+          if (contentMotivo) {
+            const plainMotivo = contentMotivo
+              .replace(/<[^>]*>?/gm, '')
+              .replace(/&nbsp;/g, ' ')
+              .replace(/\u00A0/g, ' ')
+              .trim();
+            window.dispatchEvent(new CustomEvent("sync_motivo_consulta", { detail: { source: "evolucion", value: plainMotivo } }));
+          }
+
           // Extracción 2: Enfermedad Actual (desde ENFERMEDAD ACTUAL hasta NOTA o EXAMEN FISICO)
           let extractingEA = false;
           let contentEA = '';
@@ -1108,6 +1171,23 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
           }
           window.dispatchEvent(new CustomEvent("sync_examen_fisico", { detail: { source: "evolucion", value: contentEF } }));
 
+          // Extracción 4: Diagnósticos CIE-10
+          const diagnosticos: { descripcion: string; cie: string }[] = [];
+          const paragraphs = [...valor.matchAll(/<p[^>]*>(.*?)<\/p>/gi)];
+          for (const p of paragraphs) {
+            const plain = p[1].replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ').trim();
+            const m = plain.match(/(.*?)\(CIE10:\s*([A-Z0-9]+)\)/i);
+            if (m) {
+              diagnosticos.push({
+                descripcion: m[1].trim(),
+                cie: m[2].trim().toUpperCase()
+              });
+            }
+          }
+          if (diagnosticos.length > 0) {
+            window.dispatchEvent(new CustomEvent("sync_diagnosticos", { detail: { source: "evolucion", diagnosticos } }));
+          }
+
         } catch (e) {
           console.error("Error parsing HTML for sync events:", e);
         }
@@ -1137,6 +1217,26 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
           }
         }
         
+        if (campo === "fecha") {
+          if (idx === 0) {
+            const fechaInicial = valor;
+            for (let i = 0; i < bloques.length; i++) {
+              const dhValue = calcDH(fechaInicial, bloques[i].fecha);
+              bloques[i].notas_evolucion = bloques[i].notas_evolucion.replace(
+                /<strong>DH:<\/strong>.*?<\/p>/gi,
+                `<strong>DH:</strong> ${dhValue}</p>`
+              );
+            }
+          } else {
+            const fechaInicial = bloques[0].fecha;
+            const dhValue = calcDH(fechaInicial, valor);
+            bloques[idx].notas_evolucion = bloques[idx].notas_evolucion.replace(
+              /<strong>DH:<\/strong>.*?<\/p>/gi,
+              `<strong>DH:</strong> ${dhValue}</p>`
+            );
+          }
+        }
+        
         return { bloques };
       });
       fireSyncEvents(idx, campo, valor);
@@ -1158,7 +1258,7 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
     }, []);
 
     useEffect(() => {
-      const handleSync = (e: CustomEvent) => {
+      const handleSyncPlan = (e: CustomEvent) => {
         if (e.detail.source !== "evolucion") {
           setDatos(prev => {
             const nuevos = [...prev.bloques];
@@ -1169,8 +1269,32 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
           });
         }
       };
-      window.addEventListener("sync_plan_tratamiento", handleSync as EventListener);
-      return () => window.removeEventListener("sync_plan_tratamiento", handleSync as EventListener);
+      
+      const handleSyncMotivo = (e: CustomEvent) => {
+        if (e.detail.source !== "evolucion") {
+          setDatos(prev => {
+            const nuevos = [...prev.bloques];
+            if (nuevos.length > 0) {
+              const currentNotas = nuevos[0].notas_evolucion;
+              // El regex busca el párrafo que contiene MOTIVO DE CONSULTA: y captura su contenido, 
+              // reemplazándolo con el valor enviado por la otra hoja.
+              const updatedNotas = currentNotas.replace(
+                /(<p[^>]*><strong[^>]*>\s*MOTIVO DE CONSULTA:\s*<\/strong>\s*)(.*?)(<\/p>)/i,
+                `$1${e.detail.value}$3`
+              );
+              nuevos[0] = { ...nuevos[0], notas_evolucion: updatedNotas };
+            }
+            return { ...prev, bloques: nuevos };
+          });
+        }
+      };
+      
+      window.addEventListener("sync_plan_tratamiento", handleSyncPlan as EventListener);
+      window.addEventListener("sync_motivo_consulta", handleSyncMotivo as EventListener);
+      return () => {
+        window.removeEventListener("sync_plan_tratamiento", handleSyncPlan as EventListener);
+        window.removeEventListener("sync_motivo_consulta", handleSyncMotivo as EventListener);
+      };
     }, []);
 
     useImperativeHandle(

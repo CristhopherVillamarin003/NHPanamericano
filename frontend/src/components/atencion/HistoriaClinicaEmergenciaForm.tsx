@@ -514,17 +514,33 @@ const EmergenciaForm008 = React.forwardRef<HistoriaClinicaEmergenciaHandle, Prop
         setD(p => ({ ...p, motivo_atencion: e.detail.value }));
       }
     };
+    const handleSyncDiagnosticos = (e: CustomEvent) => {
+      if (e.detail.source !== "emergencia") {
+        const diagnosticos = e.detail.diagnosticos || [];
+        setD(p => {
+          const newDx = [...p.dx_definitivos];
+          for (let i = 0; i < 3; i++) {
+            if (diagnosticos[i]) {
+              newDx[i] = { ...newDx[i], descripcion: diagnosticos[i].descripcion as string, cie: diagnosticos[i].cie as string };
+            }
+          }
+          return { ...p, dx_definitivos: newDx };
+        });
+      }
+    };
     window.addEventListener("sync_antecedentes", handleSyncAnt as EventListener);
     window.addEventListener("sync_enfermedad_actual", handleSyncEA as EventListener);
     window.addEventListener("sync_examen_fisico", handleSyncEF as EventListener);
     window.addEventListener("sync_constante_vital", handleSyncConstante as EventListener);
     window.addEventListener("sync_motivo_consulta", handleSyncMotivoConsulta as EventListener);
+    window.addEventListener("sync_diagnosticos", handleSyncDiagnosticos as EventListener);
     return () => {
       window.removeEventListener("sync_antecedentes", handleSyncAnt as EventListener);
       window.removeEventListener("sync_enfermedad_actual", handleSyncEA as EventListener);
       window.removeEventListener("sync_examen_fisico", handleSyncEF as EventListener);
       window.removeEventListener("sync_constante_vital", handleSyncConstante as EventListener);
       window.removeEventListener("sync_motivo_consulta", handleSyncMotivoConsulta as EventListener);
+      window.removeEventListener("sync_diagnosticos", handleSyncDiagnosticos as EventListener);
     };
   }, []);
 
