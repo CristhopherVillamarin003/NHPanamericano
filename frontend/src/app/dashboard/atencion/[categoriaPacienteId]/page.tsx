@@ -859,6 +859,42 @@ export default function AtencionPage() {
               <div className="seccion-card-header">
                 <div className="seccion-card-title">
                   <FolderOpen className="w-4 h-4 text-sky-500" />
+                  <span>Historia Clínica</span>
+                  {atencion?.historiaClinica && (
+                    <span className="seccion-badge">1</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="btn-create"
+                  onClick={() => router.push(`/dashboard/atencion/${categoriaPacienteId}/historia-clinica`)}
+                >
+                  <ArrowRight className="w-4 h-4" />
+                  Ingresar
+                </button>
+              </div>
+              {atencion?.historiaClinica && (
+                <div className="seccion-items">
+                  <div className="seccion-item">
+                    <span className="seccion-item-name" style={{ cursor: 'default', textDecoration: 'none', color: '#18181b' }}>
+                      Historia Clínica
+                    </span>
+                    <div className="seccion-item-estado">
+                      {atencion.historiaClinica.estado !== 'borrador' && (
+                        <span className={`estado-badge estado-${atencion.historiaClinica.estado}`}>
+                          {atencion.historiaClinica.estado}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="seccion-card">
+              <div className="seccion-card-header">
+                <div className="seccion-card-title">
+                  <FolderOpen className="w-4 h-4 text-sky-500" />
                   <span>Enfermería</span>
                   {atencion?.enfermeria && (
                     <span className="seccion-badge">1</span>
