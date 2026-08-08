@@ -365,19 +365,29 @@ function ImagenologiaBloque({
           {/* ── D. MOTIVO DE LA SOLICITUD ── */}
           <tr><td colSpan={20} style={secH()}>D. MOTIVO DE LA SOLICITUD</td></tr>
           <tr>
-            <td colSpan={3} style={tdM}><Lbl small>F.U.M. (Fecha Última Menstruación)</Lbl></td>
-            <td colSpan={4} style={td}>{dateInput(b.fum, s("fum"))}</td>
-            <td colSpan={6} style={tdM}>
+            <td colSpan={5} style={tdM}><Lbl small>F.U.M. (Fecha Última Menstruación)</Lbl></td>
+            <td colSpan={5} style={td}>{dateInput(b.fum, s("fum"))}</td>
+            <td colSpan={10} style={tdM}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "2px 4px" }}>
                 <span style={{ fontSize: "9px", fontWeight: 700 }}>PACIENTE CONTAMINADO:</span>
                 <ChkBox checked={b.paciente_contaminado_si} onChange={c("paciente_contaminado_si")} label="SI" />
                 <ChkBox checked={b.paciente_contaminado_no} onChange={c("paciente_contaminado_no")} label="NO" />
               </div>
             </td>
-            <td colSpan={7} style={td}>
-              <TxtInput value={b.paciente_contaminado_desc}
-                onChange={s("paciente_contaminado_desc")}
-                placeholder="Descripción / tipo de contaminación..." />
+          </tr>
+          <tr>
+            <td colSpan={20} style={td}>
+              <textarea 
+                value={b.paciente_contaminado_desc}
+                onChange={(e) => s("paciente_contaminado_desc")(e.target.value)}
+                placeholder="Descripción / tipo de contaminación..." 
+                style={{
+                  width: "100%", border: "none", outline: "none",
+                  background: "#fff", fontSize: "10px", fontFamily: "Arial, sans-serif",
+                  padding: "6px 8px", color: "#000", boxSizing: "border-box",
+                  resize: "vertical", minHeight: "45px"
+                }}
+              />
             </td>
           </tr>
 
