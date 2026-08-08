@@ -19,9 +19,8 @@ function seedTemplates() {
     const files = fs.readdirSync(defaultDir);
     for (const file of files) {
       const dest = path.join(uploadsDir, file);
-      if (!fs.existsSync(dest)) {
-        fs.copyFileSync(path.join(defaultDir, file), dest);
-      }
+      // Fuerza la actualización de las plantillas desde Github hacia el volumen persistente
+      fs.copyFileSync(path.join(defaultDir, file), dest);
     }
   }
 }
