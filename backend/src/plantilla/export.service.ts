@@ -921,10 +921,16 @@ export class ExportService {
 
       // Solo runs directos del párrafo
       const runs = this.childrenByLocal(p, "r");
-      const run = runs[mapEntry.run];
+      let run = runs[mapEntry.run];
       if (!run) {
-        console.warn(`processRun: run [${mapEntry.run}] no existe en P[${mapEntry.parrafo}]`);
-        return;
+        // Si el párrafo está vacío y pedimos inyectar texto, creamos el run
+        if (mapEntry.run === 0 || runs.length === 0) {
+          run = xmlDoc.createElement("w:r");
+          p.appendChild(run);
+        } else {
+          console.warn(`processRun: run [${mapEntry.run}] no existe en P[${mapEntry.parrafo}]`);
+          return;
+        }
       }
 
       let t = this.childrenByLocal(run, "t")[0];
@@ -939,13 +945,38 @@ export class ExportService {
       const sufijo  = mapEntry.espacioFin   ? " " : "";
       t.textContent = `${prefijo}${valor}${sufijo}`;
 
-      // Aplicar o quitar negrita en el rPr del run
+      // Aplicar estilos en el rPr del run
+      let rPr = this.childrenByLocal(run, "rPr")[0];
+      if (!rPr) {
+        rPr = xmlDoc.createElement("w:rPr");
+        run.insertBefore(rPr, run.firstChild);
+      }
+
+      // Asegurar fuente Calibri 10pt
+      let rFonts = this.childrenByLocal(rPr, "rFonts")[0];
+      if (!rFonts) {
+        rFonts = xmlDoc.createElement("w:rFonts");
+        rPr.appendChild(rFonts);
+      }
+      rFonts.setAttribute("w:ascii", "Calibri");
+      rFonts.setAttribute("w:hAnsi", "Calibri");
+      rFonts.setAttribute("w:cs", "Calibri");
+
+      let sz = this.childrenByLocal(rPr, "sz")[0];
+      if (!sz) {
+        sz = xmlDoc.createElement("w:sz");
+        rPr.appendChild(sz);
+      }
+      sz.setAttribute("w:val", "20"); // 10pt
+
+      let szCs = this.childrenByLocal(rPr, "szCs")[0];
+      if (!szCs) {
+        szCs = xmlDoc.createElement("w:szCs");
+        rPr.appendChild(szCs);
+      }
+      szCs.setAttribute("w:val", "20"); // 10pt
+
       if (mapEntry.negrita || mapEntry.sinNegrita) {
-        let rPr = this.childrenByLocal(run, "rPr")[0];
-        if (!rPr) {
-          rPr = xmlDoc.createElement("w:rPr");
-          run.insertBefore(rPr, run.firstChild);
-        }
         // Eliminar w:b y w:bCs existentes para partir de cero
         const existingB   = this.childrenByLocal(rPr, "b");
         const existingBCs = this.childrenByLocal(rPr, "bCs");

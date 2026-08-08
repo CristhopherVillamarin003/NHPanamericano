@@ -162,6 +162,19 @@ export const MAPEO_CERTIFICADO = {
   } as PosicionRun,
 
   // ═══════════════════════════════════════════════════════════════════
+  // P[09] — Línea vacía arriba de "PARA LOS FINES..."
+  // ═══════════════════════════════════════════════════════════════════
+  observacion: {
+    parrafo: 9,
+    run: 0,
+    espacioInicio: false,
+    espacioFin: false,
+    sinNegrita: true,
+    descripcion: "Observaciones adicionales opcionales",
+    ejemplo: "Paciente presenta mejoría.",
+  } as PosicionRun,
+
+  // ═══════════════════════════════════════════════════════════════════
   // P[16] — Nombre del doctor
   // run[0] = 'DR. JOSE SANTIAGO CAMPUZANO TUBAY' → reemplazar completo
   // ═══════════════════════════════════════════════════════════════════

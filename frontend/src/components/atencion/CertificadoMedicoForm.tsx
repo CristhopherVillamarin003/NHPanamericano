@@ -26,6 +26,9 @@ interface DatosCertificado {
   hasta_fecha_raw: string;          // date input
   hasta_fecha_letras: string;       // generado automáticamente
 
+  // Observación opcional
+  observacion: string;
+
   // Tabla clínica
   casa_de_salud: string;
   fecha_ingreso: string;            // generado automáticamente en letras
@@ -303,6 +306,7 @@ const CertificadoMedicoForm = React.forwardRef<CertificadoMedicoFormHandle, Prop
       desde_fecha_letras: fechaCompletaConLetras(today),
       hasta_fecha_raw: "",
       hasta_fecha_letras: "",
+      observacion: "",
       casa_de_salud: "NUEVO HOSPITAL PANAMERICANO",
       fecha_ingreso_raw: "",
       fecha_ingreso: "",
@@ -736,6 +740,23 @@ const CertificadoMedicoForm = React.forwardRef<CertificadoMedicoFormHandle, Prop
               </span>
             )}
           </div>
+
+          <div style={{ marginBottom: 15 }}>
+            <div style={{ fontSize: "10px", fontFamily: "'Georgia', serif", color: "#555", marginBottom: 4 }}>
+              Observación (opcional):
+            </div>
+            <textarea
+              style={{
+                width: "100%", padding: "6px", fontSize: "10px", fontFamily: "'Georgia', serif",
+                border: "1px solid #ccc", borderRadius: "4px", resize: "vertical", minHeight: "50px"
+              }}
+              value={d.observacion}
+              onChange={(e) => s("observacion")(e.target.value)}
+              placeholder="Escriba alguna observación adicional (opcional)..."
+              disabled={isReadOnly}
+            />
+          </div>
+
           <div style={{
             fontSize: "10px", lineHeight: 1.8, marginBottom: 30,
             fontFamily: "'Georgia', serif", fontStyle: "italic",
