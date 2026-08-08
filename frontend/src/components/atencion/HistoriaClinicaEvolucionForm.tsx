@@ -1018,7 +1018,11 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
     };
 
     const handleRemoveBloque = (idx: number) => {
-      if (datos.bloques.length <= 1 || idx === 0) return;
+      if (datos.bloques.length <= 1) return;
+      
+      const isSppat = paciente?.tipoPaciente?.toUpperCase() === 'SPPAT';
+      if (idx === 0 && !isSppat) return;
+
       setDatos((prev) => ({
         bloques: prev.bloques.filter((_, i) => i !== idx),
       }));
@@ -1322,7 +1326,7 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
                 bloque={bloque}
                 onChange={(campo, valor) => handleChange(idx, campo, valor)}
               />
-              {idx > 0 && (
+              {((idx > 0 || (idx === 0 && paciente?.tipoPaciente?.toUpperCase() === 'SPPAT')) && datos.bloques.length > 1) && (
                 <button
                   type="button"
                   onClick={() => handleRemoveBloque(idx)}

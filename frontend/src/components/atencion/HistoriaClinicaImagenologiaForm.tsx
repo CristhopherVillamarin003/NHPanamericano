@@ -597,6 +597,39 @@ const ImagenologiaForm = React.forwardRef<HistoriaClinicaImagenologiaHandle, Pro
       }));
     };
 
+    useEffect(() => {
+      const handleSyncDiagnosticos = (e: CustomEvent) => {
+        if (e.detail.source !== "imagenologia") {
+          const diagnosticos = e.detail.diagnosticos || [];
+          setDatos(p => {
+            const updates: any = {};
+            for (let i = 0; i < 6; i++) {
+              const num = i + 1;
+              if (diagnosticos[i]) {
+                updates[`diagnostico_${num}`] = diagnosticos[i].descripcion;
+                updates[`diagnostico_${num}_cie`] = diagnosticos[i].cie;
+                updates[`diagnostico_${num}_def`] = true;
+                updates[`diagnostico_${num}_pre`] = false;
+              }
+            }
+            if (p.bloques.length > 0) {
+              const newBloques = [...p.bloques];
+              newBloques[0] = { ...newBloques[0], ...updates };
+              return { ...p, bloques: newBloques };
+            }
+            return p;
+          });
+        }
+      };
+
+      if (paciente?.tipoPaciente?.toUpperCase() === 'SPPAT') {
+        window.addEventListener("sync_diagnosticos", handleSyncDiagnosticos as EventListener);
+        return () => {
+          window.removeEventListener("sync_diagnosticos", handleSyncDiagnosticos as EventListener);
+        };
+      }
+    }, [paciente?.tipoPaciente]);
+
     const handleChange = <K extends keyof BloqueImagenologia>(
       idx: number,
       campo: K,

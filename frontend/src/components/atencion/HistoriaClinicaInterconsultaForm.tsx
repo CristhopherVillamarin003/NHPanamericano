@@ -278,6 +278,34 @@ const InterconsultaForm = React.forwardRef<HistoriaClinicaInterconsultaHandle, P
     const c = (k: keyof DatosInterconsulta) => (v: boolean) =>
       setD((p) => ({ ...p, [k]: v }));
 
+    useEffect(() => {
+      const handleSyncDiagnosticos = (e: CustomEvent) => {
+        if (e.detail.source !== "interconsulta") {
+          const diagnosticos = e.detail.diagnosticos || [];
+          setD(p => {
+            const updates: any = {};
+            for (let i = 0; i < 6; i++) {
+              const num = i + 1;
+              if (diagnosticos[i]) {
+                updates[`diagnostico_${num}`] = diagnosticos[i].descripcion;
+                updates[`diagnostico_${num}_cie`] = diagnosticos[i].cie;
+                updates[`diagnostico_${num}_def`] = true;
+                updates[`diagnostico_${num}_pre`] = false;
+              }
+            }
+            return { ...p, ...updates };
+          });
+        }
+      };
+
+      if (paciente?.tipoPaciente?.toUpperCase() === 'SPPAT') {
+        window.addEventListener("sync_diagnosticos", handleSyncDiagnosticos as EventListener);
+        return () => {
+          window.removeEventListener("sync_diagnosticos", handleSyncDiagnosticos as EventListener);
+        };
+      }
+    }, [paciente?.tipoPaciente]);
+
     useImperativeHandle(
       ref,
       () => ({
