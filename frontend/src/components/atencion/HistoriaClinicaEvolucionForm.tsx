@@ -99,6 +99,7 @@ interface Props {
   guardando?: boolean;
   exportando?: boolean;
   atencionId?: number;
+  isReadOnly?: boolean;
 }
 
 export type HistoriaClinicaEvolucionHandle = {
@@ -231,10 +232,12 @@ function EvolucionBloque({
   numero,
   bloque,
   onChange,
+  isReadOnly,
 }: {
   numero: number;
   bloque: BloqueEvolucion;
   onChange: (campo: keyof BloqueEvolucion, valor: any) => void;
+  isReadOnly?: boolean;
 }) {
   const [isUploading, setIsUploading] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -298,7 +301,8 @@ function EvolucionBloque({
 
   return (
     <div style={{ marginBottom: 0 }}>
-      <table style={tableStyle}>
+      <div className={isReadOnly ? 'read-only-mode' : ''} inert={isReadOnly ? true : undefined}>
+        <table style={tableStyle}>
         <tbody>
 
           {/* ── A. DATOS DEL ESTABLECIMIENTO Y USUARIO / PACIENTE ── */}
@@ -527,35 +531,40 @@ function EvolucionBloque({
             </td>
           </tr>
 
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
 
-      {/* Sección de Adjuntos PDF */}
+      {/* SECCIÓN DE PDFS ADJUNTOS */}
       <div style={{ marginTop: "10px", padding: "10px", border: "1px dashed #ccc", borderRadius: "5px", background: "#fafafa" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
           <h4 style={{ margin: 0, fontSize: "12px", color: "#333" }}>Documentos Adjuntos (PDF)</h4>
-          <input
-            type="file"
-            accept=".pdf"
-            multiple
-            ref={fileInputRef}
-            style={{ display: "none" }}
-            onChange={handleFileChange}
-          />
-          <button
-            type="button"
-            disabled={isUploading}
-            onClick={() => fileInputRef.current?.click()}
-            style={{
-              display: "flex", alignItems: "center", gap: "6px",
-              padding: "6px 12px", background: "#2563eb", color: "#fff",
-              border: "none", borderRadius: "4px", cursor: isUploading ? "not-allowed" : "pointer",
-              fontSize: "11px", fontWeight: "bold"
-            }}
-          >
-            <Upload size={14} />
-            {isUploading ? "Subiendo..." : "Cargar documento (PDF)"}
-          </button>
+          {!isReadOnly && (
+            <input
+              type="file"
+              accept=".pdf"
+              multiple
+              ref={fileInputRef}
+              style={{ display: "none" }}
+              onChange={handleFileChange}
+            />
+          )}
+          {!isReadOnly && (
+            <button
+              type="button"
+              disabled={isUploading}
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                display: "flex", alignItems: "center", gap: "6px",
+                padding: "6px 12px", background: "#2563eb", color: "#fff",
+                border: "none", borderRadius: "4px", cursor: isUploading ? "not-allowed" : "pointer",
+                fontSize: "11px", fontWeight: "bold"
+              }}
+            >
+              <Upload size={14} />
+              {isUploading ? "Subiendo..." : "Cargar documento (PDF)"}
+            </button>
+          )}
         </div>
 
         {bloque.adjuntos_pdf && bloque.adjuntos_pdf.length > 0 ? (
@@ -578,14 +587,16 @@ function EvolucionBloque({
                     <Eye size={14} />
                     Previsualizar
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => removeAdjunto(index)}
-                    style={{ display: "flex", alignItems: "center", gap: "4px", padding: "4px 8px", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: "4px", cursor: "pointer", fontSize: "11px" }}
-                  >
-                    <Trash2 size={14} />
-                    Eliminar
-                  </button>
+                  {!isReadOnly && (
+                    <button
+                      type="button"
+                      onClick={() => removeAdjunto(index)}
+                      style={{ display: "flex", alignItems: "center", gap: "4px", padding: "4px 8px", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: "4px", cursor: "pointer", fontSize: "11px" }}
+                    >
+                      <Trash2 size={14} />
+                      Eliminar
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -1043,7 +1054,7 @@ function crearBloquePersonalizado(paciente: Props["paciente"] | undefined, notas
 }
 
 const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
-  ({ paciente, initialData, guardando = false, exportando = false, atencionId }, ref) => {
+  ({ paciente, initialData, guardando = false, exportando = false, atencionId, isReadOnly = false }, ref) => {
     
     const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
     const [datos, setDatos] = useState<DatosEvolucion>(() => {
@@ -1471,13 +1482,14 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
         {/* ── Bloques de evolución ─────────────────────────────────── */}
         <div style={{ overflowY: "visible", overflowX: "visible", background: "#fff", minHeight: "70vh" }}>
           {datos.bloques.map((bloque, idx) => (
-            <div key={idx} style={{ position: "relative", marginBottom: "20px" }}>
+            <div key={idx} style={{ position: "relative" }}>
               <EvolucionBloque
                 numero={idx + 1}
                 bloque={bloque}
+                isReadOnly={isReadOnly}
                 onChange={(campo, valor) => handleChange(idx, campo, valor)}
               />
-              {((idx > 0 || (idx === 0 && paciente?.tipoPaciente?.toUpperCase() === 'SPPAT')) && datos.bloques.length > 1) && (
+              {(!isReadOnly && (idx > 0 || (idx === 0 && paciente?.tipoPaciente?.toUpperCase() === 'SPPAT')) && datos.bloques.length > 1) && (
                 <button
                   type="button"
                   onClick={() => handleRemoveBloque(idx)}
@@ -1501,33 +1513,36 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
                 </button>
               )}
               
-              <div style={{ display: "flex", justifyContent: "center", padding: "10px", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
-                <span style={{ fontSize: "11px", color: "#64748b", fontWeight: "bold" }}>+ Insertar debajo:</span>
-                <button
-                  type="button"
-                  onClick={() => handleInsertBloque(idx, "POSTQUIRURGICA")}
-                  style={{ background: "#eff6ff", color: "#3b82f6", border: "1px dashed #bfdbfe", padding: "4px 12px", borderRadius: "16px", fontSize: "11px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s" }}
-                  title="Inserta una nueva Nota Post Quirúrgica debajo"
-                >
-                  Post Quirúrgica
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInsertBloque(idx, "EVOLUCION")}
-                  style={{ background: "#f0fdf4", color: "#16a34a", border: "1px dashed #bbf7d0", padding: "4px 12px", borderRadius: "16px", fontSize: "11px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s" }}
-                  title="Inserta una nueva Nota de Evolución debajo"
-                >
-                  Evolución
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInsertBloque(idx, "ALTA")}
-                  style={{ background: "#fef2f2", color: "#dc2626", border: "1px dashed #fecaca", padding: "4px 12px", borderRadius: "16px", fontSize: "11px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s" }}
-                  title="Inserta una nueva Nota de Alta debajo"
-                >
-                  Alta
-                </button>
-              </div>
+              
+              {!isReadOnly && (
+                <div style={{ display: "flex", justifyContent: "center", padding: "10px", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+                  <span style={{ fontSize: "11px", color: "#64748b", fontWeight: "bold" }}>+ Insertar debajo:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleInsertBloque(idx, "POSTQUIRURGICA")}
+                    style={{ background: "#eff6ff", color: "#3b82f6", border: "1px dashed #bfdbfe", padding: "4px 12px", borderRadius: "16px", fontSize: "11px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s" }}
+                    title="Inserta una nueva Nota Post Quirúrgica debajo"
+                  >
+                    Post Quirúrgica
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleInsertBloque(idx, "EVOLUCION")}
+                    style={{ background: "#f0fdf4", color: "#16a34a", border: "1px dashed #bbf7d0", padding: "4px 12px", borderRadius: "16px", fontSize: "11px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s" }}
+                    title="Inserta una nueva Nota de Evolución debajo"
+                  >
+                    Evolución
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleInsertBloque(idx, "ALTA")}
+                    style={{ background: "#fef2f2", color: "#dc2626", border: "1px dashed #fecaca", padding: "4px 12px", borderRadius: "16px", fontSize: "11px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s" }}
+                    title="Inserta una nueva Nota de Alta debajo"
+                  >
+                    Alta
+                  </button>
+                </div>
+              )}
             </div>
           ))}
 

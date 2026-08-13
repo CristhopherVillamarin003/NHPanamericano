@@ -338,6 +338,8 @@ export default function HistoriaClinicaPage() {
             exportando={exportando}
           />
         </div>
+        </div>
+        
         <div style={{ display: tab === 'EVOLUCION' ? 'block' : 'none' }}>
           <HistoriaClinicaEvolucionForm
             ref={evolRef}
@@ -346,8 +348,11 @@ export default function HistoriaClinicaPage() {
             initialData={initialEvolucion}
             guardando={guardando}
             exportando={exportando}
+            isReadOnly={isReadOnly}
           />
         </div>
+
+        <div className={isReadOnly ? 'read-only-mode' : ''} inert={isReadOnly ? true : undefined}>
         <div style={{ display: tab === 'LABORATORIO' ? 'block' : 'none' }}>
           <HistoriaClinicaLaboratorioForm
             ref={labRef}
