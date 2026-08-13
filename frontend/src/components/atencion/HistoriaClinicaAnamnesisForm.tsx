@@ -487,6 +487,24 @@ const AnamnesisForm = React.forwardRef<HistoriaClinicaAnamnesisHandle, Props>(
     isDirty: () => isDirty,
   }), [datos, clearAutosave, isDirty]);
 
+  const handleDiagnosticoChange = (n: number, cie: string, desc: string) => {
+    const next = { ...datos, [`diagnostico_${n}`]: desc, [`diagnostico_${n}_cie`]: cie };
+    setDatos(next);
+    
+    const diagnosticos = [];
+    for (let i = 1; i <= 6; i++) {
+      const descVal = next[`diagnostico_${i}` as keyof DatosAnamnesis] as string;
+      const cieVal = next[`diagnostico_${i}_cie` as keyof DatosAnamnesis] as string;
+      if (descVal || cieVal) {
+        diagnosticos.push({ descripcion: descVal, cie: cieVal });
+      }
+    }
+    
+    window.dispatchEvent(new CustomEvent("sync_diagnosticos", { 
+      detail: { source: "anamnesis", diagnosticos } 
+    }));
+  };
+
   useEffect(() => {
     const handleSyncAnt = (e: CustomEvent) => {
       if (e.detail.source !== "anamnesis") {
@@ -529,6 +547,11 @@ const AnamnesisForm = React.forwardRef<HistoriaClinicaAnamnesisHandle, Props>(
               updates[`diagnostico_${num}`] = diagnosticos[i].descripcion;
               updates[`diagnostico_${num}_cie`] = diagnosticos[i].cie;
               updates[`diagnostico_${num}_def`] = true;
+              updates[`diagnostico_${num}_pre`] = false;
+            } else {
+              updates[`diagnostico_${num}`] = "";
+              updates[`diagnostico_${num}_cie`] = "";
+              updates[`diagnostico_${num}_def`] = false;
               updates[`diagnostico_${num}_pre`] = false;
             }
           }
@@ -1061,22 +1084,14 @@ const AnamnesisForm = React.forwardRef<HistoriaClinicaAnamnesisHandle, Props>(
                   <Cie10DescInput
                     cie={datos[`diagnostico_${n}_cie` as keyof DatosAnamnesis] as string}
                     descripcion={datos[`diagnostico_${n}` as keyof DatosAnamnesis] as string}
-                    onChange={(cie, desc) => setDatos(p => ({
-                      ...p,
-                      [`diagnostico_${n}`]: desc,
-                      [`diagnostico_${n}_cie`]: cie,
-                    }))}
+                    onChange={(cie, desc) => handleDiagnosticoChange(n, cie, desc)}
                   />
                 </td>
                 <td colSpan={3} style={tdBase}>
                   <Cie10CieInput
                     cie={datos[`diagnostico_${n}_cie` as keyof DatosAnamnesis] as string}
                     descripcion={datos[`diagnostico_${n}` as keyof DatosAnamnesis] as string}
-                    onChange={(cie, desc) => setDatos(p => ({
-                      ...p,
-                      [`diagnostico_${n}`]: desc,
-                      [`diagnostico_${n}_cie`]: cie,
-                    }))}
+                    onChange={(cie, desc) => handleDiagnosticoChange(n, cie, desc)}
                   />
                 </td>
                 <td colSpan={2} style={{ ...tdBase, textAlign: "center", verticalAlign: "middle" }}>

@@ -101,16 +101,18 @@ function Lbl({ children, small = false, center = false, color }: {
   );
 }
 
-function TxtIn({ value, onChange, readOnly = false, center = false, placeholder = "" }: {
+function TxtIn({ value, onChange, readOnly = false, center = false, placeholder = "", onPaste }: {
   value: string; onChange?: (v: string) => void;
   readOnly?: boolean; center?: boolean; placeholder?: string;
+  onPaste?: React.ClipboardEventHandler<HTMLInputElement>;
 }) {
   return (
     <input type="text" value={value} readOnly={readOnly} placeholder={placeholder}
       onChange={(e) => onChange?.(e.target.value)}
+      onPaste={onPaste}
       style={{
         width: "100%", border: "none", outline: "none",
-        background: readOnly ? "#f0f0f0" : "#fff",
+        background: readOnly ? "#f0f0f0" : "transparent",
         fontSize: "10px", fontFamily: "Arial, sans-serif",
         textAlign: center ? "center" : "left",
         padding: "3px 4px", color: "#000", boxSizing: "border-box",
@@ -179,8 +181,8 @@ const tbl: React.CSSProperties = {
 
 // ─── Componente Principal ─────────────────────────────────────────────────────
 
-const PROC_LINES_ANV = 16;
-const PROC_LINES_REV = 20;
+const PROC_LINES_ANV_MAX = 31;
+const PROC_LINES_REV_MAX = 20;
 
 function profVacio(): ProfesionalRow {
   return { nombre_apellidos: "", especialidad: "", sello_documento: "" };
@@ -197,6 +199,10 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
   guardando = false, exportando = false, atencionId, isTemplateMode = false, isReadOnly = false
 }, ref) => {
   const [hoja, setHoja] = useState<"ANVERSO" | "REVERSO">("ANVERSO");
+  const [sel, setSel] = useState<{ tipo: string, start: number, end: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [bulkUndoStack, setBulkUndoStack] = useState<{ tipo: string, arr: string[] }[]>([]);
+  const [canUndoBulk, setCanUndoBulk] = useState(false);
 
   const [d, setD] = useState<DatosProtocolo>(() => {
     const base: DatosProtocolo = {
@@ -234,8 +240,8 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
       dieresis: Array(5).fill(""),
       exposicion_exploracion: "",
       hallazgos_quirurgicos: Array(5).fill(""),
-      proced_quirurgico: Array(PROC_LINES_ANV).fill(""),
-      procedimiento_quirurgico_cont: Array(PROC_LINES_REV).fill(""),
+      proced_quirurgico: Array(16).fill(""), // Default to 16, but dynamic
+      procedimiento_quirurgico_cont: Array(20).fill(""), // Default to 20, but dynamic
       complicaciones: "",
       perdida_sanguinea_total: "", sangrado_aproximado: "",
       uso_material_protesico_si: false, uso_material_protesico_no: false,
@@ -274,16 +280,29 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
       if (initialData.prot_condicion_edad_m === "X") base.condicion_edad = "M";
       if (initialData.prot_condicion_edad_a === "X") base.condicion_edad = "A";
 
-      // Mapear arrays de texto
-      for (let i = 0; i < PROC_LINES_ANV; i++) {
-        if (initialData[`prot_proced_quirurgico_${i + 1}`] !== undefined) {
-          base.proced_quirurgico[i] = initialData[`prot_proced_quirurgico_${i + 1}`];
+      // Mapear arrays de texto (soporta formato antiguo plano y nuevo formato array)
+      if (Array.isArray(initialData.proced_quirurgico)) {
+        base.proced_quirurgico = [...initialData.proced_quirurgico];
+      } else {
+        const legacyAnv = [];
+        for (let i = 0; i < PROC_LINES_ANV_MAX; i++) {
+          if (initialData[`prot_proced_quirurgico_${i + 1}`] !== undefined) {
+            legacyAnv.push(initialData[`prot_proced_quirurgico_${i + 1}`]);
+          }
         }
+        if (legacyAnv.length > 0) base.proced_quirurgico = legacyAnv;
       }
-      for (let i = 0; i < PROC_LINES_REV; i++) {
-        if (initialData[`prot_procedimiento_quirurgico_cont_${i + 1}`] !== undefined) {
-          base.procedimiento_quirurgico_cont[i] = initialData[`prot_procedimiento_quirurgico_cont_${i + 1}`];
+
+      if (Array.isArray(initialData.procedimiento_quirurgico_cont)) {
+        base.procedimiento_quirurgico_cont = [...initialData.procedimiento_quirurgico_cont];
+      } else {
+        const legacyRev = [];
+        for (let i = 0; i < PROC_LINES_REV_MAX; i++) {
+          if (initialData[`prot_procedimiento_quirurgico_cont_${i + 1}`] !== undefined) {
+            legacyRev.push(initialData[`prot_procedimiento_quirurgico_cont_${i + 1}`]);
+          }
         }
+        if (legacyRev.length > 0) base.procedimiento_quirurgico_cont = legacyRev;
       }
 
       // Mapear profesionales
@@ -318,12 +337,28 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
   const s = (k: keyof DatosProtocolo) => (v: string) => !isReadOnly && setD(p => ({ ...p, [k]: v }));
   const c = (k: keyof DatosProtocolo) => (v: boolean) => !isReadOnly && setD(p => ({ ...p, [k]: v }));
 
-  const setLine = (arr: "proced_quirurgico" | "procedimiento_quirurgico_cont" | "dieresis" | "hallazgos_quirurgicos", idx: number, val: string) =>
+  const setLine = (arr: "proced_quirurgico" | "procedimiento_quirurgico_cont" | "dieresis" | "hallazgos_quirurgicos", idx: number, val: string) => {
+    setCanUndoBulk(false);
     !isReadOnly && setD(p => {
       const next = [...p[arr]];
-      next[idx] = val;
+      if (arr === "proced_quirurgico") {
+        const clean = val.replace(/^\d+\.\s*/, '');
+        next[idx] = `${idx + 1}. ${clean}`;
+      } else if (arr === "procedimiento_quirurgico_cont") {
+        const clean = val.replace(/^\d+\.\s*/, '');
+        next[idx] = `${p.proced_quirurgico.length + idx + 1}. ${clean}`;
+      } else {
+        next[idx] = val;
+      }
       return { ...p, [arr]: next };
     });
+  };
+
+  const renumberArrays = (anv: string[], rev: string[]) => {
+    const newAnv = anv.map((val, i) => `${i + 1}. ${val.replace(/^\d+\.\s*/, '')}`);
+    const newRev = rev.map((val, i) => `${newAnv.length + i + 1}. ${val.replace(/^\d+\.\s*/, '')}`);
+    return { newAnv, newRev };
+  };
 
   const setProf = (idx: number, campo: keyof ProfesionalRow, val: string) => {
     if (isReadOnly) return;
@@ -370,10 +405,15 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
     out.prot_condicion_edad_a = d.condicion_edad === "A" ? "X" : "";
 
     // Mapeos de arrays (procedimiento quirúrgico)
+    // Se guardan como array directamente para el nuevo formato dinámico
+    out.proced_quirurgico = d.proced_quirurgico;
+    out.procedimiento_quirurgico_cont = d.procedimiento_quirurgico_cont;
+    
+    // Por compatibilidad con plantillas que no usen el export.service modificado aún, 
+    // también los mandamos aplanados.
     d.proced_quirurgico.forEach((val, i) => {
       out[`prot_proced_quirurgico_${i + 1}`] = val;
     });
-
     d.procedimiento_quirurgico_cont.forEach((val, i) => {
       out[`prot_procedimiento_quirurgico_cont_${i + 1}`] = val;
     });
@@ -403,6 +443,141 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
     clearAutosave: () => clearAutosave(),
     isDirty: () => isDirty,
   }), [d, clearAutosave, isDirty]);
+
+  React.useEffect(() => {
+    const handleMouseUp = () => setIsDragging(false);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && canUndoBulk) {
+        setBulkUndoStack(prevStack => {
+          if (prevStack.length === 0) return prevStack;
+          const last = prevStack[prevStack.length - 1];
+          setD(curr => ({ ...curr, [last.tipo]: last.arr }));
+          return prevStack.slice(0, -1);
+        });
+        setCanUndoBulk(false);
+        e.preventDefault();
+        return;
+      }
+
+      if (!sel) return;
+
+      const isMultipleSelected = sel.start !== sel.end;
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && isMultipleSelected) {
+        const arr = d[sel.tipo as 'proced_quirurgico' | 'procedimiento_quirurgico_cont'];
+        if (!arr) return;
+        const s = Math.min(sel.start, sel.end);
+        const e_idx = Math.max(sel.start, sel.end);
+        const values = [];
+        for (let i = s; i <= e_idx; i++) {
+          values.push(arr[i] || '');
+        }
+        navigator.clipboard.writeText(values.join('\n'));
+        e.preventDefault();
+      }
+
+      if ((e.key === 'Delete' || e.key === 'Backspace') && isMultipleSelected) {
+        const tipo = sel.tipo as 'proced_quirurgico' | 'procedimiento_quirurgico_cont';
+        const arrSnapshot = [...d[tipo]];
+        setBulkUndoStack(stack => [...stack, { tipo, arr: arrSnapshot }]);
+        setCanUndoBulk(true);
+
+        setD(prev => {
+          const arr = [...prev[tipo]];
+          const s = Math.min(sel.start, sel.end);
+          const e_idx = Math.max(sel.start, sel.end);
+          for (let i = s; i <= e_idx; i++) {
+            if (i < arr.length) arr[i] = "";
+          }
+          const anv = tipo === 'proced_quirurgico' ? arr : [...prev.proced_quirurgico];
+          const rev = tipo === 'procedimiento_quirurgico_cont' ? arr : [...prev.procedimiento_quirurgico_cont];
+          const { newAnv, newRev } = renumberArrays(anv, rev);
+          return { ...prev, proced_quirurgico: newAnv, procedimiento_quirurgico_cont: newRev };
+        });
+        e.preventDefault();
+      }
+    };
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-grid="true"]')) {
+        if (!isDragging) setSel(null);
+      }
+    };
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('mousedown', handleClick);
+    return () => {
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('mousedown', handleClick);
+    };
+  }, [sel, d, isDragging, canUndoBulk]);
+
+  const addProcedimiento = (
+    tipo: 'proced_quirurgico' | 'procedimiento_quirurgico_cont', 
+    idx: number, 
+    pos: 'arriba' | 'abajo'
+  ) => {
+    setD(prev => {
+      const arr = [...prev[tipo]];
+      const maxLines = tipo === 'proced_quirurgico' ? PROC_LINES_ANV_MAX : PROC_LINES_REV_MAX;
+      if (arr.length >= maxLines) return prev; // Límite alcanzado
+      const targetIdx = pos === 'arriba' ? idx : idx + 1;
+      arr.splice(targetIdx, 0, "");
+      const anv = tipo === 'proced_quirurgico' ? arr : [...prev.proced_quirurgico];
+      const rev = tipo === 'procedimiento_quirurgico_cont' ? arr : [...prev.procedimiento_quirurgico_cont];
+      const { newAnv, newRev } = renumberArrays(anv, rev);
+      return { ...prev, proced_quirurgico: newAnv, procedimiento_quirurgico_cont: newRev };
+    });
+  };
+
+  const removeProcedimiento = (
+    tipo: 'proced_quirurgico' | 'procedimiento_quirurgico_cont', 
+    idx: number
+  ) => {
+    setD(prev => {
+      const arr = [...prev[tipo]];
+      if (arr.length <= 1) return prev; // Mantener al menos 1
+      arr.splice(idx, 1);
+      const anv = tipo === 'proced_quirurgico' ? arr : [...prev.proced_quirurgico];
+      const rev = tipo === 'procedimiento_quirurgico_cont' ? arr : [...prev.procedimiento_quirurgico_cont];
+      const { newAnv, newRev } = renumberArrays(anv, rev);
+      return { ...prev, proced_quirurgico: newAnv, procedimiento_quirurgico_cont: newRev };
+    });
+  };
+
+  const handlePasteProcedimiento = (
+    e: React.ClipboardEvent<HTMLInputElement>,
+    tipo: 'proced_quirurgico' | 'procedimiento_quirurgico_cont',
+    startIndex: number
+  ) => {
+    const text = e.clipboardData.getData('text');
+    if (!text || (!text.includes('\n') && !text.includes('\r'))) return;
+
+    e.preventDefault();
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length === 0) return;
+
+    const arrSnapshot = [...d[tipo]];
+    setBulkUndoStack(stack => [...stack, { tipo, arr: arrSnapshot }]);
+    setCanUndoBulk(true);
+
+    setD(prev => {
+      const arr = [...prev[tipo]];
+      const maxLines = tipo === 'proced_quirurgico' ? PROC_LINES_ANV_MAX : PROC_LINES_REV_MAX;
+      
+      for (let i = 0; i < lines.length; i++) {
+        const targetIdx = startIndex + i;
+        if (targetIdx < maxLines) {
+          arr[targetIdx] = lines[i];
+        }
+      }
+      const anv = tipo === 'proced_quirurgico' ? arr : [...prev.proced_quirurgico];
+      const rev = tipo === 'procedimiento_quirurgico_cont' ? arr : [...prev.procedimiento_quirurgico_cont];
+      const { newAnv, newRev } = renumberArrays(anv, rev);
+      return { ...prev, proced_quirurgico: newAnv, procedimiento_quirurgico_cont: newRev };
+    });
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
@@ -695,22 +870,55 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
                   </tr>
                 ))}
 
-                {/* Procedimiento Quirúrgico — 16 líneas ANVERSO */}
+                {/* Procedimiento Quirúrgico — Dinámico ANVERSO */}
                 <tr>
                   <td colSpan={20} style={{ ...td, padding: "3px 6px", background: "#DCE6F1" }}>
-                    <Lbl>Procedimiento Quirúrgico:</Lbl>
+                    <Lbl>Procedimiento Quirúrgico: ({d.proced_quirurgico.length}/{PROC_LINES_ANV_MAX} máx)</Lbl>
                   </td>
                 </tr>
-                {d.proced_quirurgico.map((val, idx) => (
+                {d.proced_quirurgico.map((val, idx) => {
+                  const isSelected = sel?.tipo === 'proced_quirurgico' && idx >= Math.min(sel.start, sel.end) && idx <= Math.max(sel.start, sel.end);
+                  const cleanVal = val.replace(/^\d+\.\s*/, '');
+                  const displayNum = idx + 1;
+                  return (
                   <tr key={`pq_${idx}`} style={{ height: 22 }}>
                     <td colSpan={1} style={{ ...tdC, background: "#f9f9f9", fontSize: "9px", color: "#999" }}>
-                      {idx + 1}
+                      {displayNum}
                     </td>
-                    <td colSpan={19} style={td}>
-                      <TxtIn value={val} onChange={(v) => setLine("proced_quirurgico", idx, v)} />
+                    <td colSpan={18} style={{ ...td, position: 'relative', background: isSelected ? '#d3e3fd' : '#fff' }} data-grid="true"
+                        onMouseDown={() => { setIsDragging(true); setSel({ tipo: 'proced_quirurgico', start: idx, end: idx }); }}
+                        onMouseEnter={() => { if (isDragging && sel?.tipo === 'proced_quirurgico') setSel(prev => prev ? { ...prev, end: idx } : null); }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', width: '100%', paddingLeft: 2 }}>
+                        <span style={{ fontSize: '10px', fontFamily: 'Arial', whiteSpace: 'nowrap', color: '#000', userSelect: 'none' }}>
+                          {displayNum}.&nbsp;
+                        </span>
+                        <TxtIn 
+                          value={cleanVal} 
+                          onChange={(v) => setLine("proced_quirurgico", idx, v)} 
+                          onPaste={(e) => handlePasteProcedimiento(e, 'proced_quirurgico', idx)}
+                        />
+                      </div>
+                      {isDragging && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10 }} />}
+                    </td>
+                    <td colSpan={1} style={{ textAlign: "center", verticalAlign: "middle", width: 50, padding: "0 2px", border: "1px solid #000" }}>
+                      {!isReadOnly && (
+                        <div style={{ display: "flex", gap: "2px", justifyContent: "center" }}>
+                          <button type="button" onClick={() => addProcedimiento('proced_quirurgico', idx, 'arriba')} disabled={d.proced_quirurgico.length >= PROC_LINES_ANV_MAX} style={{ cursor: d.proced_quirurgico.length >= PROC_LINES_ANV_MAX ? "not-allowed" : "pointer", background: "#eef3f9", border: "1px solid #c8d8e8", borderRadius: 2, padding: "2px 4px", fontSize: "8px", color: "#1a3a5c", opacity: d.proced_quirurgico.length >= PROC_LINES_ANV_MAX ? 0.5 : 1 }} title="Añadir arriba">
+                            +⬆
+                          </button>
+                          <button type="button" onClick={() => addProcedimiento('proced_quirurgico', idx, 'abajo')} disabled={d.proced_quirurgico.length >= PROC_LINES_ANV_MAX} style={{ cursor: d.proced_quirurgico.length >= PROC_LINES_ANV_MAX ? "not-allowed" : "pointer", background: "#eef3f9", border: "1px solid #c8d8e8", borderRadius: 2, padding: "2px 4px", fontSize: "8px", color: "#1a3a5c", opacity: d.proced_quirurgico.length >= PROC_LINES_ANV_MAX ? 0.5 : 1 }} title="Añadir abajo">
+                            +⬇
+                          </button>
+                          <button type="button" onClick={() => removeProcedimiento('proced_quirurgico', idx)} disabled={d.proced_quirurgico.length <= 1} style={{ cursor: d.proced_quirurgico.length <= 1 ? "not-allowed" : "pointer", background: "#fee", border: "1px solid #fcc", borderRadius: 2, padding: "2px 4px", fontSize: "8px", color: "#c00", opacity: d.proced_quirurgico.length <= 1 ? 0.5 : 1 }} title="Eliminar fila">
+                            -
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
 
                 {/* Footer ANVERSO */}
                 <tr>
@@ -734,22 +942,55 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
           <>
             <table style={tbl}>
               <tbody>
-                {/* Continuación Procedimiento Quirúrgico — 20 líneas */}
+                {/* Continuación Procedimiento Quirúrgico — Dinámico REVERSO */}
                 <tr>
                   <td colSpan={20} style={{ ...td, padding: "3px 6px", background: "#DCE6F1" }}>
-                    <Lbl>Procedimiento Quirúrgico: (continuación)</Lbl>
+                    <Lbl>Procedimiento Quirúrgico: (continuación) ({d.procedimiento_quirurgico_cont.length}/{PROC_LINES_REV_MAX} máx)</Lbl>
                   </td>
                 </tr>
-                {d.procedimiento_quirurgico_cont.map((val, idx) => (
+                {d.procedimiento_quirurgico_cont.map((val, idx) => {
+                  const isSelected = sel?.tipo === 'procedimiento_quirurgico_cont' && idx >= Math.min(sel.start, sel.end) && idx <= Math.max(sel.start, sel.end);
+                  const displayNum = d.proced_quirurgico.length + idx + 1;
+                  const cleanVal = val.replace(/^\d+\.\s*/, '');
+                  return (
                   <tr key={`pqc_${idx}`} style={{ height: 22 }}>
                     <td colSpan={1} style={{ ...tdC, background: "#f9f9f9", fontSize: "9px", color: "#999" }}>
-                      {PROC_LINES_ANV + idx + 1}
+                      {displayNum}
                     </td>
-                    <td colSpan={19} style={td}>
-                      <TxtIn value={val} onChange={(v) => setLine("procedimiento_quirurgico_cont", idx, v)} />
+                    <td colSpan={18} style={{ ...td, position: 'relative', background: isSelected ? '#d3e3fd' : '#fff' }} data-grid="true"
+                        onMouseDown={() => { setIsDragging(true); setSel({ tipo: 'procedimiento_quirurgico_cont', start: idx, end: idx }); }}
+                        onMouseEnter={() => { if (isDragging && sel?.tipo === 'procedimiento_quirurgico_cont') setSel(prev => prev ? { ...prev, end: idx } : null); }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', width: '100%', paddingLeft: 2 }}>
+                        <span style={{ fontSize: '10px', fontFamily: 'Arial', whiteSpace: 'nowrap', color: '#000', userSelect: 'none' }}>
+                          {displayNum}.&nbsp;
+                        </span>
+                        <TxtIn 
+                          value={cleanVal} 
+                          onChange={(v) => setLine("procedimiento_quirurgico_cont", idx, v)} 
+                          onPaste={(e) => handlePasteProcedimiento(e, 'procedimiento_quirurgico_cont', idx)}
+                        />
+                      </div>
+                      {isDragging && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10 }} />}
+                    </td>
+                    <td colSpan={1} style={{ textAlign: "center", verticalAlign: "middle", width: 50, padding: "0 2px", border: "1px solid #000" }}>
+                      {!isReadOnly && (
+                        <div style={{ display: "flex", gap: "2px", justifyContent: "center" }}>
+                          <button type="button" onClick={() => addProcedimiento('procedimiento_quirurgico_cont', idx, 'arriba')} disabled={d.procedimiento_quirurgico_cont.length >= PROC_LINES_REV_MAX} style={{ cursor: d.procedimiento_quirurgico_cont.length >= PROC_LINES_REV_MAX ? "not-allowed" : "pointer", background: "#eef3f9", border: "1px solid #c8d8e8", borderRadius: 2, padding: "2px 4px", fontSize: "8px", color: "#1a3a5c", opacity: d.procedimiento_quirurgico_cont.length >= PROC_LINES_REV_MAX ? 0.5 : 1 }} title="Añadir arriba">
+                            +⬆
+                          </button>
+                          <button type="button" onClick={() => addProcedimiento('procedimiento_quirurgico_cont', idx, 'abajo')} disabled={d.procedimiento_quirurgico_cont.length >= PROC_LINES_REV_MAX} style={{ cursor: d.procedimiento_quirurgico_cont.length >= PROC_LINES_REV_MAX ? "not-allowed" : "pointer", background: "#eef3f9", border: "1px solid #c8d8e8", borderRadius: 2, padding: "2px 4px", fontSize: "8px", color: "#1a3a5c", opacity: d.procedimiento_quirurgico_cont.length >= PROC_LINES_REV_MAX ? 0.5 : 1 }} title="Añadir abajo">
+                            +⬇
+                          </button>
+                          <button type="button" onClick={() => removeProcedimiento('procedimiento_quirurgico_cont', idx)} disabled={d.procedimiento_quirurgico_cont.length <= 1} style={{ cursor: d.procedimiento_quirurgico_cont.length <= 1 ? "not-allowed" : "pointer", background: "#fee", border: "1px solid #fcc", borderRadius: 2, padding: "2px 4px", fontSize: "8px", color: "#c00", opacity: d.procedimiento_quirurgico_cont.length <= 1 ? 0.5 : 1 }} title="Eliminar fila">
+                            -
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
 
                 {/* ── G. COMPLICACIONES ── */}
                 <tr><td colSpan={20} style={secH()}>G. COMPLICACIONES DEL PROCEDIMIENTO QUIRÚRGICO</td></tr>

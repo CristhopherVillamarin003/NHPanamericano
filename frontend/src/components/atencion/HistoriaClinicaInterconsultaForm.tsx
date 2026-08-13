@@ -278,6 +278,26 @@ const InterconsultaForm = React.forwardRef<HistoriaClinicaInterconsultaHandle, P
     const c = (k: keyof DatosInterconsulta) => (v: boolean) =>
       setD((p) => ({ ...p, [k]: v }));
 
+    const handleDiagnosticoChange = (n: number, cie: string, desc: string) => {
+      const next = { ...d, [`diagnostico_${n}`]: desc, [`diagnostico_${n}_cie`]: cie };
+      setD(next);
+      
+      if (paciente?.tipoPaciente?.toUpperCase() === 'SPPAT') {
+        const diagnosticos = [];
+        for (let i = 1; i <= 6; i++) {
+          const descVal = next[`diagnostico_${i}` as keyof DatosInterconsulta] as string;
+          const cieVal = next[`diagnostico_${i}_cie` as keyof DatosInterconsulta] as string;
+          if (descVal || cieVal) {
+            diagnosticos.push({ descripcion: descVal, cie: cieVal });
+          }
+        }
+        
+        window.dispatchEvent(new CustomEvent("sync_diagnosticos", { 
+          detail: { source: "interconsulta", diagnosticos } 
+        }));
+      }
+    };
+
     useEffect(() => {
       const handleSyncDiagnosticos = (e: CustomEvent) => {
         if (e.detail.source !== "interconsulta") {
@@ -290,6 +310,11 @@ const InterconsultaForm = React.forwardRef<HistoriaClinicaInterconsultaHandle, P
                 updates[`diagnostico_${num}`] = diagnosticos[i].descripcion;
                 updates[`diagnostico_${num}_cie`] = diagnosticos[i].cie;
                 updates[`diagnostico_${num}_def`] = true;
+                updates[`diagnostico_${num}_pre`] = false;
+              } else {
+                updates[`diagnostico_${num}`] = "";
+                updates[`diagnostico_${num}_cie`] = "";
+                updates[`diagnostico_${num}_def`] = false;
                 updates[`diagnostico_${num}_pre`] = false;
               }
             }
@@ -662,14 +687,14 @@ const InterconsultaForm = React.forwardRef<HistoriaClinicaInterconsultaHandle, P
                       <Cie10DescInput
                         cie={d[ck] as string}
                         descripcion={d[dk] as string}
-                        onChange={(cie, desc) => setD(p => ({ ...p, [dk]: desc, [ck]: cie }))}
+                        onChange={(cie, desc) => handleDiagnosticoChange(n, cie, desc)}
                       />
                     </td>
                     <td colSpan={4} style={td}>
                       <Cie10CieInput
                         cie={d[ck] as string}
                         descripcion={d[dk] as string}
-                        onChange={(cie, desc) => setD(p => ({ ...p, [dk]: desc, [ck]: cie }))}
+                        onChange={(cie, desc) => handleDiagnosticoChange(n, cie, desc)}
                       />
                     </td>
                     <td colSpan={2} style={{ ...td, textAlign: "center", verticalAlign: "middle" }}>

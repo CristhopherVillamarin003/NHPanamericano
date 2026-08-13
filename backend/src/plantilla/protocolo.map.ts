@@ -88,47 +88,13 @@ export const PROTOCOLO_MAP: Record<string, { sheet: string; cell: string }> = {
   prot_hallazgos_quirurgicos_4   : { sheet: '017 ANVERSO', cell: 'A46' },
   prot_hallazgos_quirurgicos_5   : { sheet: '017 ANVERSO', cell: 'A47' },
 
-  prot_proced_quirurgico_1       : { sheet: '017 ANVERSO', cell: 'A49' },
-  prot_proced_quirurgico_2       : { sheet: '017 ANVERSO', cell: 'A50' },
-  prot_proced_quirurgico_3       : { sheet: '017 ANVERSO', cell: 'A51' },
-  prot_proced_quirurgico_4       : { sheet: '017 ANVERSO', cell: 'A52' },
-  prot_proced_quirurgico_5       : { sheet: '017 ANVERSO', cell: 'A53' },
-  prot_proced_quirurgico_6       : { sheet: '017 ANVERSO', cell: 'A54' },
-  prot_proced_quirurgico_7       : { sheet: '017 ANVERSO', cell: 'A55' },
-  prot_proced_quirurgico_8       : { sheet: '017 ANVERSO', cell: 'A56' },
-  prot_proced_quirurgico_9       : { sheet: '017 ANVERSO', cell: 'A57' },
-  prot_proced_quirurgico_10      : { sheet: '017 ANVERSO', cell: 'A58' },
-  prot_proced_quirurgico_11      : { sheet: '017 ANVERSO', cell: 'A59' },
-  prot_proced_quirurgico_12      : { sheet: '017 ANVERSO', cell: 'A60' },
-  prot_proced_quirurgico_13      : { sheet: '017 ANVERSO', cell: 'A61' },
-  prot_proced_quirurgico_14      : { sheet: '017 ANVERSO', cell: 'A62' },
-  prot_proced_quirurgico_15      : { sheet: '017 ANVERSO', cell: 'A63' },
-  prot_proced_quirurgico_16      : { sheet: '017 ANVERSO', cell: 'A64' },
+
 
   // ─────────────────────────────────────────────────────────────────────────
   // 017 REVERSO
   // Continuación del Procedimiento Quirúrgico
   // ─────────────────────────────────────────────────────────────────────────
-  prot_procedimiento_quirurgico_cont_1       : { sheet: '017 REVERSO', cell: 'A2' },
-  prot_procedimiento_quirurgico_cont_2       : { sheet: '017 REVERSO', cell: 'A3' },
-  prot_procedimiento_quirurgico_cont_3       : { sheet: '017 REVERSO', cell: 'A4' },
-  prot_procedimiento_quirurgico_cont_4       : { sheet: '017 REVERSO', cell: 'A5' },
-  prot_procedimiento_quirurgico_cont_5       : { sheet: '017 REVERSO', cell: 'A6' },
-  prot_procedimiento_quirurgico_cont_6       : { sheet: '017 REVERSO', cell: 'A7' },
-  prot_procedimiento_quirurgico_cont_7       : { sheet: '017 REVERSO', cell: 'A8' },
-  prot_procedimiento_quirurgico_cont_8       : { sheet: '017 REVERSO', cell: 'A9' },
-  prot_procedimiento_quirurgico_cont_9       : { sheet: '017 REVERSO', cell: 'A10'},
-  prot_procedimiento_quirurgico_cont_10      : { sheet: '017 REVERSO', cell: 'A11'},
-  prot_procedimiento_quirurgico_cont_11      : { sheet: '017 REVERSO', cell: 'A12'},
-  prot_procedimiento_quirurgico_cont_12      : { sheet: '017 REVERSO', cell: 'A13'},
-  prot_procedimiento_quirurgico_cont_13      : { sheet: '017 REVERSO', cell: 'A14'},
-  prot_procedimiento_quirurgico_cont_14      : { sheet: '017 REVERSO', cell: 'A15'},
-  prot_procedimiento_quirurgico_cont_15      : { sheet: '017 REVERSO', cell: 'A16'},
-  prot_procedimiento_quirurgico_cont_16      : { sheet: '017 REVERSO', cell: 'A17'},
-  prot_procedimiento_quirurgico_cont_17      : { sheet: '017 REVERSO', cell: 'A18'},
-  prot_procedimiento_quirurgico_cont_18      : { sheet: '017 REVERSO', cell: 'A19'},
-  prot_procedimiento_quirurgico_cont_19      : { sheet: '017 REVERSO', cell: 'A20'},
-  prot_procedimiento_quirurgico_cont_20      : { sheet: '017 REVERSO', cell: 'A21'},
+
 
   // G. COMPLICACIONES DEL PROCEDIMIENTO QUIRÚRGICO
   prot_complicaciones            : { sheet: '017 REVERSO', cell: 'A24' },

@@ -29,6 +29,7 @@ export interface EnfermeriaData {
   nota_i: string;
   nota_e: string;
   bloques: BloqueEnfermeria[];
+  is_sppat?: boolean;
 }
 
 export const DEFAULT_ENFERMERIA_DATA: EnfermeriaData = {
@@ -43,7 +44,8 @@ export const DEFAULT_ENFERMERIA_DATA: EnfermeriaData = {
   nota_p: '',
   nota_i: '',
   nota_e: '',
-  bloques: [] // Empezamos sin notas adicionales, el usuario las crea
+  bloques: [], // Empezamos sin notas adicionales, el usuario las crea
+  is_sppat: false
 };
 
 interface Props {
@@ -387,14 +389,6 @@ const EnfermeriaForm = forwardRef<EnfermeriaFormRef, Props>(({ paciente, initial
     // Si no hay datos, inicializamos con los valores por defecto y las fechas de hoy
     const data = { ...DEFAULT_ENFERMERIA_DATA, ...initialData };
     
-    if (!data.bloques) {
-      data.bloques = [];
-    }
-
-    // Si es un registro nuevo, poblar nombre completo, dni, fecha y hora
-    if (!initialData?.fecha) data.fecha = today;
-    if (!initialData?.hora) data.hora = nowTime;
-    
     if (paciente) {
       data.nombres_completos = [
         paciente.primerNombre,
@@ -403,7 +397,22 @@ const EnfermeriaForm = forwardRef<EnfermeriaFormRef, Props>(({ paciente, initial
         paciente.segundoApellido
       ].filter(Boolean).join(" ").toUpperCase();
       data.dni = paciente.cedula || '';
+      if (paciente.tipoPaciente === 'SPPAT') {
+        data.is_sppat = true;
+      }
     }
+
+    if (!data.bloques || data.bloques.length === 0) {
+      if (data.is_sppat) {
+        data.bloques = [bloqueVacio("NOTA POSTQUIRURGICA")];
+      } else {
+        data.bloques = [];
+      }
+    }
+    
+    // Si es un registro nuevo, poblar nombre completo, dni, fecha y hora
+    if (!initialData?.fecha) data.fecha = today;
+    if (!initialData?.hora) data.hora = nowTime;
     
     // Asegurarse de que los bloques tengan IDs únicos para renderizado
     if (data.bloques && data.bloques.length > 0) {
@@ -440,14 +449,17 @@ const EnfermeriaForm = forwardRef<EnfermeriaFormRef, Props>(({ paciente, initial
         
         const dni = paciente.cedula || '';
 
-        if (prev.nombres_completos === nombresCompletos && prev.dni === dni) {
+        const is_sppat = paciente.tipoPaciente === 'SPPAT';
+
+        if (prev.nombres_completos === nombresCompletos && prev.dni === dni && prev.is_sppat === is_sppat) {
           return prev;
         }
 
         return {
           ...prev,
           nombres_completos: prev.nombres_completos || nombresCompletos,
-          dni: prev.dni || dni
+          dni: prev.dni || dni,
+          is_sppat: prev.is_sppat !== undefined ? prev.is_sppat : is_sppat
         };
       });
     }
@@ -525,24 +537,26 @@ const EnfermeriaForm = forwardRef<EnfermeriaFormRef, Props>(({ paciente, initial
           </table>
 
           {/* ══ BLOQUE FIJO — NOTA DE EVOLUCIÓN DE INGRESO ═══════════════════ */}
-          <div style={{ marginTop: 10 }}>
-            <SoapBlock
-              fecha={formData.fecha}      onFecha={s("fecha")}
-              hora={formData.hora}        onHora={s("hora")}
-              nota_s={formData.nota_s}    onS={s("nota_s")}
-              nota_o={formData.nota_o}    onO={s("nota_o")}
-              nota_a={formData.nota_a}    onA={s("nota_a")}
-              nota_p={formData.nota_p}    onP={s("nota_p")}
-              nota_i={formData.nota_i}    onI={s("nota_i")}
-              nota_e={formData.nota_e}    onE={s("nota_e")}
-              isReadOnly={isReadOnly}
-              titulo={
-                <div style={ingresoTitleStyle}>
-                  NOTA DE EVOLUCIÓN DE INGRESO
-                </div>
-              }
-            />
-          </div>
+          {!formData.is_sppat && (
+            <div style={{ marginTop: 10 }}>
+              <SoapBlock
+                fecha={formData.fecha}      onFecha={s("fecha")}
+                hora={formData.hora}        onHora={s("hora")}
+                nota_s={formData.nota_s}    onS={s("nota_s")}
+                nota_o={formData.nota_o}    onO={s("nota_o")}
+                nota_a={formData.nota_a}    onA={s("nota_a")}
+                nota_p={formData.nota_p}    onP={s("nota_p")}
+                nota_i={formData.nota_i}    onI={s("nota_i")}
+                nota_e={formData.nota_e}    onE={s("nota_e")}
+                isReadOnly={isReadOnly}
+                titulo={
+                  <div style={ingresoTitleStyle}>
+                    NOTA DE EVOLUCIÓN DE INGRESO
+                  </div>
+                }
+              />
+            </div>
+          )}
 
           {/* ══ BLOQUES ADICIONALES ═══════════════════════════════════════════ */}
           {(formData.bloques || []).map((b) => (

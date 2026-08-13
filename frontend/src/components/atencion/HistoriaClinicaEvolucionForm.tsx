@@ -438,7 +438,7 @@ function EvolucionBloque({
                 onChange={(v) => onChange("notas_evolucion", v)}
                 minHeight="140px"
                 placeholder="Escriba las notas de evolución del paciente..."
-                enableCie10Select={numero === 1}
+                enableCie10Select={true}
               />
             </td>
             <td colSpan={8} style={tdBase}>
@@ -1293,11 +1293,34 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
         }
       };
       
+      const handleSyncDiagnosticos = (e: CustomEvent) => {
+        if (e.detail.source !== "evolucion") {
+          const diagnosticos = e.detail.diagnosticos || [];
+          setDatos(prev => {
+            const nuevos = [...prev.bloques];
+            if (nuevos.length > 0) {
+              const currentNotas = nuevos[0].notas_evolucion;
+              const updatedNotas = currentNotas.replace(
+                /(<p[^>]*><strong[^>]*>\s*DIAGNOSTICOS:\s*<\/strong>\s*<\/p>)([\s\S]*)$/i,
+                (match: string, p1: string) => {
+                  const diagsHtml = diagnosticos.map((d: any) => `<p>${d.descripcion} (CIE10: ${d.cie})</p>`).join('\n');
+                  return `${p1}\n${diagsHtml}`;
+                }
+              );
+              nuevos[0] = { ...nuevos[0], notas_evolucion: updatedNotas };
+            }
+            return { ...prev, bloques: nuevos };
+          });
+        }
+      };
+      
       window.addEventListener("sync_plan_tratamiento", handleSyncPlan as EventListener);
       window.addEventListener("sync_motivo_consulta", handleSyncMotivo as EventListener);
+      window.addEventListener("sync_diagnosticos", handleSyncDiagnosticos as EventListener);
       return () => {
         window.removeEventListener("sync_plan_tratamiento", handleSyncPlan as EventListener);
         window.removeEventListener("sync_motivo_consulta", handleSyncMotivo as EventListener);
+        window.removeEventListener("sync_diagnosticos", handleSyncDiagnosticos as EventListener);
       };
     }, []);
 

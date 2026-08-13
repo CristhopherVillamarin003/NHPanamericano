@@ -31,6 +31,8 @@ export default function RichTextEvolucion({
   const [medicoQuery, setMedicoQuery] = useState("");
   const [cie10SearchAbierto, setCie10SearchAbierto] = useState(false);
   const [cie10Query, setCie10Query] = useState("");
+  const [dxTops, setDxTops] = useState<number[]>([]);
+  const [activeDxIndex, setActiveDxIndex] = useState(-1);
 
   const editor = useEditor({
     extensions: [
@@ -60,6 +62,39 @@ export default function RichTextEvolucion({
       },
     },
   });
+
+  useEffect(() => {
+    if (!editor || !enableCie10Select) return;
+
+    const updatePositions = () => {
+      if (!editor.view.dom) return;
+      
+      const nodes = Array.from(editor.view.dom.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, strong'));
+      const dxNodes = nodes.filter(n => {
+        const txt = n.textContent?.toUpperCase() || '';
+        return txt.includes('DIAGNOSTICO') || txt.includes('DIAGNÓSTICO');
+      });
+      
+      const newTops = dxNodes.map(n => {
+        return (n as HTMLElement).offsetTop;
+      });
+      
+      const uniqueTops = newTops.filter((top, idx, arr) => {
+        return arr.findIndex(t => Math.abs(t - top) < 15) === idx;
+      });
+      
+      setDxTops(uniqueTops);
+    };
+
+    editor.on('update', updatePositions);
+    const interval = setInterval(updatePositions, 1000); // Poll just in case of layout shifts
+    setTimeout(updatePositions, 100);
+
+    return () => {
+      editor.off('update', updatePositions);
+      clearInterval(interval);
+    };
+  }, [editor, enableCie10Select]);
 
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
@@ -228,12 +263,12 @@ export default function RichTextEvolucion({
           </div>
         )}
 
-        {enableCie10Select && !readOnly && (
+        {enableCie10Select && !readOnly && dxTops.length === 0 && (
           <div style={{ position: 'absolute', bottom: '8px', right: enableMedicoSelect ? '100px' : '8px', zIndex: 10 }}>
             {!cie10SearchAbierto ? (
               <button
                 type="button"
-                onClick={() => setCie10SearchAbierto(true)}
+                onClick={() => { setCie10SearchAbierto(true); setActiveDxIndex(-1); }}
                 style={{
                   background: '#fce7f3',
                   border: '1px solid #f9a8d4',
@@ -288,6 +323,73 @@ export default function RichTextEvolucion({
             )}
           </div>
         )}
+
+        {enableCie10Select && !readOnly && dxTops.map((top, idx) => (
+          <div key={idx} style={{ position: 'absolute', top: `${top}px`, right: '8px', zIndex: 10 }}>
+            {!(cie10SearchAbierto && activeDxIndex === idx) ? (
+              <button
+                type="button"
+                onClick={() => { setCie10SearchAbierto(true); setActiveDxIndex(idx); }}
+                style={{
+                  background: '#fce7f3',
+                  border: '1px solid #f9a8d4',
+                  borderRadius: '4px',
+                  padding: '4px 8px',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  color: '#be185d',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+                title="Insertar CIE 10"
+              >
+                🩺 CIE 10 🔽
+              </button>
+            ) : (
+              <div style={{ 
+                background: '#fff', 
+                border: '1px solid #ccc', 
+                borderRadius: '4px', 
+                padding: '4px', 
+                width: '260px', 
+                display: 'flex', 
+                alignItems: 'center',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
+                position: 'absolute',
+                top: '0',
+                right: '0'
+              }}>
+                <div style={{ flex: 1 }}>
+                  <Cie10SearchInput
+                    value={cie10Query}
+                    onChangeValue={setCie10Query}
+                    onSelectCie10={(item: Cie10Item) => {
+                      const textToInsert = `${item.descripcion} (CIE10: ${item.codigo})`;
+                      // Si el editor no tiene el foco (lo perdió al clickear el buscador), el run() lo insertará al final.
+                      // Lo ideal es que el usuario tenga el cursor donde lo quiere. 
+                      // TipTap focus() intenta restaurar la última selección.
+                      editor.chain().focus().insertContent(textToInsert).run();
+                      setCie10SearchAbierto(false);
+                      setCie10Query("");
+                    }}
+                    placeholder="Buscar CIE 10..."
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCie10SearchAbierto(false)}
+                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '10px', color: '#999', padding: '0 4px' }}
+                  title="Cancelar"
+                >
+                  ❌
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

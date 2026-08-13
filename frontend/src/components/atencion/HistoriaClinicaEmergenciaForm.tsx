@@ -475,8 +475,23 @@ const EmergenciaForm008 = React.forwardRef<HistoriaClinicaEmergenciaHandle, Prop
       window.dispatchEvent(new CustomEvent("sync_motivo_consulta", { detail: { source: "emergencia", value: v } }));
     }
   };
-  const updDx = (t: "dx_presuntivos" | "dx_definitivos", i: number, f: "descripcion" | "cie", v: string) =>
-    setD((p) => { const a = [...p[t]]; a[i] = { ...a[i], [f]: v }; return { ...p, [t]: a }; });
+  const updDx = (t: "dx_presuntivos" | "dx_definitivos", i: number, cie: string, desc: string) => {
+    const a = [...d[t]];
+    a[i] = { ...a[i], cie, descripcion: desc };
+    const nextP = { ...d, [t]: a };
+    setD(nextP);
+    
+    if (t === "dx_definitivos") {
+      const diagnosticos = [];
+      for (let j = 0; j < nextP.dx_definitivos.length; j++) {
+        const dx = nextP.dx_definitivos[j];
+        if (dx.descripcion || dx.cie) {
+          diagnosticos.push({ descripcion: dx.descripcion, cie: dx.cie });
+        }
+      }
+      window.dispatchEvent(new CustomEvent("sync_diagnosticos", { detail: { source: "emergencia", diagnosticos } }));
+    }
+  };
   const updTx = (i: number, f: keyof Tratamiento, v: string) =>
     setD((p) => { const a = [...p.tratamientos]; a[i] = { ...a[i], [f]: v }; return { ...p, tratamientos: a }; });
 
@@ -522,6 +537,8 @@ const EmergenciaForm008 = React.forwardRef<HistoriaClinicaEmergenciaHandle, Prop
           for (let i = 0; i < 3; i++) {
             if (diagnosticos[i]) {
               newDx[i] = { ...newDx[i], descripcion: diagnosticos[i].descripcion as string, cie: diagnosticos[i].cie as string };
+            } else {
+              newDx[i] = { ...newDx[i], descripcion: "", cie: "" };
             }
           }
           return { ...p, dx_definitivos: newDx };
@@ -1044,8 +1061,7 @@ const EmergenciaForm008 = React.forwardRef<HistoriaClinicaEmergenciaHandle, Prop
                   cie={d.dx_presuntivos[i].cie}
                   descripcion={d.dx_presuntivos[i].descripcion}
                   onChange={(cie, desc) => {
-                    updDx("dx_presuntivos", i, "cie", cie);
-                    updDx("dx_presuntivos", i, "descripcion", desc);
+                    updDx("dx_presuntivos", i, cie, desc);
                   }}
                   placeholderDesc={`${i + 1}.`}
                   colSpanDesc={5}
@@ -1056,8 +1072,7 @@ const EmergenciaForm008 = React.forwardRef<HistoriaClinicaEmergenciaHandle, Prop
                   cie={d.dx_definitivos[i].cie}
                   descripcion={d.dx_definitivos[i].descripcion}
                   onChange={(cie, desc) => {
-                    updDx("dx_definitivos", i, "cie", cie);
-                    updDx("dx_definitivos", i, "descripcion", desc);
+                    updDx("dx_definitivos", i, cie, desc);
                   }}
                   placeholderDesc={`${i + 1}.`}
                   colSpanDesc={5}

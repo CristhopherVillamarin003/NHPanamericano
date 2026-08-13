@@ -546,6 +546,50 @@ function injectEnfermeriaMatematica(workbook: ExcelJS.Workbook, bloques: any[]) 
   }
 }
 
+function injectProtocoloProcedimientos(workbook: ExcelJS.Workbook, datos: any) {
+  const sheetAnv = workbook.getWorksheet('017 ANVERSO');
+  if (sheetAnv) {
+    const arr = Array.isArray(datos.proced_quirurgico) ? datos.proced_quirurgico : [];
+    const MAX_ANV = 31; // From row 49 to 79
+    const START_ANV = 49;
+    for (let i = 0; i < MAX_ANV; i++) {
+      const rowIdx = START_ANV + i;
+      const row = sheetAnv.getRow(rowIdx);
+      if (i < arr.length) {
+        row.hidden = false;
+        const cell = sheetAnv.getCell(`A${rowIdx}`);
+        const val = arr[i] || '';
+        cell.value = /^\d+\.\s*$/.test(val) ? '' : val;
+        cell.numFmt = '@'; // Ensure text formatting
+        const prevAlign = cell.alignment || {};
+        cell.alignment = { ...prevAlign, wrapText: true, vertical: 'top' };
+      } else {
+        if (row) row.hidden = true; // Ocultar celdas sobrantes solo en el ANVERSO
+      }
+    }
+  }
+
+  const sheetRev = workbook.getWorksheet('017 REVERSO');
+  if (sheetRev) {
+    const arr = Array.isArray(datos.procedimiento_quirurgico_cont) ? datos.procedimiento_quirurgico_cont : [];
+    const MAX_REV = 20; // From row 2 to 21
+    const START_REV = 2;
+    for (let i = 0; i < MAX_REV; i++) {
+      const rowIdx = START_REV + i;
+      const cell = sheetRev.getCell(`A${rowIdx}`);
+      if (i < arr.length) {
+        const val = arr[i] || '';
+        cell.value = /^\d+\.\s*$/.test(val) ? '' : val;
+      } else {
+        cell.value = ''; // Solo vaciar, NO ocultar (row.hidden = true) en el REVERSO
+      }
+      cell.numFmt = '@';
+      const prevAlign = cell.alignment || {};
+      cell.alignment = { ...prevAlign, wrapText: true, vertical: 'top' };
+    }
+  }
+}
+
 @Injectable()
 export class ExportService {
   private readonly uploadsDir = path.join(process.cwd(), 'uploads', 'plantillas');
@@ -1158,7 +1202,21 @@ export class ExportService {
 
     // Si es SÓLO Enfermería
     if (seccion === 'enfermeria') {
+      if (datos.is_sppat) {
+        const sheet = workbook.getWorksheet('ENFERMERIA');
+        if (sheet) {
+          for (let r = 5; r <= 20; r++) {
+            const rowObj = sheet.getRow(r);
+            if (rowObj) rowObj.hidden = true;
+          }
+        }
+      }
       injectEnfermeriaMatematica(workbook, datos.bloques || []);
+    }
+
+    // Protocolo: Inyección dinámica de arrays de procedimiento
+    if (seccion === 'protocolo') {
+      injectProtocoloProcedimientos(workbook, datos);
     }
 
     const cellMap = SECTION_MAPS[seccion];

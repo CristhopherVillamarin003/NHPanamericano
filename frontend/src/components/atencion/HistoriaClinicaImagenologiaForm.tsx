@@ -185,10 +185,12 @@ function ImagenologiaBloque({
   numero,
   b,
   onChange,
+  onDiagnosticoChange,
 }: {
   numero: number;
   b: BloqueImagenologia;
   onChange: <K extends keyof BloqueImagenologia>(campo: K, valor: BloqueImagenologia[K]) => void;
+  onDiagnosticoChange: (n: number, cie: string, desc: string) => void;
 }) {
   const s = (k: keyof BloqueImagenologia) => (v: string) => onChange(k, v as never);
   const c = (k: keyof BloqueImagenologia) => (v: boolean) => onChange(k, v as never);
@@ -380,7 +382,7 @@ function ImagenologiaBloque({
               <textarea 
                 value={b.paciente_contaminado_desc}
                 onChange={(e) => s("paciente_contaminado_desc")(e.target.value)}
-                placeholder="Descripción / tipo de contaminación..." 
+                placeholder="Motivo de consulta" 
                 style={{
                   width: "100%", border: "none", outline: "none",
                   background: "#fff", fontSize: "10px", fontFamily: "Arial, sans-serif",
@@ -422,20 +424,14 @@ function ImagenologiaBloque({
                   <Cie10DescInput
                     cie={b[ck] as string}
                     descripcion={b[dk] as string}
-                    onChange={(cie, desc) => {
-                      s(dk)(desc as never);
-                      s(ck)(cie as never);
-                    }}
+                    onChange={(cie, desc) => onDiagnosticoChange(n, cie, desc)}
                   />
                 </td>
                 <td colSpan={4} style={td}>
                   <Cie10CieInput
                     cie={b[ck] as string}
                     descripcion={b[dk] as string}
-                    onChange={(cie, desc) => {
-                      s(dk)(desc as never);
-                      s(ck)(cie as never);
-                    }}
+                    onChange={(cie, desc) => onDiagnosticoChange(n, cie, desc)}
                   />
                 </td>
                 <td colSpan={2} style={{ ...td, textAlign: "center", verticalAlign: "middle" }}>
@@ -595,9 +591,13 @@ const ImagenologiaForm = React.forwardRef<HistoriaClinicaImagenologiaHandle, Pro
 
     const handleAddBloque = () => {
       if (datos.bloques.length >= MAX_BLOQUES_IMAGENOLOGIA) return;
-      setDatos((prev) => ({
-        bloques: [...prev.bloques, crearBloqueVacio(paciente)],
-      }));
+      setDatos((prev) => {
+        const firstBlock = prev.bloques[0];
+        const newBlock = firstBlock ? { ...firstBlock } : crearBloqueVacio(paciente);
+        return {
+          bloques: [...prev.bloques, newBlock],
+        };
+      });
     };
 
     const handleRemoveBloque = (idx: number) => {
@@ -605,6 +605,31 @@ const ImagenologiaForm = React.forwardRef<HistoriaClinicaImagenologiaHandle, Pro
       setDatos((prev) => ({
         bloques: prev.bloques.filter((_, i) => i !== idx),
       }));
+    };
+
+    const handleDiagnosticoChange = (idx: number, n: number, cie: string, desc: string) => {
+      const nextBloques = [...datos.bloques];
+      nextBloques[idx] = { 
+        ...nextBloques[idx], 
+        [`diagnostico_${n}`]: desc, 
+        [`diagnostico_${n}_cie`]: cie 
+      };
+      setDatos(prev => ({ ...prev, bloques: nextBloques }));
+      
+      if (paciente?.tipoPaciente?.toUpperCase() === 'SPPAT') {
+        const diagnosticos = [];
+        for (let i = 1; i <= 6; i++) {
+          const descVal = nextBloques[idx][`diagnostico_${i}` as keyof BloqueImagenologia] as string;
+          const cieVal = nextBloques[idx][`diagnostico_${i}_cie` as keyof BloqueImagenologia] as string;
+          if (descVal || cieVal) {
+            diagnosticos.push({ descripcion: descVal, cie: cieVal });
+          }
+        }
+        
+        window.dispatchEvent(new CustomEvent("sync_diagnosticos", { 
+          detail: { source: "imagenologia", diagnosticos } 
+        }));
+      }
     };
 
     useEffect(() => {
@@ -619,6 +644,11 @@ const ImagenologiaForm = React.forwardRef<HistoriaClinicaImagenologiaHandle, Pro
                 updates[`diagnostico_${num}`] = diagnosticos[i].descripcion;
                 updates[`diagnostico_${num}_cie`] = diagnosticos[i].cie;
                 updates[`diagnostico_${num}_def`] = true;
+                updates[`diagnostico_${num}_pre`] = false;
+              } else {
+                updates[`diagnostico_${num}`] = "";
+                updates[`diagnostico_${num}_cie`] = "";
+                updates[`diagnostico_${num}_def`] = false;
                 updates[`diagnostico_${num}_pre`] = false;
               }
             }
@@ -758,6 +788,7 @@ const ImagenologiaForm = React.forwardRef<HistoriaClinicaImagenologiaHandle, Pro
                 numero={idx + 1}
                 b={b}
                 onChange={(campo, valor) => handleChange(idx, campo, valor)}
+                onDiagnosticoChange={(n, cie, desc) => handleDiagnosticoChange(idx, n, cie, desc)}
               />
               {datos.bloques.length > 1 && (
                 <button
