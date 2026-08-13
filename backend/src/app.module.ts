@@ -11,6 +11,7 @@ import { CategoriaPacienteModule } from './categoria-paciente/categoria-paciente
 import { AtencionModule } from './atencion/atencion.module';
 import { PlantillaModule } from './plantilla/plantilla.module';
 import { Cie10Module } from './cie10/cie10.module';
+import { ArchivosModule } from './archivos/archivos.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { Cie10Module } from './cie10/cie10.module';
     AtencionModule,
     PlantillaModule,
     Cie10Module,
+    ArchivosModule,
   ],
   controllers: [AppController],
   providers: [AppService],

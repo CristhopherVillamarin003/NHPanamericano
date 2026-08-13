@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useImperativeHandle, useEffect } from "react";
-import { ArrowDown } from "lucide-react";
+import { Trash2, FileText, Eye, Upload, ArrowDown } from "lucide-react";
 import RichTextEvolucion from "../ui/RichTextEvolucion";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
+import { api } from "@/lib/api";
 
 export function stripMedicoData(html: string): string {
   try {
@@ -74,6 +75,7 @@ interface BloqueEvolucion {
   notas_evolucion: string;
   farmacoterapia: string;
   administrar_farmacos: string;
+  adjuntos_pdf?: { url: string; nombre: string }[];
 }
 
 export interface DatosEvolucion {
@@ -232,8 +234,59 @@ function EvolucionBloque({
 }: {
   numero: number;
   bloque: BloqueEvolucion;
-  onChange: (campo: keyof BloqueEvolucion, valor: string) => void;
+  onChange: (campo: keyof BloqueEvolucion, valor: any) => void;
 }) {
+  const [isUploading, setIsUploading] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      for (let i = 0; i < files.length; i++) {
+        formData.append("files", files[i]);
+      }
+
+      const res = await api.post("/archivos/upload-pdf", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const data = res.data;
+      const nuevosAdjuntos = data.adjuntos || [];
+      const actuales = bloque.adjuntos_pdf || [];
+      onChange("adjuntos_pdf", [...actuales, ...nuevosAdjuntos]);
+    } catch (error) {
+      console.error(error);
+      alert("No se pudieron subir los archivos. Verifique que sean PDF.");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const removeAdjunto = async (index: number) => {
+    if (!bloque.adjuntos_pdf) return;
+    const url = bloque.adjuntos_pdf[index].url; // e.g. /archivos/pdfs/1786601373759-905847.pdf
+    
+    // Si la URL es válida, intentamos borrar el archivo físico en el backend
+    if (url && url.startsWith("/archivos/pdfs/")) {
+      try {
+        await api.delete(url);
+      } catch (error) {
+        console.error("Error al eliminar archivo físico:", error);
+      }
+    }
+
+    const nuevos = [...bloque.adjuntos_pdf];
+    nuevos.splice(index, 1);
+    onChange("adjuntos_pdf", nuevos);
+  };
+
   const tableStyle: React.CSSProperties = {
     width: "100%",
     minWidth: "900px",
@@ -476,6 +529,74 @@ function EvolucionBloque({
 
         </tbody>
       </table>
+
+      {/* Sección de Adjuntos PDF */}
+      <div style={{ marginTop: "10px", padding: "10px", border: "1px dashed #ccc", borderRadius: "5px", background: "#fafafa" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+          <h4 style={{ margin: 0, fontSize: "12px", color: "#333" }}>Documentos Adjuntos (PDF)</h4>
+          <input
+            type="file"
+            accept=".pdf"
+            multiple
+            ref={fileInputRef}
+            style={{ display: "none" }}
+            onChange={handleFileChange}
+          />
+          <button
+            type="button"
+            disabled={isUploading}
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              display: "flex", alignItems: "center", gap: "6px",
+              padding: "6px 12px", background: "#2563eb", color: "#fff",
+              border: "none", borderRadius: "4px", cursor: isUploading ? "not-allowed" : "pointer",
+              fontSize: "11px", fontWeight: "bold"
+            }}
+          >
+            <Upload size={14} />
+            {isUploading ? "Subiendo..." : "Cargar documento (PDF)"}
+          </button>
+        </div>
+
+        {bloque.adjuntos_pdf && bloque.adjuntos_pdf.length > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {bloque.adjuntos_pdf.map((adjunto, index) => (
+              <div key={index} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px", background: "#fff", border: "1px solid #eee", borderRadius: "4px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
+                  <FileText size={16} color="#ef4444" />
+                  <span style={{ fontWeight: 500, color: "#374151" }}>{adjunto.nombre}</span>
+                </div>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+                      window.dispatchEvent(new CustomEvent("open_pdf_preview", { detail: `${baseUrl}${adjunto.url}` }));
+                    }}
+                    style={{ display: "flex", alignItems: "center", gap: "4px", padding: "4px 8px", background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", borderRadius: "4px", cursor: "pointer", fontSize: "11px" }}
+                  >
+                    <Eye size={14} />
+                    Previsualizar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeAdjunto(index)}
+                    style={{ display: "flex", alignItems: "center", gap: "4px", padding: "4px 8px", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: "4px", cursor: "pointer", fontSize: "11px" }}
+                  >
+                    <Trash2 size={14} />
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ fontSize: "11px", color: "#6b7280", fontStyle: "italic", textAlign: "center", padding: "10px 0" }}>
+            No hay documentos adjuntos en este bloque.
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }
@@ -924,6 +1045,7 @@ function crearBloquePersonalizado(paciente: Props["paciente"] | undefined, notas
 const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
   ({ paciente, initialData, guardando = false, exportando = false, atencionId }, ref) => {
     
+    const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
     const [datos, setDatos] = useState<DatosEvolucion>(() => {
       if (initialData?.bloques && initialData.bloques.length > 0) {
         return { bloques: [...initialData.bloques] };
@@ -1314,13 +1436,19 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
         }
       };
       
+      const handleOpenPdfPreview = (e: CustomEvent) => {
+        setPdfPreviewUrl(e.detail);
+      };
+
       window.addEventListener("sync_plan_tratamiento", handleSyncPlan as EventListener);
       window.addEventListener("sync_motivo_consulta", handleSyncMotivo as EventListener);
       window.addEventListener("sync_diagnosticos", handleSyncDiagnosticos as EventListener);
+      window.addEventListener("open_pdf_preview", handleOpenPdfPreview as EventListener);
       return () => {
         window.removeEventListener("sync_plan_tratamiento", handleSyncPlan as EventListener);
         window.removeEventListener("sync_motivo_consulta", handleSyncMotivo as EventListener);
         window.removeEventListener("sync_diagnosticos", handleSyncDiagnosticos as EventListener);
+        window.removeEventListener("open_pdf_preview", handleOpenPdfPreview as EventListener);
       };
     }, []);
 
@@ -1431,6 +1559,32 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
               <span style={{ fontWeight: "700", color: "#1e293b", fontSize: "14px", letterSpacing: "0.02em" }}>
                 {toastMsg.texto}
               </span>
+            </div>
+          )}
+
+          {/* PDF Preview Modal */}
+          {pdfPreviewUrl && (
+            <div style={{
+              position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+              background: "rgba(0,0,0,0.75)", zIndex: 10000, display: "flex", flexDirection: "column",
+              justifyContent: "center", alignItems: "center", padding: "40px"
+            }}>
+              <div style={{
+                width: "100%", maxWidth: "900px", height: "85vh", background: "#fff",
+                borderRadius: "8px", overflow: "hidden", display: "flex", flexDirection: "column",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)"
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                  <h3 style={{ margin: 0, fontSize: "16px", color: "#334155" }}>Visor de Documento PDF</h3>
+                  <button
+                    onClick={() => setPdfPreviewUrl(null)}
+                    style={{ background: "#ef4444", color: "#fff", border: "none", borderRadius: "4px", padding: "6px 12px", fontWeight: "bold", cursor: "pointer" }}
+                  >
+                    X Cerrar
+                  </button>
+                </div>
+                <iframe src={pdfPreviewUrl} style={{ width: "100%", flex: 1, border: "none" }} title="PDF Preview" />
+              </div>
             </div>
           )}
 
