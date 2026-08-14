@@ -202,4 +202,97 @@ export class AtencionService {
     if (!record) throw new NotFoundException('Sección Escala de Riesgo no encontrada');
     return this.prisma.escalaRiesgo.delete({ where: { atencionId } });
   }
+
+  // ─── Lógica de Clonado ──────────────────────────────────────────────────
+  async cloneExpediente(sourceAtencionId: number, targetCategoriaPacienteId: number, targetPaciente: any) {
+    const source = await this.prisma.atencion.findUnique({
+      where: { id: sourceAtencionId },
+      include: this.fullInclude,
+    });
+    if (!source) throw new NotFoundException('Expediente origen no encontrado');
+
+    // 1. Asegurar que existe la Atención destino
+    const targetAtencion = await this.findOrCreate(targetCategoriaPacienteId);
+    const targetId = targetAtencion.id;
+
+    // Helper para reemplazar datos personales en JSONs de forma recursiva
+    const overwritePersonalData = (datos: any) => {
+      if (!datos || typeof datos !== 'object') return datos;
+      // Hacer una copia profunda para evitar mutar el objeto original en memoria
+      const result = JSON.parse(JSON.stringify(datos));
+      
+      const newValues = {
+        primer_nombre: targetPaciente.primerNombre ?? '',
+        segundo_nombre: targetPaciente.segundoNombre ?? '',
+        primer_apellido: targetPaciente.primerApellido ?? '',
+        segundo_apellido: targetPaciente.segundoApellido ?? '',
+        cedula: targetPaciente.cedula ?? '',
+        numero_historia_clinica: targetPaciente.cedula ?? '',
+        edad: targetPaciente.edad ?? '',
+        sexo: targetPaciente.sexo ? (targetPaciente.sexo.toUpperCase().startsWith('F') ? 'F' : 'M') : '',
+        institucion: targetPaciente.tipoPaciente ?? 'PARTICULAR',
+      };
+
+      const traverse = (obj: any) => {
+        if (!obj || typeof obj !== 'object') return;
+        
+        if (Array.isArray(obj)) {
+          obj.forEach(traverse);
+          return;
+        }
+
+        for (const [key, value] of Object.entries(obj)) {
+          if (newValues.hasOwnProperty(key)) {
+            obj[key] = newValues[key as keyof typeof newValues];
+          } else if (typeof value === 'object') {
+            traverse(value);
+          }
+        }
+      };
+
+      traverse(result);
+      return result;
+    };
+
+    // 2. Clonar Historia Clínica
+    if (source.historiaClinica) {
+      await this.upsertHistoriaClinica(
+        targetId,
+        source.historiaClinica.plantillaId,
+        overwritePersonalData(source.historiaClinica.datos as object),
+        source.historiaClinica.estado
+      );
+    }
+
+    // 3. Clonar Consentimientos
+    if (source.consentimientos && source.consentimientos.length > 0) {
+      // Eliminar los creados por defecto si los hay (opcional, por si el findOrCreate metió algo)
+      await this.prisma.consentimiento.deleteMany({ where: { atencionId: targetId } });
+      for (const cons of source.consentimientos) {
+        await this.createConsentimiento(
+          targetId,
+          cons.plantillaId,
+          overwritePersonalData(cons.datos as object)
+        );
+      }
+    }
+
+    // 4. Clonar otras secciones únicas
+    const cloneSection = async (sourceSec: any, upsertFn: Function) => {
+      if (sourceSec) {
+        await upsertFn.call(this, targetId, sourceSec.plantillaId, overwritePersonalData(sourceSec.datos as object), sourceSec.estado);
+      }
+    };
+
+    await cloneSection(source.protocolo, this.upsertProtocolo);
+    await cloneSection(source.cuidado, this.upsertCuidado);
+    await cloneSection(source.epicrisis, this.upsertEpicrisis);
+    await cloneSection(source.receta, this.upsertReceta);
+    await cloneSection(source.certificado, this.upsertCertificado);
+    await cloneSection(source.liquidacion, this.upsertLiquidacion);
+    await cloneSection(source.enfermeria, this.upsertEnfermeria);
+    await cloneSection(source.escalaRiesgo, this.upsertEscalaRiesgo);
+
+    return await this.findByCategoriaPaciente(targetCategoriaPacienteId);
+  }
 }

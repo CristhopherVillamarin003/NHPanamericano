@@ -14,6 +14,11 @@ export class CategoriaPacienteController {
     return this.categoriaPacienteService.addPacienteToCategoria(dto);
   }
 
+  @Get('all-expedientes')
+  listAll() {
+    return this.categoriaPacienteService.listAllExpedientes();
+  }
+
   @Get()
   list(@Query('categoriaId') categoriaId: string) {
     return this.categoriaPacienteService.listPacientesByCategoria(

@@ -130,8 +130,9 @@ export default function CategoriaPage() {
     setFormLoading(true);
     setFormError(undefined);
     try {
-      const paciente = await createPaciente(data);
-      await addPacienteToCategoria(categoriaId, paciente.id, data.tipoPaciente);
+      const { diagnostico, expedienteBaseId, ...pacienteData } = data;
+      const paciente = await createPaciente(pacienteData as any);
+      await addPacienteToCategoria(categoriaId, paciente.id, data.tipoPaciente, data.diagnostico, data.expedienteBaseId);
       setCreateOpen(false);
       await fetchRecords();
     } catch (error: any) {
@@ -145,8 +146,8 @@ export default function CategoriaPage() {
     }
   };
 
-  const handleLinkExisting = async (pacienteId: number, tipoPaciente?: string) => {
-    await addPacienteToCategoria(categoriaId, pacienteId, tipoPaciente);
+  const handleLinkExisting = async (pacienteId: number, tipoPaciente?: string, diagnostico?: string, expedienteBaseId?: number) => {
+    await addPacienteToCategoria(categoriaId, pacienteId, tipoPaciente, diagnostico, expedienteBaseId);
     await fetchRecords();
   };
 
@@ -155,11 +156,15 @@ export default function CategoriaPage() {
     if (!selectedPaciente) return;
     setFormLoading(true);
     try {
-      await updatePaciente(selectedPaciente.id, data);
+      const { diagnostico, expedienteBaseId, ...pacienteData } = data;
+      await updatePaciente(selectedPaciente.id, pacienteData as any);
       
       const recordId = (selectedPaciente as any)._recordId;
       if (recordId) {
-        await updateCategoriaPaciente(recordId, { tipoPaciente: data.tipoPaciente });
+        await updateCategoriaPaciente(recordId, { 
+          tipoPaciente: data.tipoPaciente,
+          diagnostico: diagnostico 
+        });
       }
 
       setEditOpen(false);
@@ -217,11 +222,14 @@ export default function CategoriaPage() {
           .filter(Boolean)
           .join(' ');
 
+        const diagnostico = (row as any).diagnostico;
+        const diagText = diagnostico ? ` • Dx: ${diagnostico}` : '';
+
         return (
           <div className="flex flex-col">
             <div className="text-xs text-zinc-500">
               {updatedAtLabel} {' '}
-              {tipo}
+              {tipo}{diagText}
             </div>
             <div className="font-medium text-zinc-900">{nombres}</div>
             <div className="text-sm text-zinc-600">{row.cedula || '—'}</div>
@@ -249,6 +257,7 @@ export default function CategoriaPage() {
     ...r.paciente,
     _recordId: r.id,
     _vinculadoAt: r.createdAt,
+    diagnostico: r.diagnostico,
     tipoPaciente: r.tipoPaciente || r.paciente.tipoPaciente, // Override with specific type
   }));
 
@@ -270,6 +279,8 @@ export default function CategoriaPage() {
       ? new Date((row as any)._vinculadoAt).toLocaleDateString('es-EC').toLowerCase()
       : '';
 
+    const diagnostico = ((row as any).diagnostico || '').toLowerCase();
+
     return (
       fullName.includes(query) ||
       row.primerNombre?.toLowerCase().includes(query) ||
@@ -281,6 +292,7 @@ export default function CategoriaPage() {
       row.sexo?.toLowerCase().includes(query) ||
       row.telefono?.includes(query) ||
       row.direccion?.toLowerCase().includes(query) ||
+      diagnostico.includes(query) ||
       createdAtText.includes(query)
     );
   });
@@ -326,6 +338,7 @@ export default function CategoriaPage() {
           onCancel={() => setCreateOpen(false)}
           loading={formLoading}
           errorMessage={formError}
+          isEdit={false}
         />
       </Modal>
 
@@ -337,6 +350,7 @@ export default function CategoriaPage() {
             onSubmit={handleEdit}
             onCancel={() => { setEditOpen(false); setSelectedPaciente(null); }}
             loading={formLoading}
+            isEdit={true}
           />
         )}
       </Modal>

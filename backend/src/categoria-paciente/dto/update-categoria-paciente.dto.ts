@@ -4,4 +4,8 @@ export class UpdateCategoriaPacienteDto {
   @IsOptional()
   @IsString()
   tipoPaciente?: string;
+
+  @IsOptional()
+  @IsString()
+  diagnostico?: string;
 }

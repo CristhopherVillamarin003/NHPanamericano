@@ -12,4 +12,12 @@ export class AddPacienteToCategoriaDto {
   @IsOptional()
   @IsString()
   tipoPaciente?: string;
+
+  @IsOptional()
+  @IsString()
+  diagnostico?: string;
+
+  @IsOptional()
+  @IsInt()
+  expedienteBaseId?: number;
 }

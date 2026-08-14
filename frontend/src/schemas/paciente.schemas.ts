@@ -54,6 +54,8 @@ export const pacienteSchema = z.object({
     .optional()
     .or(z.literal('')),
   direccion: z.string().optional().or(z.literal('')),
+  diagnostico: z.string().optional().or(z.literal('')),
+  expedienteBaseId: z.number().optional(),
 });
 
 export type PacienteFormData = z.infer<typeof pacienteSchema>;

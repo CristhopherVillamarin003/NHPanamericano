@@ -9,19 +9,19 @@ datasource db {
 }
 
 model Usuario {
-  id                Int      @id @default(autoincrement())
-  email             String   @unique
-  password          String
-  nombres           String?
-  apellidos         String?
-  activo            Boolean  @default(true)
-  emailVerificado   Boolean  @default(false) @map("email_verificado")
-  createdAt         DateTime @default(now()) @map("created_at")
+  id              Int      @id @default(autoincrement())
+  email           String   @unique
+  password        String
+  nombres         String?
+  apellidos       String?
+  activo          Boolean  @default(true)
+  emailVerificado Boolean  @default(false) @map("email_verificado")
+  createdAt       DateTime @default(now()) @map("created_at")
 
-  roles             UsuarioRol[]
-  refreshTokens     RefreshToken[]
-  recuperaciones    RecuperacionPassword[]
-  categorias         Categoria[]
+  roles          UsuarioRol[]
+  refreshTokens  RefreshToken[]
+  recuperaciones RecuperacionPassword[]
+  categorias     Categoria[]
 
   @@map("usuario")
   @@schema("seguridad")
@@ -32,8 +32,8 @@ model Rol {
   nombre      String  @unique
   descripcion String?
 
-  usuarios    UsuarioRol[]
-  permisos    RolPermiso[]
+  usuarios UsuarioRol[]
+  permisos RolPermiso[]
 
   @@map("rol")
   @@schema("seguridad")
@@ -44,7 +44,7 @@ model Permiso {
   codigo      String  @unique
   descripcion String?
 
-  roles       RolPermiso[]
+  roles RolPermiso[]
 
   @@map("permiso")
   @@schema("seguridad")
@@ -54,8 +54,8 @@ model UsuarioRol {
   usuarioId Int @map("usuario_id")
   rolId     Int @map("rol_id")
 
-  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  rol       Rol     @relation(fields: [rolId], references: [id], onDelete: Cascade)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  rol     Rol     @relation(fields: [rolId], references: [id], onDelete: Cascade)
 
   @@id([usuarioId, rolId])
   @@map("usuario_rol")
@@ -66,8 +66,8 @@ model RolPermiso {
   rolId     Int @map("rol_id")
   permisoId Int @map("permiso_id")
 
-  rol       Rol     @relation(fields: [rolId], references: [id], onDelete: Cascade)
-  permiso   Permiso @relation(fields: [permisoId], references: [id], onDelete: Cascade)
+  rol     Rol     @relation(fields: [rolId], references: [id], onDelete: Cascade)
+  permiso Permiso @relation(fields: [permisoId], references: [id], onDelete: Cascade)
 
   @@id([rolId, permisoId])
   @@map("rol_permiso")
@@ -81,7 +81,7 @@ model RefreshToken {
   expiracion DateTime
   creadoEn   DateTime @default(now()) @map("creado_en")
 
-  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@map("refresh_token")
   @@schema("seguridad")
@@ -95,7 +95,7 @@ model RecuperacionPassword {
   usado      Boolean  @default(false)
   creadoEn   DateTime @default(now()) @map("creado_en")
 
-  usuario    Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@map("recuperacion_password")
   @@schema("seguridad")
@@ -108,34 +108,34 @@ model Categoria {
   usuarioId   Int      @map("usuario_id")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  pacientes   CategoriaPaciente[]
+  usuario   Usuario             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  pacientes CategoriaPaciente[]
 
   @@map("categoria")
   @@schema("hospital")
 }
 
 model Paciente {
-  id             Int      @id @default(autoincrement())
-  primerNombre   String   @map("primer_nombre")
-  segundoNombre  String?  @map("segundo_nombre")
-  primerApellido String   @map("primer_apellido")
+  id              Int     @id @default(autoincrement())
+  primerNombre    String  @map("primer_nombre")
+  segundoNombre   String? @map("segundo_nombre")
+  primerApellido  String  @map("primer_apellido")
   segundoApellido String? @map("segundo_apellido")
 
-  cedula         String?  @unique
-  fechaNacimiento DateTime? @db.Date @map("fecha_nacimiento")
-  edad           Int?
+  cedula          String?   @unique
+  fechaNacimiento DateTime? @map("fecha_nacimiento") @db.Date
+  edad            Int?
 
-  tipoPaciente   String?  @map("tipo_paciente")
+  tipoPaciente String? @map("tipo_paciente")
 
-  sexo           String?
-  telefono       String?
-  direccion      String?
+  sexo      String?
+  telefono  String?
+  direccion String?
 
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  categorias     CategoriaPaciente[]
+  categorias CategoriaPaciente[]
 
   @@map("paciente")
   @@schema("hospital")
@@ -147,11 +147,12 @@ model CategoriaPaciente {
   pacienteId  Int      @map("paciente_id")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  categoria   Categoria @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
-  paciente    Paciente  @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
-  tipoPaciente String?  @map("tipo_paciente")
+  categoria    Categoria @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  paciente     Paciente  @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  tipoPaciente String?   @map("tipo_paciente")
+  diagnostico  String?
 
-  atencion    Atencion?
+  atencion Atencion?
 
   @@map("categoria_paciente")
   @@schema("hospital")
@@ -166,18 +167,18 @@ model Atencion {
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
 
-  categoriaPaciente   CategoriaPaciente @relation(fields: [categoriaPacienteId], references: [id], onDelete: Cascade)
+  categoriaPaciente CategoriaPaciente @relation(fields: [categoriaPacienteId], references: [id], onDelete: Cascade)
 
-  consentimientos     Consentimiento[]
-  historiaClinica     HistoriaClinica?
-  protocolo           Protocolo?
-  cuidado             Cuidado?
-  epicrisis           Epicrisis?
-  receta              Receta?
-  certificado         Certificado?
-  liquidacion         Liquidacion?
-  enfermeria          Enfermeria?
-  escalaRiesgo        EscalaRiesgo?
+  consentimientos Consentimiento[]
+  historiaClinica HistoriaClinica?
+  protocolo       Protocolo?
+  cuidado         Cuidado?
+  epicrisis       Epicrisis?
+  receta          Receta?
+  certificado     Certificado?
+  liquidacion     Liquidacion?
+  enfermeria      Enfermeria?
+  escalaRiesgo    EscalaRiesgo?
 
   @@map("atencion")
   @@schema("hospital")
@@ -186,26 +187,26 @@ model Atencion {
 // ─── Catálogo de plantillas MSP ──────────────────────────────────────────────
 
 model Plantilla {
-  id              Int      @id @default(autoincrement())
+  id              Int     @id @default(autoincrement())
   codigo          String?
   nombre          String
-  seccion         String   // 'consentimiento' | 'historia_clinica' | 'cuidado' | 'epicrisis' | 'protocolo' | 'receta'
-  tipoArchivo     String   @map("tipo_archivo") // 'xlsx' | 'docx'
-  esPlantillaFija Boolean  @default(true) @map("es_plantilla_fija")
-  rutaArchivo     String?  @map("ruta_archivo")
-  activo          Boolean  @default(true)
-  datos           Json?    @default("{}")
+  seccion         String // 'consentimiento' | 'historia_clinica' | 'cuidado' | 'epicrisis' | 'protocolo' | 'receta'
+  tipoArchivo     String  @map("tipo_archivo") // 'xlsx' | 'docx'
+  esPlantillaFija Boolean @default(true) @map("es_plantilla_fija")
+  rutaArchivo     String? @map("ruta_archivo")
+  activo          Boolean @default(true)
+  datos           Json?   @default("{}")
 
-  consentimientos Consentimiento[]
+  consentimientos   Consentimiento[]
   historiasClinicas HistoriaClinica[]
-  protocolos      Protocolo[]
-  cuidados        Cuidado[]
-  epicrisis       Epicrisis[]
-  recetas         Receta[]
-  certificados    Certificado[]
-  liquidaciones   Liquidacion[]
-  enfermerias     Enfermeria[]
-  escalasRiesgo   EscalaRiesgo[]
+  protocolos        Protocolo[]
+  cuidados          Cuidado[]
+  epicrisis         Epicrisis[]
+  recetas           Receta[]
+  certificados      Certificado[]
+  liquidaciones     Liquidacion[]
+  enfermerias       Enfermeria[]
+  escalasRiesgo     EscalaRiesgo[]
 
   @@map("plantilla")
   @@schema("hospital")
@@ -222,8 +223,8 @@ model Consentimiento {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
-  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+  atencion  Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla Plantilla @relation(fields: [plantillaId], references: [id])
 
   @@map("consentimiento")
   @@schema("hospital")
@@ -238,8 +239,8 @@ model HistoriaClinica {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
-  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+  atencion  Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla Plantilla @relation(fields: [plantillaId], references: [id])
 
   @@map("historia_clinica")
   @@schema("hospital")
@@ -254,8 +255,8 @@ model Protocolo {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
-  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+  atencion  Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla Plantilla @relation(fields: [plantillaId], references: [id])
 
   @@map("protocolo")
   @@schema("hospital")
@@ -270,8 +271,8 @@ model Cuidado {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
-  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+  atencion  Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla Plantilla @relation(fields: [plantillaId], references: [id])
 
   @@map("cuidado")
   @@schema("hospital")
@@ -286,8 +287,8 @@ model Epicrisis {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
-  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+  atencion  Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla Plantilla @relation(fields: [plantillaId], references: [id])
 
   @@map("epicrisis")
   @@schema("hospital")
@@ -302,8 +303,8 @@ model Receta {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
-  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+  atencion  Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla Plantilla @relation(fields: [plantillaId], references: [id])
 
   @@map("receta")
   @@schema("hospital")
@@ -318,8 +319,8 @@ model Certificado {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
-  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+  atencion  Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla Plantilla @relation(fields: [plantillaId], references: [id])
 
   @@map("certificado")
   @@schema("hospital")
@@ -334,8 +335,8 @@ model Liquidacion {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
-  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+  atencion  Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla Plantilla @relation(fields: [plantillaId], references: [id])
 
   @@map("liquidacion")
   @@schema("hospital")
@@ -360,8 +361,8 @@ model Enfermeria {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
-  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+  atencion  Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla Plantilla @relation(fields: [plantillaId], references: [id])
 
   @@map("enfermeria")
   @@schema("hospital")
@@ -376,8 +377,8 @@ model EscalaRiesgo {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  atencion    Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
-  plantilla   Plantilla @relation(fields: [plantillaId], references: [id])
+  atencion  Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+  plantilla Plantilla @relation(fields: [plantillaId], references: [id])
 
   @@map("escala_riesgo")
   @@schema("hospital")

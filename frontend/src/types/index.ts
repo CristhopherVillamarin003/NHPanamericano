@@ -29,6 +29,7 @@ export interface CategoriaPaciente {
   pacienteId: number;
   createdAt: string;
   tipoPaciente?: string;
+  diagnostico?: string;
   paciente: Paciente;
 }
 
