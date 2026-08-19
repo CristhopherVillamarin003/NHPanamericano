@@ -402,6 +402,21 @@ function injectImagenologiaMatematica(workbook: ExcelJS.Workbook, bloques: any[]
   }
 }
 
+/**
+ * Calcula el número de líneas aproximado requerido para el texto
+ * asumiendo un salto de línea automático (wrap text).
+ */
+function calculateRequiredLines(text: string, charsPerLine: number): number {
+  if (!text) return 1; // 1 línea por defecto
+  const textStr = String(text);
+  const lines = textStr.split('\n');
+  let totalLines = 0;
+  for (const line of lines) {
+    totalLines += Math.max(1, Math.ceil(line.length / charsPerLine));
+  }
+  return totalLines;
+}
+
 function injectEvolucionMatematica(workbook: ExcelJS.Workbook, bloques: any[]) {
   const sheet = workbook.getWorksheet('EVOLUCION');
   if (!sheet) return;
@@ -477,6 +492,32 @@ function injectEvolucionMatematica(workbook: ExcelJS.Workbook, bloques: any[]) {
       // Como no estaba explícito en el TXT, lo mapeo de forma conservadora o lo sumo a farmacoterapia
       // si es que comparten columna, pero por defecto lo dejaremos en la celda contigua
       setCell('AW11', b.administrar_farmacos); 
+    }
+
+    // --- AUTO-AJUSTE DE ALTURA PARA LA FILA 11 ---
+    const rowToAdjust = sheet.getRow(11 + bOffset);
+    let maxLines = 1;
+
+    // Reducimos aún más los caracteres por línea para sobrestimar y garantizar que no falte espacio.
+    // J11: notas_evolucion. Usamos ~42 caracteres
+    if (b.notas_evolucion) {
+      const estimatedLines = calculateRequiredLines(b.notas_evolucion, 42);
+      if (estimatedLines > maxLines) maxLines = estimatedLines;
+    }
+
+    // AN11: farmacoterapia. Es más angosta, usamos ~30 caracteres
+    if (b.farmacoterapia) {
+      const estimatedLines = calculateRequiredLines(b.farmacoterapia, 30);
+      if (estimatedLines > maxLines) maxLines = estimatedLines;
+    }
+
+    // El bloque en la plantilla está formado por celdas combinadas de 52 filas.
+    // SÓLO si superamos esas 52 líneas, calculamos las líneas sobrantes y extendemos la primera fila.
+    // Aumentamos los puntos por línea a 16.5 para dar un margen de respiro extra en cada salto.
+    if (maxLines > 52) {
+      const extraLines = maxLines - 52;
+      const currentHeight = rowToAdjust.height || 15; // altura típica de una sola fila
+      rowToAdjust.height = currentHeight + (extraLines * 16.5);
     }
   }
 

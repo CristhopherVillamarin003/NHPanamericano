@@ -52,6 +52,16 @@ export interface Atencion {
   liquidacion: SeccionUnica | null;
   enfermeria: SeccionUnica | null;
   escalaRiesgo: SeccionUnica | null;
+  consulta: SeccionConsulta | null;
+}
+
+export interface SeccionConsulta {
+  id: number;
+  atencionId: number;
+  datos: Record<string, any>;
+  estado: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Consentimiento {

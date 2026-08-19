@@ -19,6 +19,7 @@ export class AtencionService {
     liquidacion:       { include: { plantilla: true } },
     enfermeria:        { include: { plantilla: true } },
     escalaRiesgo:      { include: { plantilla: true } },
+    consulta:          true,
   };
 
   async findOrCreate(categoriaPacienteId: number) {
@@ -203,6 +204,23 @@ export class AtencionService {
     return this.prisma.escalaRiesgo.delete({ where: { atencionId } });
   }
 
+  // ─── Consulta (Sin Plantilla) ───────────────────────────────────────────
+
+  async upsertConsulta(atencionId: number, datos: object, estado?: string) {
+    await this.getAtencion(atencionId);
+    return this.prisma.consulta.upsert({
+      where: { atencionId },
+      create: { atencionId, datos, ...(estado ? { estado } : {}) },
+      update: { datos, ...(estado ? { estado } : {}) },
+    });
+  }
+
+  async deleteConsulta(atencionId: number) {
+    const record = await this.prisma.consulta.findUnique({ where: { atencionId } });
+    if (!record) throw new NotFoundException('Sección Consulta no encontrada');
+    return this.prisma.consulta.delete({ where: { atencionId } });
+  }
+
   // ─── Lógica de Clonado ──────────────────────────────────────────────────
   async cloneExpediente(sourceAtencionId: number, targetCategoriaPacienteId: number, targetPaciente: any) {
     const source = await this.prisma.atencion.findUnique({
@@ -292,6 +310,11 @@ export class AtencionService {
     await cloneSection(source.liquidacion, this.upsertLiquidacion);
     await cloneSection(source.enfermeria, this.upsertEnfermeria);
     await cloneSection(source.escalaRiesgo, this.upsertEscalaRiesgo);
+
+    // Clonar Consulta sin plantilla
+    if (source.consulta) {
+      await this.upsertConsulta(targetId, overwritePersonalData(source.consulta.datos as object), source.consulta.estado);
+    }
 
     return await this.findByCategoriaPaciente(targetCategoriaPacienteId);
   }

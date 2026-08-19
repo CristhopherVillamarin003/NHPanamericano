@@ -15,8 +15,13 @@ export class CategoriasService {
     });
   }
 
-  async listAll() {
+  async listAll(userEmail?: string, userId?: number) {
+    const isConsultaExterna = userEmail === 'consultaexterna@hospitalpanamericano.com.ec';
+
     return this.prisma.categoria.findMany({
+      where: isConsultaExterna 
+        ? { usuarioId: userId } 
+        : { usuario: { email: { not: 'consultaexterna@hospitalpanamericano.com.ec' } } },
       orderBy: { createdAt: 'desc' },
     });
   }

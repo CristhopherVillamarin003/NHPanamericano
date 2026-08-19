@@ -10,8 +10,8 @@ export class CategoriasController {
   constructor(private readonly categoriasService: CategoriasService) {}
 
   @Get()
-  list() {
-    return this.categoriasService.listAll();
+  list(@Req() req: { user: RequestUser }) {
+    return this.categoriasService.listAll(req.user.email, req.user.sub);
   }
 
   @Post()

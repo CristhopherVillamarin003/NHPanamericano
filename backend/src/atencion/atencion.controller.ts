@@ -216,4 +216,23 @@ export class AtencionController {
   deleteEscalaRiesgo(@Param('atencionId', ParseIntPipe) atencionId: number) {
     return this.atencionService.deleteEscalaRiesgo(atencionId);
   }
+
+  // ─── Consulta (Sin Plantilla) ───────────────────────────────────────────
+
+  @Put(':atencionId/consulta')
+  upsertConsulta(
+    @Param('atencionId', ParseIntPipe) atencionId: number,
+    @Body() dto: Partial<SeccionDto>,
+  ) {
+    return this.atencionService.upsertConsulta(
+      atencionId,
+      dto.datos ?? {},
+      dto.estado,
+    );
+  }
+
+  @Delete(':atencionId/consulta')
+  deleteConsulta(@Param('atencionId', ParseIntPipe) atencionId: number) {
+    return this.atencionService.deleteConsulta(atencionId);
+  }
 }
