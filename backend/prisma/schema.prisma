@@ -180,6 +180,7 @@ model Atencion {
   enfermeria      Enfermeria?
   escalaRiesgo    EscalaRiesgo?
   consulta        Consulta?
+  examenes        Examenes?
 
   @@map("atencion")
   @@schema("hospital")
@@ -399,3 +400,16 @@ model Consulta {
   @@schema("hospital")
 }
 
+model Examenes {
+  id          Int      @id @default(autoincrement())
+  atencionId  Int      @unique @map("atencion_id")
+  datos       Json     @default("{}")
+  estado      String   @default("borrador")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  atencion  Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+
+  @@map("examenes")
+  @@schema("hospital")
+}

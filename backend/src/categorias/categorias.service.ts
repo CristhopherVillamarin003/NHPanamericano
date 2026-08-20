@@ -16,12 +16,16 @@ export class CategoriasService {
   }
 
   async listAll(userEmail?: string, userId?: number) {
-    const isConsultaExterna = userEmail === 'consultaexterna@hospitalpanamericano.com.ec';
+    const consultaEmails = [
+      'consultaexterna@hospitalpanamericano.com.ec',
+      'laboratorioce@hospitalpanamericano.com.ec'
+    ];
+    const isConsultaExterna = userEmail && consultaEmails.includes(userEmail);
 
     return this.prisma.categoria.findMany({
       where: isConsultaExterna 
-        ? { usuarioId: userId } 
-        : { usuario: { email: { not: 'consultaexterna@hospitalpanamericano.com.ec' } } },
+        ? { usuario: { email: { in: consultaEmails } } } 
+        : { usuario: { email: { notIn: consultaEmails } } },
       orderBy: { createdAt: 'desc' },
     });
   }

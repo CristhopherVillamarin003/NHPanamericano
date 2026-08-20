@@ -20,6 +20,7 @@ export class AtencionService {
     enfermeria:        { include: { plantilla: true } },
     escalaRiesgo:      { include: { plantilla: true } },
     consulta:          true,
+    examenes:          true,
   };
 
   async findOrCreate(categoriaPacienteId: number) {
@@ -219,6 +220,22 @@ export class AtencionService {
     const record = await this.prisma.consulta.findUnique({ where: { atencionId } });
     if (!record) throw new NotFoundException('Sección Consulta no encontrada');
     return this.prisma.consulta.delete({ where: { atencionId } });
+  }
+
+  // ─── Exámenes (Sin Plantilla) ───────────────────────────────────────────
+  async upsertExamenes(atencionId: number, datos: object, estado?: string) {
+    await this.getAtencion(atencionId);
+    return this.prisma.examenes.upsert({
+      where: { atencionId },
+      create: { atencionId, datos, ...(estado ? { estado } : {}) },
+      update: { datos, ...(estado ? { estado } : {}) },
+    });
+  }
+
+  async deleteExamenes(atencionId: number) {
+    const record = await this.prisma.examenes.findUnique({ where: { atencionId } });
+    if (!record) throw new NotFoundException('Sección Exámenes no encontrada');
+    return this.prisma.examenes.delete({ where: { atencionId } });
   }
 
   // ─── Lógica de Clonado ──────────────────────────────────────────────────

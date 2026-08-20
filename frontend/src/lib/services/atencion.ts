@@ -42,7 +42,7 @@ export async function deleteConsentimiento(id: number): Promise<void> {
 
 // ─── Secciones únicas ─────────────────────────────────────────────────────────
 
-type Seccion = 'historia-clinica' | 'protocolo' | 'cuidado' | 'epicrisis' | 'receta' | 'certificado' | 'liquidacion' | 'enfermeria' | 'escala_riesgo' | 'consulta';
+type Seccion = 'historia-clinica' | 'protocolo' | 'cuidado' | 'epicrisis' | 'receta' | 'certificado' | 'liquidacion' | 'enfermeria' | 'escala_riesgo' | 'consulta' | 'examenes';
 
 export async function exportarConsentimiento(
   plantillaId: number,

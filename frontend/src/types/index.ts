@@ -53,6 +53,7 @@ export interface Atencion {
   enfermeria: SeccionUnica | null;
   escalaRiesgo: SeccionUnica | null;
   consulta: SeccionConsulta | null;
+  examenes: SeccionConsulta | null;
 }
 
 export interface SeccionConsulta {

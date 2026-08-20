@@ -113,7 +113,7 @@ export default function AtencionPage() {
     setUserEmail(getSessionCookie('user_email'));
   }, []);
   const isReadOnlyUser = userEmail === 'administracion@hospitalpanamericano.com.ec' || userEmail === 'laboratorio@hospitalpanamericano.com.ec';
-  const isConsultaExterna = userEmail === 'consultaexterna@hospitalpanamericano.com.ec';
+  const isConsultaExterna = userEmail === 'consultaexterna@hospitalpanamericano.com.ec' || userEmail === 'laboratorioce@hospitalpanamericano.com.ec';
 
   // Modal crear consentimiento
   const [createOpen, setCreateOpen] = useState(false);
@@ -983,7 +983,8 @@ export default function AtencionPage() {
         
         {/* Consulta Externa — condicional */}
         {isConsultaExterna && (
-          <div className="seccion-card">
+          <>
+            <div className="seccion-card">
             <div className="seccion-card-header">
               <div className="seccion-card-title">
                 <FolderOpen className="w-4 h-4 text-sky-500" />
@@ -1024,7 +1025,51 @@ export default function AtencionPage() {
                 </div>
               </div>
             )}
-          </div>
+            </div>
+            
+            <div className="seccion-card mt-4">
+              <div className="seccion-card-header">
+                <div className="seccion-card-title">
+                  <FolderOpen className="w-4 h-4 text-sky-500" />
+                  <span>Exámenes</span>
+                  {atencion?.examenes && (
+                    <span className="seccion-badge">1</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="btn-create"
+                  onClick={() => router.push(`/dashboard/atencion/${categoriaPacienteId}/examenes`)}
+                >
+                  <ArrowRight className="w-4 h-4" />
+                  Ingresar
+                </button>
+              </div>
+              {atencion?.examenes && (
+                <div className="seccion-items">
+                  <div className="seccion-item">
+                    <span className="seccion-item-name" style={{ cursor: 'default', textDecoration: 'none', color: '#18181b' }}>
+                      Exámenes de Laboratorio
+                    </span>
+                    <div className="seccion-item-estado">
+                      {atencion.examenes.estado !== 'borrador' && (
+                        <span className={`estado-badge estado-${atencion.examenes.estado}`}>
+                          {atencion.examenes.estado}
+                        </span>
+                      )}
+                    </div>
+                    <div className="table-actions">
+                      <ConsentimientoActionsMenu
+                        onEdit={() => {}}
+                        onDelete={() => setDeleteSeccionTarget('examenes')}
+                        hideEdit
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
 

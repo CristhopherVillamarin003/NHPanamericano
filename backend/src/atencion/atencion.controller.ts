@@ -235,4 +235,23 @@ export class AtencionController {
   deleteConsulta(@Param('atencionId', ParseIntPipe) atencionId: number) {
     return this.atencionService.deleteConsulta(atencionId);
   }
+
+  // ─── Exámenes (Sin Plantilla) ───────────────────────────────────────────
+
+  @Put(':atencionId/examenes')
+  upsertExamenes(
+    @Param('atencionId', ParseIntPipe) atencionId: number,
+    @Body() body: { datos: object; estado?: string },
+  ) {
+    return this.atencionService.upsertExamenes(
+      atencionId,
+      body.datos,
+      body.estado,
+    );
+  }
+
+  @Delete(':atencionId/examenes')
+  deleteExamenes(@Param('atencionId', ParseIntPipe) atencionId: number) {
+    return this.atencionService.deleteExamenes(atencionId);
+  }
 }
