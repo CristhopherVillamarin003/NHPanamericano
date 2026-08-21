@@ -42,6 +42,7 @@ interface DatosCertificado {
   procedimiento: string;
   diagnostico: string;
   codigo_cie10: string;
+  diagnosticos_array: { cie: string; desc: string }[];
   cuadro_clinico: string;
   tipo_contingencia: string;
   direccion_paciente: string;
@@ -319,6 +320,7 @@ const CertificadoMedicoForm = React.forwardRef<CertificadoMedicoFormHandle, Prop
       procedimiento: "",
       diagnostico: "",
       codigo_cie10: "",
+      diagnosticos_array: [],
       cuadro_clinico: "",
       tipo_contingencia: "",
       direccion_paciente: paciente?.direccion ?? "",
@@ -343,6 +345,25 @@ const CertificadoMedicoForm = React.forwardRef<CertificadoMedicoFormHandle, Prop
     base.fecha_alta = base.fecha_alta_raw ? fechaCompletaConLetras(base.fecha_alta_raw) : "";
     base.dias_reposo_letras = base.dias_reposo_num ? reposoConLetras(base.dias_reposo_num) : "";
 
+    // Migración legacy para diagnosticos_array
+    if ((!base.diagnosticos_array || base.diagnosticos_array.length === 0) && (base.diagnostico || base.codigo_cie10)) {
+      base.diagnosticos_array = [{
+        cie: base.codigo_cie10 || "",
+        desc: base.diagnostico || ""
+      }];
+    }
+    if (!base.diagnosticos_array || base.diagnosticos_array.length === 0) {
+      base.diagnosticos_array = [{ cie: "", desc: "" }];
+    }
+
+    // Normalizar a formato combinado para la UI
+    base.diagnosticos_array = base.diagnosticos_array.map(x => {
+      if (x.cie && !x.desc.includes(`(CIE10: ${x.cie})`)) {
+        return { cie: "", desc: `${x.desc} (CIE10: ${x.cie})` };
+      }
+      return x;
+    });
+
     return base;
   });
 
@@ -353,8 +374,26 @@ const CertificadoMedicoForm = React.forwardRef<CertificadoMedicoFormHandle, Prop
     onRestore: (saved) => setD(p => ({ ...p, ...saved })),
   });
 
+  const getFinalDatos = () => {
+    const final = { ...d };
+    const validDiags = final.diagnosticos_array
+      .map(x => {
+        let t = x.desc.trim();
+        if (x.cie) t += ` (CIE10: ${x.cie.trim()})`;
+        return t;
+      })
+      .filter(Boolean);
+
+    final.diagnostico = validDiags.length > 1
+      ? validDiags.map((desc, i) => `${i + 1}. ${desc}`).join('\n')
+      : validDiags.join('\n');
+    
+    final.codigo_cie10 = "";
+    return final;
+  };
+
   useImperativeHandle(ref, () => ({
-    getDatos: () => d,
+    getDatos: () => getFinalDatos(),
     clearAutosave: () => clearAutosave(),
     isDirty: () => isDirty,
   }), [d, clearAutosave, isDirty]);
@@ -425,11 +464,11 @@ const CertificadoMedicoForm = React.forwardRef<CertificadoMedicoFormHandle, Prop
         </div>
         <div style={{ display: "flex", gap: 6 }}>
           {!isReadOnly && (
-            <button onClick={() => { onGuardar?.(d); clearAutosave(); }} disabled={guardando} style={btnStyle("#1a3a5c")}>
+            <button onClick={() => { onGuardar?.(getFinalDatos()); clearAutosave(); }} disabled={guardando} style={btnStyle("#1a3a5c")}>
               {guardando ? "Guardando..." : "💾 Guardar"}
             </button>
           )}
-          <button onClick={() => onExportarDocx?.(d)} disabled={exportando} style={btnStyle("#1e6b2e")}>
+          <button onClick={() => onExportarDocx?.(getFinalDatos())} disabled={exportando} style={btnStyle("#1e6b2e")}>
             {exportando ? "Exportando..." : "📄 Descargar Word"}
           </button>
         </div>
@@ -596,80 +635,80 @@ const CertificadoMedicoForm = React.forwardRef<CertificadoMedicoFormHandle, Prop
                   fontWeight: 700, fontSize: "9px", fontFamily: "Arial, sans-serif",
                   color: "#1a3a5c", width: 200,
                 }}>
-                  <div style={{ height: 26, display: "flex", alignItems: "center" }}>DIAGNÓSTICO:</div>
-                  <div style={{ height: 26, display: "flex", alignItems: "center" }}>CÓDIGO DE DIAGNÓSTICO (CIE10):</div>
-                  <div style={{ height: 26, display: "flex", alignItems: "center" }}>CUADRO CLÍNICO:</div>
-                  <div style={{ height: 26, display: "flex", alignItems: "center" }}>TIPO DE CONTINGENCIA:</div>
-                  <div style={{ height: 26, display: "flex", alignItems: "center" }}>DIRECCIÓN:</div>
-                  <div style={{ height: 26, display: "flex", alignItems: "center" }}>TELÉFONO DEL PACIENTE:</div>
-                  <div style={{ height: 26, display: "flex", alignItems: "center" }}>INSTITUCIÓN / EMPRESA:</div>
+                  DIAGNÓSTICO + CÓDIGO DE DIAGNÓSTICO (CIE10):
                 </td>
-                <td style={{ border: "1px solid #999", padding: "0 4px", verticalAlign: "top" }}>
-                  {/* DIAGNÓSTICO */}
-                  <div style={{ height: 26, display: "flex", alignItems: "center", borderBottom: "1px solid #f0f0f0" }}>
-                    <div style={{ flex: 1, padding: "2px 4px", fontSize: "10px", fontFamily: "'Georgia', serif", width: "100%" }}>
-                      <Cie10DescInput
-                        cie={d.codigo_cie10}
-                        descripcion={d.diagnostico}
-                        placeholder="Ej: HERNIA UMBILICAL CON OBSTRUCCIÓN, SIN GANGRENA"
-                        onChange={(cie, desc) => {
-                          s("codigo_cie10")(cie);
-                          s("diagnostico")(desc);
-                        }}
-                      />
-                    </div>
-                  </div>
-                  {/* CÓDIGO DE DIAGNÓSTICO (CIE10) */}
-                  <div style={{ height: 26, display: "flex", alignItems: "center", borderBottom: "1px solid #f0f0f0" }}>
-                    <div style={{ flex: 1, padding: "2px 4px", fontSize: "10px", fontFamily: "'Georgia', serif", width: "100%" }}>
-                      <Cie10CieInput
-                        cie={d.codigo_cie10}
-                        descripcion={d.diagnostico}
-                        center={false}
-                        onChange={(cie, desc) => {
-                          s("codigo_cie10")(cie);
-                          s("diagnostico")(desc);
-                        }}
-                      />
-                    </div>
-                  </div>
-                  {[
-                    { k: "cuadro_clinico" as const, ph: "Descripción del cuadro clínico..." },
-                    { k: "tipo_contingencia" as const, ph: "ENFERMEDAD / ACCIDENTE / MATERNIDAD" },
-                    { k: "direccion_paciente" as const, ph: "Dirección de domicilio" },
-                    { k: "telefono_paciente" as const, ph: "0999999999" },
-                    { k: "institucion_empresa" as const, ph: "Empresa u organización" },
-                  ].map(({ k, ph }) => (
-                    <div key={k} style={{ height: 26, display: "flex", alignItems: "center", borderBottom: "1px solid #f0f0f0" }}>
-                      {k === "tipo_contingencia" ? (
-                        <select
-                          value={d[k]}
-                          onChange={(e) => s(k)(e.target.value)}
-                          style={{
-                            width: "100%", border: "none", outline: "none", fontSize: "10px",
-                            fontFamily: "'Georgia', serif", padding: "2px 4px",
-                            background: "transparent", boxSizing: "border-box",
-                            cursor: "pointer", color: d[k] ? "#000" : "#777",
+                <td style={{ border: "1px solid #999", padding: "0", verticalAlign: "top" }}>
+                  {d.diagnosticos_array.map((diag, idx) => (
+                    <div key={idx} style={{ display: "flex", alignItems: "center", borderBottom: "1px solid #f0f0f0", padding: "2px 4px" }}>
+                      <div style={{ flex: 1, padding: "2px 4px", fontSize: "10px", fontFamily: "'Georgia', serif", width: "100%" }}>
+                        <Cie10DescInput
+                          cie={diag.cie}
+                          descripcion={diag.desc}
+                          placeholder="Ej: HERNIA UMBILICAL CON OBSTRUCCIÓN, SIN GANGRENA"
+                          onChange={(cie, desc) => {
+                            const newArr = [...d.diagnosticos_array];
+                            if (cie && desc && !desc.includes(`(CIE10: ${cie})`)) {
+                              newArr[idx] = { cie: "", desc: `${desc} (CIE10: ${cie})` };
+                            } else {
+                              newArr[idx] = { cie: "", desc };
+                            }
+                            s("diagnosticos_array")(newArr as any);
                           }}
-                        >
-                          <option value="" disabled>Seleccione...</option>
-                          <option value="ENFERMEDAD GENERAL">ENFERMEDAD GENERAL</option>
-                          <option value="ENFERMEDAD CATASTRÓFICA">ENFERMEDAD CATASTRÓFICA</option>
-                          <option value="MATERNIDAD">MATERNIDAD</option>
-                        </select>
-                      ) : (
-                        <input type="text" value={d[k]} onChange={(e) => s(k)(e.target.value)}
-                          placeholder={ph}
-                          style={{
-                            width: "100%", border: "none", outline: "none", fontSize: "10px",
-                            fontFamily: "'Georgia', serif", padding: "2px 4px",
-                            background: "transparent", boxSizing: "border-box",
-                          }} />
+                        />
+                      </div>
+                      {!isReadOnly && (
+                        <button type="button" onClick={() => {
+                          const newArr = d.diagnosticos_array.filter((_, i) => i !== idx);
+                          if (newArr.length === 0) newArr.push({ cie: "", desc: "" });
+                          s("diagnosticos_array")(newArr as any);
+                        }} style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer", fontSize: "12px", fontWeight: "bold", padding: "0 6px" }} title="Eliminar diagnóstico">
+                          ×
+                        </button>
                       )}
                     </div>
                   ))}
+                  {!isReadOnly && (
+                    <div style={{ padding: "4px", background: "#f8fafc", textAlign: "center" }}>
+                      <button type="button" onClick={() => {
+                        s("diagnosticos_array")([...d.diagnosticos_array, { cie: "", desc: "" }] as any);
+                      }} style={{ background: "#e0f2fe", color: "#0369a1", border: "1px dashed #bae6fd", padding: "2px 8px", borderRadius: "4px", fontSize: "9px", cursor: "pointer", fontWeight: "bold" }}>
+                        + Agregar Diagnóstico
+                      </button>
+                    </div>
+                  )}
                 </td>
               </tr>
+              <TableField label="CUADRO CLÍNICO:" value={d.cuadro_clinico} onChange={s("cuadro_clinico")} placeholder="Descripción del cuadro clínico..." />
+              <tr>
+                <td style={{
+                  border: "1px solid #999", padding: "4px 8px",
+                  background: "#f0f4f8", verticalAlign: "top",
+                  fontWeight: 700, fontSize: "9px", fontFamily: "Arial, sans-serif",
+                  color: "#1a3a5c", width: 200,
+                }}>
+                  TIPO DE CONTINGENCIA:
+                </td>
+                <td style={{ border: "1px solid #999", padding: "2px 4px", verticalAlign: "top" }}>
+                  <select
+                    value={d.tipo_contingencia}
+                    onChange={(e) => s("tipo_contingencia")(e.target.value)}
+                    style={{
+                      width: "100%", border: "none", outline: "none", fontSize: "10px",
+                      fontFamily: "'Georgia', serif", padding: "2px 4px",
+                      background: "transparent", boxSizing: "border-box",
+                      cursor: "pointer", color: d.tipo_contingencia ? "#000" : "#777",
+                    }}
+                  >
+                    <option value="" disabled>ENFERMEDAD / ACCIDENTE / MATERNIDAD</option>
+                    <option value="ENFERMEDAD GENERAL">ENFERMEDAD GENERAL</option>
+                    <option value="ENFERMEDAD CATASTRÓFICA">ENFERMEDAD CATASTRÓFICA</option>
+                    <option value="MATERNIDAD">MATERNIDAD</option>
+                  </select>
+                </td>
+              </tr>
+              <TableField label="DIRECCIÓN:" value={d.direccion_paciente} onChange={s("direccion_paciente")} placeholder="Dirección de domicilio" />
+              <TableField label="TELÉFONO DEL PACIENTE:" value={d.telefono_paciente} onChange={s("telefono_paciente")} placeholder="0999999999" />
+              <TableField label="INSTITUCIÓN / EMPRESA:" value={d.institucion_empresa} onChange={s("institucion_empresa")} placeholder="Empresa u organización" />
               <TableField label="OCUPACIÓN / CARGO:"
                 value={d.ocupacion} onChange={s("ocupacion")} placeholder="Ej: DOCENTE" />
             </tbody>

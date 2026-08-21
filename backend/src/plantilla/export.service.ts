@@ -847,30 +847,20 @@ export class ExportService {
       } else {
         const lineas = strValor.split('\n');
         
-        // Extraer formato del párrafo original (pPr) si existe
-        const originalPPr = p.getElementsByTagName("w:pPr")[0];
-
         for (let i = 0; i < lineas.length; i++) {
-          let targetP = p;
           if (i > 0) {
-            targetP = doc.createElement("w:p");
-            if (originalPPr) {
-              targetP.appendChild(originalPPr.cloneNode(true));
-            }
-            celda.appendChild(targetP);
+            const rBr = doc.createElement("w:r");
+            rBr.appendChild(doc.createElement("w:br"));
+            p.appendChild(rBr);
           }
 
-          const r = doc.createElement("w:r");
-          const t = doc.createElement("w:t");
-          t.setAttribute("xml:space", "preserve");
-          t.appendChild(doc.createTextNode(lineas[i]));
-          r.appendChild(t);
-          targetP.appendChild(r);
-          
-          if (lineas[i].trim() === '') {
-             const rBr = doc.createElement("w:r");
-             rBr.appendChild(doc.createElement("w:br"));
-             targetP.appendChild(rBr);
+          if (lineas[i].trim() !== '') {
+            const r = doc.createElement("w:r");
+            const t = doc.createElement("w:t");
+            t.setAttribute("xml:space", "preserve");
+            t.appendChild(doc.createTextNode(lineas[i]));
+            r.appendChild(t);
+            p.appendChild(r);
           }
         }
       }
@@ -1196,24 +1186,19 @@ export class ExportService {
         return;
       }
 
-      const r = xmlDoc.createElement("w:r");
-
       // Aplicar fuente Calibri 10pt para que coincida con el resto del documento
       const rPr = xmlDoc.createElement("w:rPr");
-
       const rFonts = xmlDoc.createElement("w:rFonts");
       rFonts.setAttribute("w:ascii", "Calibri");
       rFonts.setAttribute("w:hAnsi", "Calibri");
       rFonts.setAttribute("w:cs", "Calibri");
       rPr.appendChild(rFonts);
 
-      // Negrita si el campo lo requiere
       if (mapEntry.negrita) {
         rPr.appendChild(xmlDoc.createElement("w:b"));
         rPr.appendChild(xmlDoc.createElement("w:bCs"));
       }
 
-      // Tamaño 10pt → half-points = 20
       const sz = xmlDoc.createElement("w:sz");
       sz.setAttribute("w:val", "20");
       rPr.appendChild(sz);
@@ -1222,13 +1207,27 @@ export class ExportService {
       szCs.setAttribute("w:val", "20");
       rPr.appendChild(szCs);
 
-      r.appendChild(rPr);
+      const strValor = String(valorText).toUpperCase();
+      const lineas = strValor.split('\n');
 
-      const t = xmlDoc.createElement("w:t");
-      t.setAttribute("xml:space", "preserve");
-      t.appendChild(xmlDoc.createTextNode(String(valorText).toUpperCase()));
-      r.appendChild(t);
-      p.appendChild(r);
+      for (let i = 0; i < lineas.length; i++) {
+        if (i > 0) {
+          const rBr = xmlDoc.createElement("w:r");
+          rBr.appendChild(xmlDoc.createElement("w:br"));
+          p.appendChild(rBr);
+        }
+
+        if (lineas[i].trim() !== '') {
+          const rLine = xmlDoc.createElement("w:r");
+          rLine.appendChild(rPr.cloneNode(true));
+          
+          const t = xmlDoc.createElement("w:t");
+          t.setAttribute("xml:space", "preserve");
+          t.appendChild(xmlDoc.createTextNode(lineas[i]));
+          rLine.appendChild(t);
+          p.appendChild(rLine);
+        }
+      }
     };
 
     console.log('DATOS RECIBIDOS PARA REPOSO:', {
