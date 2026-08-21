@@ -62,10 +62,17 @@ interface DatosEpicrisis {
   dias_reposo: string;
 
   // I. Médicos tratantes
-  medico_nombre: string;
-  medico_especialidad: string;
-  medico_sello_documento: string;
-  medico_periodo: string;
+  medicos_tratantes: Array<{
+    nombre: string;
+    especialidad: string;
+    sello_documento: string;
+    periodo: string;
+  }>;
+  // Mantener los campos antiguos opcionales para compatibilidad con datos viejos
+  medico_nombre?: string;
+  medico_especialidad?: string;
+  medico_sello_documento?: string;
+  medico_periodo?: string;
 
   // J. Datos del profesional responsable
   prof_fecha: string;
@@ -222,10 +229,11 @@ export type EpicrisisFormHandle = {
   getDatos: () => DatosEpicrisis;
   clearAutosave?: () => void;
   isDirty?: () => boolean;
+  updateDatos?: (nuevos: Partial<DatosEpicrisis>) => void;
 };
 
 const EpicrisisForm = React.forwardRef<EpicrisisFormHandle, Props>(({
-  paciente, initialData, onGuardar,  onExportarDocx,
+  paciente, initialData: rawInitialData, onGuardar,  onExportarDocx,
   guardando = false,
   exportando = false,
   atencionId,
@@ -233,6 +241,20 @@ const EpicrisisForm = React.forwardRef<EpicrisisFormHandle, Props>(({
 }, ref) => {
   const [hoja, setHoja] = useState<"ANVERSO" | "REVERSO">("ANVERSO");
   const nowTime = new Date().toTimeString().slice(0, 5);
+
+  const initialData = { ...rawInitialData };
+  if (!initialData.medicos_tratantes) {
+    if (initialData.medico_nombre) {
+      initialData.medicos_tratantes = [{
+        nombre: initialData.medico_nombre || "",
+        especialidad: initialData.medico_especialidad || "",
+        sello_documento: initialData.medico_sello_documento || "",
+        periodo: initialData.medico_periodo || "",
+      }];
+    } else {
+      initialData.medicos_tratantes = [{ nombre: "", especialidad: "", sello_documento: "", periodo: "" }];
+    }
+  }
 
   const [d, setD] = useState<DatosEpicrisis>({
     // A — auto desde paciente
@@ -277,6 +299,7 @@ const EpicrisisForm = React.forwardRef<EpicrisisFormHandle, Props>(({
     alta_defuncion_mas_48h: false,
     dias_reposo: "",
     // I médico
+    medicos_tratantes: [],
     medico_nombre: "",
     medico_especialidad: "",
     medico_sello_documento: "",
@@ -304,10 +327,33 @@ const EpicrisisForm = React.forwardRef<EpicrisisFormHandle, Props>(({
     getDatos: () => d,
     clearAutosave: () => clearAutosave(),
     isDirty: () => isDirty,
+    updateDatos: (nuevos) => setD(p => ({ ...p, ...nuevos })),
   }), [d, clearAutosave, isDirty]);
 
   const s = (k: keyof DatosEpicrisis) => (v: string) => setD(p => ({ ...p, [k]: v }));
   const c = (k: keyof DatosEpicrisis) => (v: boolean) => setD(p => ({ ...p, [k]: v }));
+
+  const updateMedico = (index: number, field: keyof DatosEpicrisis["medicos_tratantes"][0], val: string) => {
+    setD(p => {
+      const copy = [...p.medicos_tratantes];
+      copy[index] = { ...copy[index], [field]: val };
+      return { ...p, medicos_tratantes: copy };
+    });
+  };
+
+  const addMedico = () => {
+    setD(p => ({
+      ...p,
+      medicos_tratantes: [...p.medicos_tratantes, { nombre: "", especialidad: "", sello_documento: "", periodo: "" }]
+    }));
+  };
+
+  const removeMedico = (index: number) => {
+    setD(p => {
+      if (p.medicos_tratantes.length <= 1) return p;
+      return { ...p, medicos_tratantes: p.medicos_tratantes.filter((_, i) => i !== index) };
+    });
+  };
 
   const diagRows: Array<{ label: string; key: keyof DatosEpicrisis; cieKey: keyof DatosEpicrisis }> = [
     { label: "DIAGNÓSTICO PRINCIPAL", key: "dx_principal", cieKey: "dx_principal_cie" },
@@ -522,45 +568,74 @@ const EpicrisisForm = React.forwardRef<EpicrisisFormHandle, Props>(({
               <td colSpan={5} style={{ ...tdLbl }}><Lbl small>SELLO Y NÚMERO DE DOCUMENTO DE IDENTIFICACIÓN DEL PROFESIONAL</Lbl></td>
               <td colSpan={3} style={{ ...tdLbl }}><Lbl small>PERÍODO DE RESPONSABILIDAD</Lbl></td>
             </tr>
-            <tr style={{ height: 28 }}>
-              <td colSpan={1} style={tdC}><span style={{ fontSize: "10px", fontWeight: 700 }}>1.</span></td>
-              <td colSpan={7} style={td}>
-                <MedicoInput 
-                  value={d.medico_nombre} 
-                  onChangeValue={s("medico_nombre")} 
-                  onSelectMedico={(m) => {
-                    s("medico_nombre")(m.nombre);
-                    s("medico_especialidad")(m.especialidad);
-                    s("medico_sello_documento")(m.identificacion);
-                  }} 
-                />
-              </td>
-              <td colSpan={4} style={td}>
-                <MedicoInput 
-                  value={d.medico_especialidad} 
-                  onChangeValue={s("medico_especialidad")} 
-                  onSelectMedico={(m) => {
-                    s("medico_nombre")(m.nombre);
-                    s("medico_especialidad")(m.especialidad);
-                    s("medico_sello_documento")(m.identificacion);
-                  }} 
-                />
-              </td>
-              <td colSpan={5} style={td}>
-                <MedicoInput 
-                  value={d.medico_sello_documento} 
-                  onChangeValue={s("medico_sello_documento")} 
-                  onSelectMedico={(m) => {
-                    s("medico_nombre")(m.nombre);
-                    s("medico_especialidad")(m.especialidad);
-                    s("medico_sello_documento")(m.identificacion);
-                  }} 
-                />
-              </td>
-              <td colSpan={3} style={td}><TxtIn value={d.medico_periodo} onChange={s("medico_periodo")} placeholder="dd/mm/aaaa - dd/mm/aaaa" /></td>
-            </tr>
+            {d.medicos_tratantes.map((medico, idx) => (
+              <tr key={idx} style={{ height: 28 }}>
+                <td colSpan={1} style={tdC}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                    <span style={{ fontSize: "10px", fontWeight: 700 }}>{idx + 1}.</span>
+                    {idx > 0 && !isReadOnly && (
+                      <button 
+                        onClick={() => removeMedico(idx)} 
+                        title="Eliminar médico"
+                        style={{ cursor: "pointer", background: "none", border: "none", color: "#d9534f", fontSize: "14px", padding: 0 }}
+                      >
+                        ⊖
+                      </button>
+                    )}
+                  </div>
+                </td>
+                <td colSpan={7} style={td}>
+                  <MedicoInput 
+                    value={medico.nombre} 
+                    onChangeValue={(v) => updateMedico(idx, "nombre", v)} 
+                    onSelectMedico={(m) => {
+                      updateMedico(idx, "nombre", m.nombre);
+                      updateMedico(idx, "especialidad", m.especialidad);
+                      updateMedico(idx, "sello_documento", m.identificacion);
+                    }} 
+                  />
+                </td>
+                <td colSpan={4} style={td}>
+                  <MedicoInput 
+                    value={medico.especialidad} 
+                    onChangeValue={(v) => updateMedico(idx, "especialidad", v)} 
+                    onSelectMedico={(m) => {
+                      updateMedico(idx, "nombre", m.nombre);
+                      updateMedico(idx, "especialidad", m.especialidad);
+                      updateMedico(idx, "sello_documento", m.identificacion);
+                    }} 
+                  />
+                </td>
+                <td colSpan={5} style={td}>
+                  <MedicoInput 
+                    value={medico.sello_documento} 
+                    onChangeValue={(v) => updateMedico(idx, "sello_documento", v)} 
+                    onSelectMedico={(m) => {
+                      updateMedico(idx, "nombre", m.nombre);
+                      updateMedico(idx, "especialidad", m.especialidad);
+                      updateMedico(idx, "sello_documento", m.identificacion);
+                    }} 
+                  />
+                </td>
+                <td colSpan={3} style={td}>
+                  <TxtIn 
+                    value={medico.periodo} 
+                    onChange={(v) => updateMedico(idx, "periodo", v)} 
+                    placeholder="dd/mm/aaaa - dd/mm/aaaa" 
+                  />
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
+        
+        {!isReadOnly && (
+          <div style={{ display: "flex", justifyContent: "flex-end", padding: "4px 0" }}>
+            <button onClick={addMedico} type="button" style={{ ...btnStyle("#4CAF50"), fontSize: "10px", padding: "3px 8px" }}>
+              + Agregar Médico
+            </button>
+          </div>
+        )}
 
         {/* ════════════════════════════════════════════════════════════════
             TABLA [4] — H. CONDICIÓN DE ALTA / EGRESO

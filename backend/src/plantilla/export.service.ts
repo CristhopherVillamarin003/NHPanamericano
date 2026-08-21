@@ -681,6 +681,82 @@ export class ExportService {
       throw new InternalServerErrorException(`No hay mapa de celdas DOCX para: ${seccion}`);
     }
 
+    // --- NUEVA LÓGICA PARA EPICRISIS MÉDICOS TRATANTES DINÁMICOS ---
+    if (seccion === 'epicrisis' && Array.isArray(datos.medicos_tratantes) && datos.medicos_tratantes.length > 0) {
+      const medicos = datos.medicos_tratantes;
+      const tabla3 = tables[3];
+      if (tabla3) {
+        const rows = tabla3.getElementsByTagName("w:tr");
+        const templateRow = rows[2];
+        if (templateRow) {
+          // Clonamos la fila (N - 1) veces
+          const clonedRows: any[] = [];
+          for (let i = 1; i < medicos.length; i++) {
+            const clone = templateRow.cloneNode(true);
+            // Insertar después de la última fila
+            const refNode = i === 1 ? templateRow.nextSibling : clonedRows[clonedRows.length - 1].nextSibling;
+            tabla3.insertBefore(clone, refNode);
+            clonedRows.push(clone);
+          }
+          
+          // Escribir en cada fila
+          const allRowsForMedicos = [templateRow, ...clonedRows];
+          for (let i = 0; i < medicos.length; i++) {
+            const row = allRowsForMedicos[i] as any;
+            const cells = row.getElementsByTagName("w:tc");
+            
+            const writeToCell = (celdaIndex: number, text: string) => {
+              const celda = cells[celdaIndex];
+              if (!celda) return;
+              let p = celda.getElementsByTagName("w:p")[0];
+              if (!p) {
+                p = doc.createElement("w:p");
+                celda.appendChild(p as any);
+              }
+              const originalPPr = p.getElementsByTagName("w:pPr")[0];
+              // Limpiar texto viejo
+              while (p.lastChild && p.lastChild !== originalPPr) {
+                p.removeChild(p.lastChild as any);
+              }
+              
+              const r = doc.createElement("w:r");
+              const rPr = doc.createElement("w:rPr");
+              const sz = doc.createElement("w:sz");
+              sz.setAttribute("w:val", "16"); // 8pt
+              rPr.appendChild(sz as any);
+              
+              // Añadir fuente Arial para asegurar consistencia
+              const rFonts = doc.createElement("w:rFonts");
+              rFonts.setAttribute("w:ascii", "Arial");
+              rFonts.setAttribute("w:hAnsi", "Arial");
+              rFonts.setAttribute("w:cs", "Arial");
+              rPr.appendChild(rFonts as any);
+
+              r.appendChild(rPr as any);
+              
+              const t = doc.createElement("w:t");
+              t.textContent = text || "";
+              r.appendChild(t as any);
+              p.appendChild(r as any);
+            };
+
+            // Según epicrisis.map.ts: celda[0]=N°, celda[1]=nombre, celda[2]=especialidad, celda[3]=sello, celda[4]=periodo
+            writeToCell(0, String(i + 1));
+            writeToCell(1, medicos[i].nombre || "");
+            writeToCell(2, medicos[i].especialidad || "");
+            writeToCell(3, medicos[i].sello_documento || "");
+            writeToCell(4, medicos[i].periodo || "");
+          }
+        }
+      }
+      
+      // Evitar que el mapeo plano sobrescriba la primera fila si aún viene en los datos
+      delete datos.medico_nombre;
+      delete datos.medico_especialidad;
+      delete datos.medico_sello_documento;
+      delete datos.medico_periodo;
+    }
+
     for (const [key, pos] of Object.entries(map)) {
       // The frontend uses un-prefixed keys for epicrisis (e.g. 'institucion')
       const valor = datos[key] ?? "";

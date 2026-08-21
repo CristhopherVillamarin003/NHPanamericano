@@ -85,8 +85,7 @@ export default function EpicrisisPage() {
   const [exportando, setExportando] = useState(false);
   const formRef = useRef<any>(null);
 
-  useEffect(() => {
-    async function load() {
+  const loadData = async (forceSync = false) => {
       const userEmail = getSessionCookie('user_email'); setIsReadOnly(userEmail === 'administracion@hospitalpanamericano.com.ec' || userEmail === 'laboratorio@hospitalpanamericano.com.ec');
       try {
         const atencionData = await findOrCreateAtencion(categoriaPacienteId);
@@ -103,6 +102,13 @@ export default function EpicrisisPage() {
         }
 
         let epicrisisDatos = (atencionData.epicrisis?.datos ?? {}) as any;
+
+        if (forceSync) {
+          epicrisisDatos.resumen_cuadro_clinico = '';
+          epicrisisDatos.resumen_evolucion = '';
+          epicrisisDatos.resumen_tratamiento = '';
+          epicrisisDatos.indicaciones_alta = '';
+        }
 
         // Auto-pull 'notas_evolucion' from 'historiaClinica'
         const hcDatos = atencionData.historiaClinica?.datos as any;
@@ -125,7 +131,7 @@ export default function EpicrisisPage() {
         } catch (e) {}
 
         // --- LITERAL B: RESUMEN DEL CUADRO CLÍNICO (Solo Bloque 0) ---
-        if (evolucionBloques.length > 0 && (!epicrisisDatos.resumen_cuadro_clinico || epicrisisDatos.resumen_cuadro_clinico.trim() === '')) {
+        if (evolucionBloques.length > 0 && (forceSync || !epicrisisDatos.resumen_cuadro_clinico || epicrisisDatos.resumen_cuadro_clinico.trim() === '')) {
           const firstEvo = evolucionBloques[0].notas_evolucion;
           if (firstEvo) {
             let filteredEvolucion = firstEvo;
@@ -168,7 +174,7 @@ export default function EpicrisisPage() {
         }
 
         // --- LITERAL C: RESUMEN DE EVOLUCIÓN Y COMPLICACIONES (Bloques 1 al N) ---
-        if (evolucionBloques.length > 1 && (!epicrisisDatos.resumen_evolucion || epicrisisDatos.resumen_evolucion.trim() === '')) {
+        if (evolucionBloques.length > 1 && (forceSync || !epicrisisDatos.resumen_evolucion || epicrisisDatos.resumen_evolucion.trim() === '')) {
           let aggregatedHtml = '';
           for (let idx = 1; idx < evolucionBloques.length; idx++) {
             const bloque = evolucionBloques[idx];
@@ -231,7 +237,7 @@ export default function EpicrisisPage() {
           epicrisisDatos.resumen_evolucion = aggregatedHtml;
         }
         // --- LITERAL E: RESUMEN DE TRATAMIENTO Y PROCEDIMIENTOS TERAPÉUTICOS ---
-        if (evolucionBloques.length > 0 && (!epicrisisDatos.resumen_tratamiento || epicrisisDatos.resumen_tratamiento.trim() === '')) {
+        if (evolucionBloques.length > 0 && (forceSync || !epicrisisDatos.resumen_tratamiento || epicrisisDatos.resumen_tratamiento.trim() === '')) {
           let aggregatedTratamientoHtml = '';
           for (let idx = 0; idx < evolucionBloques.length; idx++) {
             const bloque = evolucionBloques[idx];
@@ -299,7 +305,7 @@ export default function EpicrisisPage() {
         }
 
         // --- LITERAL F: INDICACIONES DE ALTA / EGRESO ---
-        if (evolucionBloques.length > 0 && (!epicrisisDatos.indicaciones_alta || epicrisisDatos.indicaciones_alta.trim() === '')) {
+        if (evolucionBloques.length > 0 && (forceSync || !epicrisisDatos.indicaciones_alta || epicrisisDatos.indicaciones_alta.trim() === '')) {
           let aggregatedIndicacionesHtml = '';
           for (let idx = 0; idx < evolucionBloques.length; idx++) {
             const bloque = evolucionBloques[idx];
@@ -371,14 +377,23 @@ export default function EpicrisisPage() {
         }
 
         setInitialData(epicrisisDatos);
+        if (forceSync) { formRef.current?.updateDatos?.(epicrisisDatos); }
       } catch (err) {
         console.error('Error al cargar la atención:', err);
       } finally {
         setLoading(false);
       }
-    }
-    load();
+    };
+
+  useEffect(() => {
+    loadData(false);
   }, [categoriaPacienteId]);
+
+  const handleSincronizar = async () => {
+    if (confirm("¿Estás seguro de que deseas sincronizar?" )) {
+      await loadData(true);
+    }
+  };
 
   const handleGuardar = async (datosPlano: Record<string, any>) => {
     if (!atencionId) return;
@@ -441,9 +456,16 @@ export default function EpicrisisPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-gray-800 leading-tight">
-              Epicrisis
-            </h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-bold text-gray-800 leading-tight">
+                Epicrisis
+              </h1>
+              {!isReadOnly && (
+                <button onClick={handleSincronizar} className="bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs font-semibold py-1 px-3 rounded flex items-center gap-1 transition-colors">
+                  <span>🔄</span> Sincronizar desde H.C.
+                </button>
+              )}
+            </div>
             <p className="text-xs text-gray-500 font-medium">
               {paciente
                 ? `PACIENTE: ${paciente.primerNombre ?? ''} ${paciente.primerApellido ?? ''}`.trim()
