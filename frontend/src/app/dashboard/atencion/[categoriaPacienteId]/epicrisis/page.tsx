@@ -104,10 +104,52 @@ export default function EpicrisisPage() {
         let epicrisisDatos = (atencionData.epicrisis?.datos ?? {}) as any;
 
         if (forceSync) {
+          // Campos dinámicos de evolución
           epicrisisDatos.resumen_cuadro_clinico = '';
           epicrisisDatos.resumen_evolucion = '';
           epicrisisDatos.resumen_tratamiento = '';
           epicrisisDatos.indicaciones_alta = '';
+          
+          // Campos manuales que no se traen de HC (Secciones D, G, H, I, J)
+          epicrisisDatos.hallazgos_examenes = '';
+          
+          epicrisisDatos.dx_principal = '';
+          epicrisisDatos.dx_principal_cie = '';
+          epicrisisDatos.dx_secundario_1 = '';
+          epicrisisDatos.dx_secundario_1_cie = '';
+          epicrisisDatos.dx_secundario_2 = '';
+          epicrisisDatos.dx_secundario_2_cie = '';
+          epicrisisDatos.dx_secundario_3 = '';
+          epicrisisDatos.dx_secundario_3_cie = '';
+          epicrisisDatos.causa_externa = '';
+          epicrisisDatos.causa_externa_cie = '';
+          
+          epicrisisDatos.condicion_vivo = false;
+          epicrisisDatos.condicion_fallecido = false;
+          epicrisisDatos.alta_medica = false;
+          epicrisisDatos.alta_asintomatico = false;
+          epicrisisDatos.alta_discapacidad = false;
+          epicrisisDatos.alta_retiro_no_autorizado = false;
+          epicrisisDatos.alta_defuncion_menos_48h = false;
+          epicrisisDatos.alta_defuncion_mas_48h = false;
+          epicrisisDatos.alta_voluntaria = false;
+          epicrisisDatos.dias_estada = '';
+          epicrisisDatos.dias_reposo = '';
+          
+          epicrisisDatos.medicos_tratantes = [{ nombre: "", especialidad: "", sello_documento: "", periodo: "" }];
+          epicrisisDatos.medico_nombre = '';
+          epicrisisDatos.medico_especialidad = '';
+          epicrisisDatos.medico_sello_documento = '';
+          epicrisisDatos.medico_periodo = '';
+          
+          epicrisisDatos.prof_fecha = new Date().toISOString().split("T")[0];
+          epicrisisDatos.prof_hora = new Date().toTimeString().slice(0, 5);
+          epicrisisDatos.prof_primer_nombre = '';
+          epicrisisDatos.prof_primer_apellido = '';
+          epicrisisDatos.prof_segundo_apellido = '';
+          epicrisisDatos.prof_numero_documento = '';
+          epicrisisDatos.elaborado_por = '';
+          epicrisisDatos.revisado_por = '';
         }
 
         // Auto-pull 'notas_evolucion' from 'historiaClinica'
@@ -390,7 +432,7 @@ export default function EpicrisisPage() {
   }, [categoriaPacienteId]);
 
   const handleSincronizar = async () => {
-    if (confirm("¿Estás seguro de que deseas sincronizar?" )) {
+    if (confirm("¿Estás seguro de que deseas sincronizar? Esto sobrescribirá el texto con las últimas notas de Evolución, y LIMPIARÁ todos los campos ingresados manualmente (Diagnósticos, Condición de alta, Médicos, etc.) para que empieces desde cero con este expediente." )) {
       await loadData(true);
     }
   };
