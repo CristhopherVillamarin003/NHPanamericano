@@ -1150,6 +1150,25 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
       setTimeout(() => setToastMsg(null), 3000);
     };
 
+    const handleDuplicarBloque = (idx: number) => {
+      setDatos((prev) => {
+        const sourceBloque = prev.bloques[idx];
+        if (!sourceBloque) return prev;
+        
+        // Deep copy the block
+        const newBloque = JSON.parse(JSON.stringify(sourceBloque));
+        
+        const newBloques = [...prev.bloques];
+        newBloques.splice(idx + 1, 0, newBloque);
+        return {
+          bloques: newBloques,
+        };
+      });
+      
+      setToastMsg({ texto: `BLOQUE DUPLICADO`, color: "#8b5cf6" }); // purple
+      setTimeout(() => setToastMsg(null), 3000);
+    };
+
     const handleRemoveBloque = (idx: number) => {
       if (datos.bloques.length <= 1) return;
       
@@ -1540,6 +1559,15 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
                     title="Inserta una nueva Nota de Alta debajo"
                   >
                     Alta
+                  </button>
+                  <span style={{ fontSize: "11px", color: "#cbd5e1", marginLeft: "4px", marginRight: "4px" }}>|</span>
+                  <button
+                    type="button"
+                    onClick={() => handleDuplicarBloque(idx)}
+                    style={{ background: "#faf5ff", color: "#9333ea", border: "1px dashed #e9d5ff", padding: "4px 12px", borderRadius: "16px", fontSize: "11px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s" }}
+                    title="Duplica exactamente este mismo bloque debajo"
+                  >
+                    Duplicar
                   </button>
                 </div>
               )}
