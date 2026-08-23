@@ -256,6 +256,13 @@ export class AtencionService {
       // Hacer una copia profunda para evitar mutar el objeto original en memoria
       const result = JSON.parse(JSON.stringify(datos));
       
+      const fullName = [
+        targetPaciente.primerApellido,
+        targetPaciente.segundoApellido,
+        targetPaciente.primerNombre,
+        targetPaciente.segundoNombre
+      ].filter(Boolean).join(' ');
+
       const newValues = {
         primer_nombre: targetPaciente.primerNombre ?? '',
         segundo_nombre: targetPaciente.segundoNombre ?? '',
@@ -263,9 +270,25 @@ export class AtencionService {
         segundo_apellido: targetPaciente.segundoApellido ?? '',
         cedula: targetPaciente.cedula ?? '',
         numero_historia_clinica: targetPaciente.cedula ?? '',
-        edad: targetPaciente.edad ?? '',
+        edad: targetPaciente.edad ? String(targetPaciente.edad) : '',
         sexo: targetPaciente.sexo ? (targetPaciente.sexo.toUpperCase().startsWith('F') ? 'F' : 'M') : '',
         institucion: targetPaciente.tipoPaciente ?? 'PARTICULAR',
+        // Alias usados en Receta, Certificado y otros forms
+        nombre: fullName,
+        nombres: fullName,
+        nombre_paciente: fullName,
+        cedula_paciente: targetPaciente.cedula ?? '',
+        edad_paciente: targetPaciente.edad ? String(targetPaciente.edad) : '',
+        // Alias específicos del Reverso de Consentimientos
+        nombre_paciente_firma: fullName,
+        cedula_paciente_firma: targetPaciente.cedula ?? '',
+        nombre_paciente_negativa: fullName,
+        cedula_paciente_negativa: targetPaciente.cedula ?? '',
+        nombre_paciente_rev: fullName,
+        cedula_paciente_rev: targetPaciente.cedula ?? '',
+        // Alias específicos de Enfermería
+        nombres_completos: fullName,
+        dni: targetPaciente.cedula ?? '',
       };
 
       const traverse = (obj: any) => {
