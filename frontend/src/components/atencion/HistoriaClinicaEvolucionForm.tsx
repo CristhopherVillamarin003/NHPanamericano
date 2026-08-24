@@ -1186,6 +1186,9 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
     /** Dispara los eventos de sincronización a otras hojas */
     const fireSyncEvents = (idx: number, campo: keyof BloqueEvolucion, valor: string) => {
       if (idx !== 0) return;
+      
+      const currentNotasEvolucion = campo === "notas_evolucion" ? valor : (datos.bloques[0]?.notas_evolucion || "");
+      if (!currentNotasEvolucion.includes("NOTA DE INGRESO")) return;
 
       if (campo === "farmacoterapia") {
         const cleanedValue = stripMedicoData(valor);
@@ -1418,7 +1421,7 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
         if (e.detail.source !== "evolucion") {
           setDatos(prev => {
             const nuevos = [...prev.bloques];
-            if (nuevos.length > 0) {
+            if (nuevos.length > 0 && nuevos[0]?.notas_evolucion?.includes("NOTA DE INGRESO")) {
               nuevos[0] = { ...nuevos[0], farmacoterapia: e.detail.value };
             }
             return { ...prev, bloques: nuevos };
@@ -1430,7 +1433,7 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
         if (e.detail.source !== "evolucion") {
           setDatos(prev => {
             const nuevos = [...prev.bloques];
-            if (nuevos.length > 0) {
+            if (nuevos.length > 0 && nuevos[0]?.notas_evolucion?.includes("NOTA DE INGRESO")) {
               const currentNotas = nuevos[0].notas_evolucion;
               // El regex busca el párrafo que contiene MOTIVO DE CONSULTA: y captura su contenido, 
               // reemplazándolo con el valor enviado por la otra hoja.
@@ -1450,7 +1453,7 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
           const diagnosticos = e.detail.diagnosticos || [];
           setDatos(prev => {
             const nuevos = [...prev.bloques];
-            if (nuevos.length > 0) {
+            if (nuevos.length > 0 && nuevos[0]?.notas_evolucion?.includes("NOTA DE INGRESO")) {
               const currentNotas = nuevos[0].notas_evolucion;
               const updatedNotas = currentNotas.replace(
                 /(<p[^>]*><strong[^>]*>\s*DIAGNOSTICOS:\s*<\/strong>\s*<\/p>)([\s\S]*)$/i,
