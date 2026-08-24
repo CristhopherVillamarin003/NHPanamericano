@@ -251,7 +251,7 @@ export class AtencionService {
     const targetId = targetAtencion.id;
 
     // Helper para reemplazar datos personales en JSONs de forma recursiva
-    const overwritePersonalData = (datos: any) => {
+    const overwritePersonalData = (datos: any, seccionName?: string) => {
       if (!datos || typeof datos !== 'object') return datos;
       // Hacer una copia profunda para evitar mutar el objeto original en memoria
       const result = JSON.parse(JSON.stringify(datos));
@@ -263,7 +263,7 @@ export class AtencionService {
         targetPaciente.segundoNombre
       ].filter(Boolean).join(' ');
 
-      const newValues = {
+      const newValues: any = {
         primer_nombre: targetPaciente.primerNombre ?? '',
         segundo_nombre: targetPaciente.segundoNombre ?? '',
         primer_apellido: targetPaciente.primerApellido ?? '',
@@ -274,8 +274,6 @@ export class AtencionService {
         sexo: targetPaciente.sexo ? (targetPaciente.sexo.toUpperCase().startsWith('F') ? 'F' : 'M') : '',
         institucion: targetPaciente.tipoPaciente ?? 'PARTICULAR',
         // Alias usados en Receta, Certificado y otros forms
-        nombre: fullName,
-        nombres: fullName,
         nombre_paciente: fullName,
         cedula_paciente: targetPaciente.cedula ?? '',
         edad_paciente: targetPaciente.edad ? String(targetPaciente.edad) : '',
@@ -290,6 +288,12 @@ export class AtencionService {
         nombres_completos: fullName,
         dni: targetPaciente.cedula ?? '',
       };
+
+      // Proteger el campo "nombre" en secciones donde se usa para el TÍTULO del documento (Consentimientos y Protocolos)
+      if (seccionName !== 'consentimiento' && seccionName !== 'protocolo') {
+        newValues.nombre = fullName;
+        newValues.nombres = fullName;
+      }
 
       const traverse = (obj: any) => {
         if (!obj || typeof obj !== 'object') return;
@@ -317,7 +321,7 @@ export class AtencionService {
       await this.upsertHistoriaClinica(
         targetId,
         source.historiaClinica.plantillaId,
-        overwritePersonalData(source.historiaClinica.datos as object),
+        overwritePersonalData(source.historiaClinica.datos as object, 'historiaClinica'),
         source.historiaClinica.estado
       );
     }
@@ -330,30 +334,30 @@ export class AtencionService {
         await this.createConsentimiento(
           targetId,
           cons.plantillaId,
-          overwritePersonalData(cons.datos as object)
+          overwritePersonalData(cons.datos as object, 'consentimiento')
         );
       }
     }
 
     // 4. Clonar otras secciones únicas
-    const cloneSection = async (sourceSec: any, upsertFn: Function) => {
+    const cloneSection = async (sourceSec: any, upsertFn: Function, seccionName: string) => {
       if (sourceSec) {
-        await upsertFn.call(this, targetId, sourceSec.plantillaId, overwritePersonalData(sourceSec.datos as object), sourceSec.estado);
+        await upsertFn.call(this, targetId, sourceSec.plantillaId, overwritePersonalData(sourceSec.datos as object, seccionName), sourceSec.estado);
       }
     };
 
-    await cloneSection(source.protocolo, this.upsertProtocolo);
-    await cloneSection(source.cuidado, this.upsertCuidado);
-    await cloneSection(source.epicrisis, this.upsertEpicrisis);
-    await cloneSection(source.receta, this.upsertReceta);
-    await cloneSection(source.certificado, this.upsertCertificado);
-    await cloneSection(source.liquidacion, this.upsertLiquidacion);
-    await cloneSection(source.enfermeria, this.upsertEnfermeria);
-    await cloneSection(source.escalaRiesgo, this.upsertEscalaRiesgo);
+    await cloneSection(source.protocolo, this.upsertProtocolo, 'protocolo');
+    await cloneSection(source.cuidado, this.upsertCuidado, 'cuidado');
+    await cloneSection(source.epicrisis, this.upsertEpicrisis, 'epicrisis');
+    await cloneSection(source.receta, this.upsertReceta, 'receta');
+    await cloneSection(source.certificado, this.upsertCertificado, 'certificado');
+    await cloneSection(source.liquidacion, this.upsertLiquidacion, 'liquidacion');
+    await cloneSection(source.enfermeria, this.upsertEnfermeria, 'enfermeria');
+    await cloneSection(source.escalaRiesgo, this.upsertEscalaRiesgo, 'escalaRiesgo');
 
     // Clonar Consulta sin plantilla
     if (source.consulta) {
-      await this.upsertConsulta(targetId, overwritePersonalData(source.consulta.datos as object), source.consulta.estado);
+      await this.upsertConsulta(targetId, overwritePersonalData(source.consulta.datos as object, 'consulta'), source.consulta.estado);
     }
 
     return await this.findByCategoriaPaciente(targetCategoriaPacienteId);

@@ -51,7 +51,7 @@ export class CategoriaPacienteService {
 
     // Si se indicó un expediente base para reciclar, clonarlo
     if (input.expedienteBaseId) {
-      await this.atencionService.cloneExpediente(input.expedienteBaseId, categoriaPaciente.id, paciente);
+      await this.atencionService.cloneExpediente(input.expedienteBaseId, categoriaPaciente.id, { ...paciente, tipoPaciente: input.tipoPaciente || paciente.tipoPaciente });
     }
 
     return categoriaPaciente;
