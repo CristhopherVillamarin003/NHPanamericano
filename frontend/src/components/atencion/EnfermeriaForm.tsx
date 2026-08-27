@@ -379,7 +379,7 @@ function CompactBlock({ b, onFecha, onHora, onContenido, onTipo, onEliminar, isR
 
 // ─── Componente Principal ─────────────────────────────────────────────────────
 
-const MAX_BLOQUES = 12;
+const MAX_BLOQUES = 30;
 
 const EnfermeriaForm = forwardRef<EnfermeriaFormRef, Props>(({ paciente, initialData, isReadOnly }, ref) => {
   const today = new Date().toISOString().split("T")[0];
