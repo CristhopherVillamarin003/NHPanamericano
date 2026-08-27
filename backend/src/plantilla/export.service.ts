@@ -562,7 +562,7 @@ function injectEnfermeriaMatematica(workbook: ExcelJS.Workbook, bloques: any[]) 
 
   const START_ROW = 21; // Comienza en la fila 21
   const ROW_OFFSET = 7; // Cada bloque toma 7 filas (21, 28, 35...)
-  const MAX_BLOQUES = 12; // Máximo de bloques en la plantilla
+  const MAX_BLOQUES = 30; // Máximo de bloques en la plantilla
 
   bloques.forEach((bloque, index) => {
     if (index >= MAX_BLOQUES) return;
