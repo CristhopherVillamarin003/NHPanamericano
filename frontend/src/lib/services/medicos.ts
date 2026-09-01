@@ -28,8 +28,10 @@ export const LISTA_MEDICOS: Medico[] = [
   { nombre: "DRA. PATRICIA JEANETH GUZMAN PROAÑO", especialidad: "MEDICA NEUROCIRUJANA", identificacion: "1707671135", correo: "patriciagu1963@yahoo.com" },
   { nombre: "DR. LUIS EDUARDO MALES VINUEZA", especialidad: "TERAPIA INTENSIVA", identificacion: "1708023146", correo: "edumales@outlook.es" },
   { nombre: "DR. WILSON DAVID QUIMBITA PANCHI", especialidad: "MEDICO TRATANTE DE MEDICINA CRITICA Y TERAPIA INTENSIVA", identificacion: "1719022475", correo: "" },
-  { nombre: "DR. ROLANDO JAVIER CHILUISA ALOMIA", especialidad: "MEDICO TRATANTE DE TERAPIA INTENSIVA", identificacion: "1803741204", correo: "" }
-
+  { nombre: "DR. ROLANDO JAVIER CHILUISA ALOMIA", especialidad: "MEDICO TRATANTE DE TERAPIA INTENSIVA", identificacion: "1803741204", correo: "" },
+  { nombre: "GLADYS YOLANDA ESPINOZA ESPINOZA", especialidad: "ENFERMERÍA", identificacion: "1727010926", correo: "" },
+  { nombre: "LCDA. ANGELICA PAULINA ROJAS CHACÓN", especialidad: "ENFERMERÍA", identificacion: "1719115758", correo: "" },
+  { nombre: "LCDA. MÓNICA JOHANNA CHACHAPOYA QUINGATUÑA", especialidad: "ENFERMERÍA", identificacion: "1723553275", correo: "" }
 ];
 
 export async function buscarMedicos(q: string): Promise<Medico[]> {
