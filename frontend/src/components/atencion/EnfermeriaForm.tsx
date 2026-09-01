@@ -2,6 +2,8 @@
 
 import React, { useState, useImperativeHandle, forwardRef } from "react";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
+import { MedicoInput } from "@/components/atencion/MedicoInput";
+import { type Medico } from "@/lib/services/medicos";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -290,6 +292,9 @@ interface CompactBlockProps {
 }
 
 function CompactBlock({ b, onFecha, onHora, onContenido, onTipo, onEliminar, isReadOnly = false }: CompactBlockProps) {
+  const [medicoSearchAbierto, setMedicoSearchAbierto] = useState(false);
+  const [medicoQuery, setMedicoQuery] = useState("");
+
   const tbl: React.CSSProperties = {
     width: "100%", borderCollapse: "collapse",
     tableLayout: "fixed", fontFamily: "Arial, sans-serif", fontSize: "10px",
@@ -352,23 +357,87 @@ function CompactBlock({ b, onFecha, onHora, onContenido, onTipo, onEliminar, isR
           </td>
           <td rowSpan={6} style={{ border, background: "#dce6f1" }}></td>
           <td rowSpan={6} style={{ border, padding: 0, verticalAlign: "top" }}>
-            <textarea
-              value={b.nota_descripcion}
-              onChange={(e) => {
-                onContenido(e.target.value);
-                autoResize(e.target, 120);
-              }}
-              ref={(el) => { if (el) autoResize(el, 120); }}
-              readOnly={isReadOnly}
-              rows={7}
-              placeholder={isReadOnly ? "" : "Escriba la nota de enfermería..."}
-              style={{
-                width: "100%", border: "none", outline: "none", resize: "none", overflow: "hidden",
-                fontSize: "10px", fontFamily: "Arial, sans-serif",
-                padding: "4px 6px", boxSizing: "border-box",
-                lineHeight: 1.6, background: isReadOnly ? "#f0f0f0" : "#fff", minHeight: 120,
-              }} 
-            />
+            <div style={{ position: "relative", width: "100%", height: "100%" }}>
+              <textarea
+                value={b.nota_descripcion}
+                onChange={(e) => {
+                  onContenido(e.target.value);
+                  autoResize(e.target, 120);
+                }}
+                ref={(el) => { if (el) autoResize(el, 120); }}
+                readOnly={isReadOnly}
+                rows={7}
+                placeholder={isReadOnly ? "" : "Escriba la nota de enfermería..."}
+                style={{
+                  width: "100%", border: "none", outline: "none", resize: "none", overflow: "hidden",
+                  fontSize: "10px", fontFamily: "Arial, sans-serif",
+                  padding: "4px 6px", boxSizing: "border-box",
+                  lineHeight: 1.6, background: isReadOnly ? "#f0f0f0" : "#fff", minHeight: 120,
+                }} 
+              />
+              
+              {!isReadOnly && (
+                <div style={{ position: 'absolute', bottom: '8px', right: '8px', zIndex: 10 }}>
+                  {!medicoSearchAbierto ? (
+                    <button
+                      type="button"
+                      onClick={() => setMedicoSearchAbierto(true)}
+                      style={{
+                        background: '#e0f2fe',
+                        border: '1px solid #7dd3fc',
+                        borderRadius: '4px',
+                        padding: '4px 8px',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        color: '#0369a1',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                      }}
+                      title="Insertar Médico"
+                    >
+                      👨‍⚕️ Médico 💉
+                    </button>
+                  ) : (
+                    <div style={{ 
+                      background: '#fff', 
+                      border: '1px solid #ccc', 
+                      borderRadius: '4px', 
+                      padding: '4px', 
+                      width: '220px', 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.15)'
+                    }}>
+                      <div style={{ flex: 1 }}>
+                        <MedicoInput
+                          value={medicoQuery}
+                          onChangeValue={setMedicoQuery}
+                          onSelectMedico={(m: Medico) => {
+                            const currentText = b.nota_descripcion || "";
+                            const newText = (currentText + `\n\nDr. ${m.nombre}\nCI: ${m.identificacion}\n${m.especialidad}`).trim();
+                            onContenido(newText);
+                            setMedicoSearchAbierto(false);
+                            setMedicoQuery("");
+                          }}
+                          placeholder="Buscar médico..."
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setMedicoSearchAbierto(false)}
+                        style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '10px', color: '#999', padding: '0 4px' }}
+                        title="Cancelar"
+                      >
+                        ❌
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </td>
         </tr>
         <tr /><tr /><tr /><tr /><tr />

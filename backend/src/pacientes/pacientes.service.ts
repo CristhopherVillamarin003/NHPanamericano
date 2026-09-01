@@ -46,6 +46,32 @@ export class PacientesService {
     return this.prisma.paciente.findMany({ orderBy: { updatedAt: 'desc' } });
   }
 
+  async buscarGlobal(query?: string) {
+    const where: any = {};
+    if (query && query.trim() !== '') {
+      const trimmed = query.trim();
+      where.OR = [
+        { cedula: { contains: trimmed, mode: 'insensitive' } },
+        { primerNombre: { contains: trimmed, mode: 'insensitive' } },
+        { segundoNombre: { contains: trimmed, mode: 'insensitive' } },
+        { primerApellido: { contains: trimmed, mode: 'insensitive' } },
+        { segundoApellido: { contains: trimmed, mode: 'insensitive' } },
+      ];
+    }
+
+    return this.prisma.paciente.findMany({
+      where,
+      include: {
+        categorias: {
+          include: {
+            categoria: true,
+          },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+
   async findOne(id: number) {
     const paciente = await this.prisma.paciente.findUnique({ where: { id } });
     if (!paciente) throw new NotFoundException('Paciente no encontrado');

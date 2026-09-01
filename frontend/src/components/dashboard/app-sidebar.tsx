@@ -14,6 +14,7 @@ import {
   Trash2,
   Pencil,
   MoreHorizontal,
+  Users,
 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { Categoria } from '@/types';
@@ -259,6 +260,15 @@ export function AppSidebar() {
         >
           <Stethoscope className="w-4 h-4" />
           <span>Inicio</span>
+        </button>
+
+        <button
+          type="button"
+          className={`sidebar-nav-item ${pathname === '/dashboard/pacientes' ? 'active' : ''}`}
+          onClick={() => router.push('/dashboard/pacientes')}
+        >
+          <Users className="w-4 h-4" />
+          <span>Pacientes</span>
         </button>
 
         <div className="sidebar-section">

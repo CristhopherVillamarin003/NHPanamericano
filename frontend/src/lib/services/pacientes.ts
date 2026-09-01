@@ -25,3 +25,8 @@ export async function updatePaciente(id: number, data: Partial<PacienteFormData>
 export async function deletePaciente(id: number): Promise<void> {
   await api.delete(`/pacientes/${id}`);
 }
+
+export async function searchPacientesGlobal(query: string = ''): Promise<any[]> {
+  const res = await api.get('/pacientes/global/search', { params: { q: query } });
+  return res.data;
+}

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, UseGuards, Query } from '@nestjs/common';
 import { PacientesService } from './pacientes.service';
 import { CreatePacienteDto } from './dto/create-paciente.dto';
 import { UpdatePacienteDto } from './dto/update-paciente.dto';
@@ -12,6 +12,11 @@ export class PacientesController {
   @Get()
   list() {
     return this.pacientesService.list();
+  }
+
+  @Get('global/search')
+  buscarGlobal(@Query('q') query?: string) {
+    return this.pacientesService.buscarGlobal(query);
   }
 
   @Get(':id')
