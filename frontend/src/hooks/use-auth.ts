@@ -12,6 +12,25 @@ export function useLogin() {
           email: input.correo,
           password: input.contrasena,
         });
+        return res.data as { usuario?: any; accessToken?: string; requires2FA?: boolean; mfaToken?: string };
+      } finally {
+        setIsPending(false);
+      }
+    },
+    [],
+  );
+
+  return { isPending, mutateAsync };
+}
+
+export function useVerifyMfa() {
+  const [isPending, setIsPending] = useState(false);
+
+  const mutateAsync = useCallback(
+    async (input: { token: string; code: string; role?: string }) => {
+      setIsPending(true);
+      try {
+        const res = await api.post('/auth/verify-2fa', input);
         return res.data as { usuario: any; accessToken: string };
       } finally {
         setIsPending(false);

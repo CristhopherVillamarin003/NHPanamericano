@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,15 +35,12 @@ export default function ForgotPasswordPage() {
     },
   });
 
+  const [isSuccess, setIsSuccess] = useState(false);
+
   const onSubmit = async (data: ForgotPasswordFormData) => {
     try {
-      const result = await forgotPasswordMutation.mutateAsync(data.correo);
-
-      // Para pruebas, el backend puede devolver token. En prod se enviaría por email.
-      if (result.token) {
-        setValue('correo', data.correo);
-        router.push(`/auth/reset-password?token=${result.token}`);
-      }
+      await forgotPasswordMutation.mutateAsync(data.correo);
+      setIsSuccess(true);
     } catch (error) {
       const errorMessage = getErrorMessage(error);
       setError('root', {
@@ -51,6 +49,25 @@ export default function ForgotPasswordPage() {
       });
     }
   };
+
+  if (isSuccess) {
+    return (
+      <AuthSplitLayout>
+        <div className="flex flex-col items-center gap-6 text-center">
+          <h1 className="text-2xl font-bold">Revisa tu correo</h1>
+          <p className="text-zinc-500 text-sm">
+            Si el correo está registrado en nuestro sistema, te enviaremos un enlace para restablecer tu contraseña.
+          </p>
+          <Link 
+            href="/auth/login"
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-black text-white hover:bg-zinc-800 h-10 py-2 px-4"
+          >
+            Volver al login
+          </Link>
+        </div>
+      </AuthSplitLayout>
+    );
+  }
 
   return (
     <AuthSplitLayout>

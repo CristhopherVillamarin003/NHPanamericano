@@ -41,7 +41,12 @@ export default function LoginPage() {
         contrasena: data.contrasena,
       });
 
-      setSessionCookie('access_token', result.accessToken);
+      if (result.requires2FA && result.mfaToken) {
+        router.push(`/auth/verify-2fa?token=${result.mfaToken}&email=${encodeURIComponent(data.correo)}`);
+        return;
+      }
+
+      setSessionCookie('access_token', result.accessToken as string);
       if (result.usuario && result.usuario.email) {
         setSessionCookie('user_email', result.usuario.email);
       }

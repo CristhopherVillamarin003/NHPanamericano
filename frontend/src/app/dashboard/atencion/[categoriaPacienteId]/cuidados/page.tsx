@@ -44,7 +44,7 @@ export default function CuidadosPage() {
 
   useEffect(() => {
     async function load() {
-      const userEmail = getSessionCookie('user_email'); setIsReadOnly(userEmail === 'administracion@hospitalpanamericano.com.ec' || userEmail === 'laboratorio@hospitalpanamericano.com.ec');
+      const userEmail = getSessionCookie('user_email'); setIsReadOnly(userEmail === 'administracion.nhpanamericano@gmail.com' || userEmail === 'laboratorio@hospitalpanamericano.com.ec');
       try {
         const atencionData = await findOrCreateAtencion(categoriaPacienteId);
         setAtencionId(atencionData.id);

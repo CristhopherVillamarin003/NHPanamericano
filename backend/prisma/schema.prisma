@@ -16,14 +16,28 @@ model Usuario {
   apellidos       String?
   activo          Boolean  @default(true)
   emailVerificado Boolean  @default(false) @map("email_verificado")
+  intentosFallidos Int     @default(0) @map("intentos_fallidos")
+  bloqueadoHasta  DateTime? @map("bloqueado_hasta")
   createdAt       DateTime @default(now()) @map("created_at")
 
   roles          UsuarioRol[]
   refreshTokens  RefreshToken[]
   recuperaciones RecuperacionPassword[]
   categorias     Categoria[]
+  mfaTokens      MfaToken[]
 
   @@map("usuario")
+  @@schema("seguridad")
+}
+
+model MfaToken {
+  id         Int      @id @default(autoincrement())
+  usuarioId  Int      @map("usuario_id")
+  token      String   @unique
+  codigo     String
+  expiracion DateTime
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  @@map("mfa_token")
   @@schema("seguridad")
 }
 
@@ -181,6 +195,7 @@ model Atencion {
   escalaRiesgo    EscalaRiesgo?
   consulta        Consulta?
   examenes        Examenes?
+  anestesiologia  Anestesiologia?
 
   @@map("atencion")
   @@schema("hospital")
@@ -411,5 +426,19 @@ model Examenes {
   atencion  Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
 
   @@map("examenes")
+  @@schema("hospital")
+}
+
+model Anestesiologia {
+  id          Int      @id @default(autoincrement())
+  atencionId  Int      @unique @map("atencion_id")
+  datos       Json     @default("{}")
+  estado      String   @default("borrador")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  atencion  Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+
+  @@map("anestesiologia")
   @@schema("hospital")
 }

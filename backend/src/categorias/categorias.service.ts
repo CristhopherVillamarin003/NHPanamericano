@@ -17,7 +17,7 @@ export class CategoriasService {
 
   async listAll(userEmail?: string, userId?: number) {
     const consultaEmails = [
-      'consultaexterna@hospitalpanamericano.com.ec',
+      'consulta.nhpanamericano@gmail.com',
       'laboratorioce@hospitalpanamericano.com.ec'
     ];
     const isConsultaExterna = userEmail && consultaEmails.includes(userEmail);

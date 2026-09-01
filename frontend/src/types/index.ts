@@ -54,6 +54,7 @@ export interface Atencion {
   escalaRiesgo: SeccionUnica | null;
   consulta: SeccionConsulta | null;
   examenes: SeccionConsulta | null;
+  anestesiologia: SeccionConsulta | null;
 }
 
 export interface SeccionConsulta {

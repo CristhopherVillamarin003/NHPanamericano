@@ -40,7 +40,16 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
     @Headers('user-agent') userAgent = 'unknown',
   ) {
-    const result = await this.authService.login(dto, userAgent);
+    return await this.authService.login(dto, userAgent);
+  }
+
+  @Post('verify-2fa')
+  async verifyMfa(
+    @Body() dto: { token: string; code: string; role?: string },
+    @Res({ passthrough: true }) res: Response,
+    @Headers('user-agent') userAgent = 'unknown',
+  ) {
+    const result = await this.authService.verifyMfa(dto, userAgent);
     this.setRefreshCookie(res, result.refreshToken);
     return { usuario: result.usuario, accessToken: result.accessToken };
   }

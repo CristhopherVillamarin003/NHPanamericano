@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { UsuariosModule } from '../usuarios/usuarios.module';
+import { MailModule } from '../mail/mail.module';
 import { AuthGuard } from './auth.guard';
 
 @Module({
@@ -12,6 +13,7 @@ import { AuthGuard } from './auth.guard';
     ConfigModule,
     PrismaModule,
     UsuariosModule,
+    MailModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

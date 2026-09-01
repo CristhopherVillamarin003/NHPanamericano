@@ -21,6 +21,7 @@ export class AtencionService {
     escalaRiesgo:      { include: { plantilla: true } },
     consulta:          true,
     examenes:          true,
+    anestesiologia:    true,
   };
 
   async findOrCreate(categoriaPacienteId: number) {
@@ -238,6 +239,22 @@ export class AtencionService {
     return this.prisma.examenes.delete({ where: { atencionId } });
   }
 
+  // ─── Anestesiología (Sin Plantilla) ───────────────────────────────────────────
+  async upsertAnestesiologia(atencionId: number, datos: object, estado?: string) {
+    await this.getAtencion(atencionId);
+    return this.prisma.anestesiologia.upsert({
+      where: { atencionId },
+      create: { atencionId, datos, ...(estado ? { estado } : {}) },
+      update: { datos, ...(estado ? { estado } : {}) },
+    });
+  }
+
+  async deleteAnestesiologia(atencionId: number) {
+    const record = await this.prisma.anestesiologia.findUnique({ where: { atencionId } });
+    if (!record) throw new NotFoundException('Sección Anestesiología no encontrada');
+    return this.prisma.anestesiologia.delete({ where: { atencionId } });
+  }
+
   // ─── Lógica de Clonado ──────────────────────────────────────────────────
   async cloneExpediente(sourceAtencionId: number, targetCategoriaPacienteId: number, targetPaciente: any) {
     const source = await this.prisma.atencion.findUnique({
@@ -358,6 +375,16 @@ export class AtencionService {
     // Clonar Consulta sin plantilla
     if (source.consulta) {
       await this.upsertConsulta(targetId, overwritePersonalData(source.consulta.datos as object, 'consulta'), source.consulta.estado);
+    }
+    
+    // Clonar Examenes sin plantilla
+    if (source.examenes) {
+      await this.upsertExamenes(targetId, overwritePersonalData(source.examenes.datos as object, 'examenes'), source.examenes.estado);
+    }
+
+    // Clonar Anestesiologia sin plantilla
+    if (source.anestesiologia) {
+      await this.upsertAnestesiologia(targetId, overwritePersonalData(source.anestesiologia.datos as object, 'anestesiologia'), source.anestesiologia.estado);
     }
 
     return await this.findByCategoriaPaciente(targetCategoriaPacienteId);

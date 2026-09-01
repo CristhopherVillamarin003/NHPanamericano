@@ -41,7 +41,7 @@ export default function EscalaRiesgoPage() {
   useEffect(() => {
     async function load() {
       const email = getSessionCookie('user_email');
-      setIsReadOnly(email !== 'enfermeria@hospitalpanamericano.com.ec');
+      setIsReadOnly(email !== 'enfermeria.nhpanamericano@gmail.com');
       
       try {
         const [atencionData, pMacdem, pMorse] = await Promise.all([

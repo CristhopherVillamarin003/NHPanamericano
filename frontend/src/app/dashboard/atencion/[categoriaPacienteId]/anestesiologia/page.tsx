@@ -1,22 +1,19 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { getSessionCookie } from '@/lib/utils';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { ArrowLeft } from 'lucide-react';
-import { findOrCreateAtencion, upsertSeccion, exportarSeccion } from '@/lib/services/atencion';
+import { findOrCreateAtencion, upsertSeccion } from '@/lib/services/atencion';
 import type { Paciente } from '@/types';
 
-const RecetaForm: any = dynamic(
-  () => import('@/components/atencion/RecetaForm'),
+// Cargamos dinámicamente el componente del formulario para evitar SSR y posibles hydration mismatches
+const AnestesiologiaForm: any = dynamic(
+  () => import('@/components/atencion/AnestesiologiaForm'),
   { ssr: false },
 );
 
-// IMPORTANTE: Asegúrate de que este ID corresponda al ID de tu plantilla "receta" en la base de datos.
-const PLANTILLA_RECETA_ID = 9; 
-
-export default function RecetaPage() {
+export default function AnestesiologiaPage() {
   const params = useParams();
   const router = useRouter();
   const categoriaPacienteId = Number(params.categoriaPacienteId);
@@ -25,21 +22,14 @@ export default function RecetaPage() {
   const [atencionId, setAtencionId] = useState<number | null>(null);
   const [initialData, setInitialData] = useState<Record<string, any> | undefined>(undefined);
   const [loading, setLoading] = useState(true);
-  const [isReadOnly, setIsReadOnly] = useState(false);
   const [guardando, setGuardando] = useState(false);
-  const [exportando, setExportando] = useState(false);
   const formRef = useRef<any>(null);
 
   useEffect(() => {
     async function load() {
-      const userEmail = getSessionCookie('user_email'); setIsReadOnly(userEmail === 'administracion.nhpanamericano@gmail.com' || userEmail === 'laboratorio@hospitalpanamericano.com.ec');
       try {
         const atencionData = await findOrCreateAtencion(categoriaPacienteId);
         setAtencionId(atencionData.id);
-
-        if (atencionData.receta) {
-          setInitialData((atencionData.receta.datos ?? {}) as any);
-        }
 
         const catPac = (atencionData as any).categoriaPaciente;
         if (catPac?.paciente) {
@@ -49,6 +39,9 @@ export default function RecetaPage() {
           }
           setPaciente(p);
         }
+
+        const datos = (atencionData.anestesiologia?.datos ?? {}) as any;
+        setInitialData(datos);
       } catch (err) {
         console.error('Error al cargar la atención:', err);
       } finally {
@@ -62,30 +55,14 @@ export default function RecetaPage() {
     if (!atencionId) return;
     try {
       setGuardando(true);
-      await upsertSeccion(atencionId, 'receta', PLANTILLA_RECETA_ID, datosPlano);
+      await upsertSeccion(atencionId, 'anestesiologia', 0, datosPlano);
       formRef.current?.clearAutosave?.();
-      alert('Receta guardada exitosamente.');
+      alert('Anestesiología guardada exitosamente.');
     } catch (err) {
       console.error(err);
-      alert('Error al guardar la receta.');
+      alert('Error al guardar anestesiología.');
     } finally {
       setGuardando(false);
-    }
-  };
-
-  const handleExportarDocx = async (datosPlano: Record<string, any>) => {
-    if (!atencionId) return;
-    try {
-      setExportando(true);
-      await upsertSeccion(atencionId, 'receta', PLANTILLA_RECETA_ID, datosPlano);
-      const nombrePaciente = paciente ? `${paciente.primerNombre || ''} ${paciente.primerApellido || ''}`.trim() : undefined;
-      await exportarSeccion(PLANTILLA_RECETA_ID, 'receta', datosPlano, 'docx', nombrePaciente);
-      formRef.current?.clearAutosave?.();
-    } catch (err) {
-      console.error(err);
-      alert('Error al exportar a Word.');
-    } finally {
-      setExportando(false);
     }
   };
 
@@ -107,8 +84,9 @@ export default function RecetaPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f9fafb]">
-      <div className="bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-10">
+    <div className="form-page-container">
+      {/* Header global */}
+      <div className="bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm" style={{ flexShrink: 0 }}>
         <div className="flex items-center gap-4">
           <button
             onClick={handleBack}
@@ -119,7 +97,7 @@ export default function RecetaPage() {
           </button>
           <div>
             <h1 className="text-xl font-bold text-gray-800 leading-tight">
-              Receta Médica
+              Anestesiología
             </h1>
             <p className="text-xs text-gray-500 font-medium">
               {paciente
@@ -130,20 +108,15 @@ export default function RecetaPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-4 md:p-6 bg-[#f1f5f9]">
-        <div className="max-w-[1200px] mx-auto bg-white rounded-lg shadow-sm border overflow-hidden">
-          <RecetaForm
-            isReadOnly={isReadOnly}
-            ref={formRef}
-            atencionId={atencionId ?? undefined}
-            paciente={paciente ?? undefined}
-            initialData={initialData}
-            onGuardar={handleGuardar}
-            onExportarDocx={handleExportarDocx}
-            guardando={guardando}
-            exportando={exportando}
-          />
-        </div>
+      <div className="form-page-body">
+        <AnestesiologiaForm
+          ref={formRef}
+          atencionId={atencionId ?? undefined}
+          paciente={paciente ?? undefined}
+          initialData={initialData}
+          onGuardar={handleGuardar}
+          guardando={guardando}
+        />
       </div>
     </div>
   );

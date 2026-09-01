@@ -32,7 +32,7 @@ export default function ConsentimientoPage() {
 
   useEffect(() => {
     async function load() {
-      const userEmail = getSessionCookie('user_email'); setIsReadOnly(userEmail === 'administracion@hospitalpanamericano.com.ec' || userEmail === 'laboratorio@hospitalpanamericano.com.ec');
+      const userEmail = getSessionCookie('user_email'); setIsReadOnly(userEmail === 'administracion.nhpanamericano@gmail.com' || userEmail === 'laboratorio@hospitalpanamericano.com.ec');
       try {
         const atencionData = await findOrCreateAtencion(categoriaPacienteId);
         const c = atencionData.consentimientos.find((x) => x.id === consentimientoId);

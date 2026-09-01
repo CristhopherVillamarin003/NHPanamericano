@@ -112,8 +112,8 @@ export default function AtencionPage() {
   useEffect(() => {
     setUserEmail(getSessionCookie('user_email'));
   }, []);
-  const isReadOnlyUser = userEmail === 'administracion@hospitalpanamericano.com.ec' || userEmail === 'laboratorio@hospitalpanamericano.com.ec';
-  const isConsultaExterna = userEmail === 'consultaexterna@hospitalpanamericano.com.ec' || userEmail === 'laboratorioce@hospitalpanamericano.com.ec';
+  const isReadOnlyUser = userEmail === 'administracion.nhpanamericano@gmail.com' || userEmail === 'laboratorio@hospitalpanamericano.com.ec';
+  const isConsultaExterna = userEmail === 'consulta.nhpanamericano@gmail.com' || userEmail === 'laboratorioce@hospitalpanamericano.com.ec';
 
   // Modal crear consentimiento
   const [createOpen, setCreateOpen] = useState(false);
@@ -497,7 +497,7 @@ export default function AtencionPage() {
 
       {/* Secciones */}
       <div className="atencion-secciones">
-        {!isConsultaExterna && userEmail !== 'enfermeria@hospitalpanamericano.com.ec' && (
+        {!isConsultaExterna && userEmail !== 'enfermeria.nhpanamericano@gmail.com' && (
           <>
             {/* ── Consentimientos ─────────────────────────────────────── */}
         <div className="seccion-card">
@@ -799,8 +799,45 @@ export default function AtencionPage() {
           )}
         </div>
 
+        {/* Anestesiología — habilitada */}
+        <div className="seccion-card">
+          <div className="seccion-card-header">
+            <div className="seccion-card-title">
+              <FolderOpen className="w-4 h-4 text-sky-500" />
+              <span>Anestesiología</span>
+              {atencion?.anestesiologia && (
+                <span className="seccion-badge">1</span>
+              )}
+            </div>
+            <button
+              type="button"
+              className="btn-create"
+              onClick={() => router.push(`/dashboard/atencion/${categoriaPacienteId}/anestesiologia`)}
+            >
+              <ArrowRight className="w-4 h-4" />
+              Ingresar
+            </button>
+          </div>
+          {atencion?.anestesiologia && (
+            <div className="seccion-items">
+              <div className="seccion-item">
+                <span className="seccion-item-name" style={{ cursor: 'default', textDecoration: 'none', color: '#18181b' }}>
+                  Anestesiología
+                </span>
+                <div className="seccion-item-estado">
+                  {atencion.anestesiologia.estado !== 'borrador' && (
+                    <span className={`estado-badge estado-${atencion.anestesiologia.estado}`}>
+                      {atencion.anestesiologia.estado}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Liquidaciones — condicional */}
-        {(userEmail === 'administracion@hospitalpanamericano.com.ec' || userEmail === 'wvalenzuela2012@gmail.com') && (
+        {(userEmail === 'administracion.nhpanamericano@gmail.com' || userEmail === 'wvalenzuela2012@gmail.com') && (
           <div className="seccion-card">
             <div className="seccion-card-header">
               <div className="seccion-card-title">
@@ -854,7 +891,7 @@ export default function AtencionPage() {
         )}
 
         {/* Enfermería — condicional */}
-        {!isConsultaExterna && userEmail === 'enfermeria@hospitalpanamericano.com.ec' && (
+        {!isConsultaExterna && userEmail === 'enfermeria.nhpanamericano@gmail.com' && (
           <>
             <div className="seccion-card">
               <div className="seccion-card-header">

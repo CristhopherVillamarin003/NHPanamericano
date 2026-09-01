@@ -254,4 +254,23 @@ export class AtencionController {
   deleteExamenes(@Param('atencionId', ParseIntPipe) atencionId: number) {
     return this.atencionService.deleteExamenes(atencionId);
   }
+
+  // ─── Anestesiología (Sin Plantilla) ───────────────────────────────────────────
+
+  @Put(':atencionId/anestesiologia')
+  upsertAnestesiologia(
+    @Param('atencionId', ParseIntPipe) atencionId: number,
+    @Body() body: { datos: object; estado?: string },
+  ) {
+    return this.atencionService.upsertAnestesiologia(
+      atencionId,
+      body.datos ?? {},
+      body.estado,
+    );
+  }
+
+  @Delete(':atencionId/anestesiologia')
+  deleteAnestesiologia(@Param('atencionId', ParseIntPipe) atencionId: number) {
+    return this.atencionService.deleteAnestesiologia(atencionId);
+  }
 }

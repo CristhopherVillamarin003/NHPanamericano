@@ -12,6 +12,7 @@ import { AtencionModule } from './atencion/atencion.module';
 import { PlantillaModule } from './plantilla/plantilla.module';
 import { Cie10Module } from './cie10/cie10.module';
 import { ArchivosModule } from './archivos/archivos.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ArchivosModule } from './archivos/archivos.module';
     PlantillaModule,
     Cie10Module,
     ArchivosModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

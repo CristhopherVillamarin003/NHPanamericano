@@ -33,7 +33,7 @@ export default function EnfermeriaPage() {
   useEffect(() => {
     async function load() {
       const email = getSessionCookie('user_email');
-      setIsReadOnly(email !== 'enfermeria@hospitalpanamericano.com.ec');
+      setIsReadOnly(email !== 'enfermeria.nhpanamericano@gmail.com');
       
       try {
         const atencionData = await findOrCreateAtencion(categoriaPacienteId);
