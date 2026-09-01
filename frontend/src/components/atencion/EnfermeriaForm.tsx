@@ -417,7 +417,7 @@ function CompactBlock({ b, onFecha, onHora, onContenido, onTipo, onEliminar, isR
                           onChangeValue={setMedicoQuery}
                           onSelectMedico={(m: Medico) => {
                             const currentText = b.nota_descripcion || "";
-                            const newText = (currentText + `\n\nDr. ${m.nombre}\nCI: ${m.identificacion}\n${m.especialidad}`).trim();
+                            const newText = (currentText + `\n\n${m.nombre}\nCI: ${m.identificacion}\n${m.especialidad}`).trim();
                             onContenido(newText);
                             setMedicoSearchAbierto(false);
                             setMedicoQuery("");

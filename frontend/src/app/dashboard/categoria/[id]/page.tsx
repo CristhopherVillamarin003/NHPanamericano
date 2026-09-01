@@ -163,7 +163,8 @@ export default function CategoriaPage() {
       if (recordId) {
         await updateCategoriaPaciente(recordId, { 
           tipoPaciente: data.tipoPaciente,
-          diagnostico: diagnostico 
+          diagnostico: diagnostico,
+          syncPacienteInfo: true
         });
       }
 

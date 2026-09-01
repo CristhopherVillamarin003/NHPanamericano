@@ -24,6 +24,82 @@ export class AtencionService {
     anestesiologia:    true,
   };
 
+  
+  async syncPacienteData(categoriaPacienteId: number) {
+    const atencion = await this.prisma.atencion.findUnique({
+      where: { categoriaPacienteId },
+      include: {
+        categoriaPaciente: { include: { paciente: true } },
+        historiaClinica: true,
+        protocolo: true,
+        cuidado: true,
+        epicrisis: true,
+        receta: true,
+        certificado: true,
+        liquidacion: true,
+        enfermeria: true,
+        escalaRiesgo: true,
+        consulta: true,
+        examenes: true,
+        anestesiologia: true,
+      }
+    });
+
+    if (!atencion || !atencion.categoriaPaciente?.paciente) return;
+
+    const paciente = atencion.categoriaPaciente.paciente;
+    const nombres_completos = [
+      paciente.primerNombre,
+      paciente.segundoNombre,
+      paciente.primerApellido,
+      paciente.segundoApellido
+    ].filter(Boolean).join(" ").toUpperCase();
+    const dni = paciente.cedula || '';
+    const is_sppat = (atencion.categoriaPaciente.tipoPaciente || paciente.tipoPaciente) === 'SPPAT';
+
+    const updateForm = async (model: any, form: any) => {
+      if (!form) return;
+      const datos = typeof form.datos === 'string' ? JSON.parse(form.datos) : form.datos;
+      if (!datos) return;
+      
+      let modified = false;
+      if (datos.nombres_completos !== undefined && datos.nombres_completos !== nombres_completos) {
+        datos.nombres_completos = nombres_completos;
+        modified = true;
+      }
+      if (datos.dni !== undefined && datos.dni !== dni) {
+        datos.dni = dni;
+        modified = true;
+      }
+      if (is_sppat && !datos.is_sppat) {
+        datos.is_sppat = true;
+        modified = true;
+      }
+
+      if (modified) {
+        await model.update({
+          where: { id: form.id },
+          data: { datos }
+        });
+      }
+    };
+
+    if (atencion.historiaClinica) await updateForm(this.prisma.historiaClinica, atencion.historiaClinica);
+    if (atencion.protocolo) await updateForm(this.prisma.protocolo, atencion.protocolo);
+    if (atencion.cuidado) await updateForm(this.prisma.cuidado, atencion.cuidado);
+    if (atencion.epicrisis) await updateForm(this.prisma.epicrisis, atencion.epicrisis);
+    if (atencion.receta) await updateForm(this.prisma.receta, atencion.receta);
+    if (atencion.certificado) await updateForm(this.prisma.certificado, atencion.certificado);
+    if (atencion.liquidacion) await updateForm(this.prisma.liquidacion, atencion.liquidacion);
+    if (atencion.enfermeria) await updateForm(this.prisma.enfermeria, atencion.enfermeria);
+    if (atencion.escalaRiesgo) await updateForm(this.prisma.escalaRiesgo, atencion.escalaRiesgo);
+    if (atencion.consulta) await updateForm(this.prisma.consulta, atencion.consulta);
+    if (atencion.examenes) await updateForm(this.prisma.examenes, atencion.examenes);
+    if (atencion.anestesiologia) await updateForm(this.prisma.anestesiologia, atencion.anestesiologia);
+    
+    return { success: true };
+  }
+
   async findOrCreate(categoriaPacienteId: number) {
     const catPac = await this.prisma.categoriaPaciente.findUnique({
       where: { id: categoriaPacienteId },

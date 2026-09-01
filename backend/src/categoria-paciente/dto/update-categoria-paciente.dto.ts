@@ -1,4 +1,4 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsBoolean } from 'class-validator';
 
 export class UpdateCategoriaPacienteDto {
   @IsOptional()
@@ -8,4 +8,8 @@ export class UpdateCategoriaPacienteDto {
   @IsOptional()
   @IsString()
   diagnostico?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  syncPacienteInfo?: boolean;
 }

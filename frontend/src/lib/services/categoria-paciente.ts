@@ -25,7 +25,7 @@ export async function addPacienteToCategoria(
   return res.data;
 }
 
-export async function updateCategoriaPaciente(id: number, data: { tipoPaciente?: string, diagnostico?: string }): Promise<CategoriaPaciente> {
+export async function updateCategoriaPaciente(id: number, data: { tipoPaciente?: string, diagnostico?: string, syncPacienteInfo?: boolean }): Promise<CategoriaPaciente> {
   const res = await api.patch(`/categoria-paciente/${id}`, data);
   return res.data;
 }

@@ -57,16 +57,22 @@ export class CategoriaPacienteService {
     return categoriaPaciente;
   }
 
-  async updateCategoriaPaciente(id: number, data: { tipoPaciente?: string, diagnostico?: string }) {
+  async updateCategoriaPaciente(id: number, data: { tipoPaciente?: string, diagnostico?: string, syncPacienteInfo?: boolean }) {
     const record = await this.prisma.categoriaPaciente.findUnique({
       where: { id },
     });
     if (!record) throw new NotFoundException('Registro no encontrado');
 
-    return this.prisma.categoriaPaciente.update({
+    const updated = await this.prisma.categoriaPaciente.update({
       where: { id },
-      data,
+      data: { tipoPaciente: data.tipoPaciente, diagnostico: data.diagnostico },
     });
+    
+    if (data.syncPacienteInfo) {
+      await this.atencionService.syncPacienteData(id);
+    }
+    
+    return updated;
   }
 
   async listPacientesByCategoria(categoriaId: number) {
