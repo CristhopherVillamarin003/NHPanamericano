@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { getSessionCookie } from '@/lib/utils';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, ArrowRight, Plus, Pencil, Trash2, FolderOpen, ChevronDown, X, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Plus, Pencil, Trash2, FolderOpen, ChevronDown, X, MoreHorizontal, FileText } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { Atencion, Consentimiento } from '@/types';
@@ -12,10 +12,13 @@ import {
   createConsentimiento,
   updateConsentimiento,
   deleteConsentimiento,
+  createProtocolo,
+  updateProtocolo,
+  deleteProtocolo,
   upsertSeccion,
   deleteSeccion,
 } from '@/lib/services/atencion';
-import { getPlantillas, createPlantilla, deletePlantilla } from '@/lib/services/plantillas';
+import { getPlantillas, createPlantilla, deletePlantilla, updatePlantilla } from '@/lib/services/plantillas';
 import { CUIDADOS_TEMPLATES } from '@/lib/constants/cuidadosTemplates';
 
 const PLANTILLA_CONSENTIMIENTO_ID = 1; // ID del registro en tabla plantilla
@@ -25,10 +28,12 @@ const PLANTILLA_CUIDADO_ID = 7; // ID para cuidados
 // Dropdown menu for consentimiento row actions
 function ConsentimientoActionsMenu({
   onEdit,
+  onEditContent,
   onDelete,
   hideEdit = false,
 }: {
   onEdit: () => void;
+  onEditContent?: () => void;
   onDelete: () => void;
   hideEdit?: boolean;
 }) {
@@ -85,6 +90,11 @@ function ConsentimientoActionsMenu({
               <Pencil className="w-4 h-4" />
             </button>
           )}
+          {onEditContent && (
+            <button type="button" className="row-action-item" title="Editar plantilla" onClick={() => { setOpen(false); onEditContent(); }}>
+              <FileText className="w-4 h-4" />
+            </button>
+          )}
           <button type="button" className="row-action-item delete" title="Eliminar" onClick={() => { setOpen(false); onDelete(); }}>
             <Trash2 className="w-4 h-4" />
           </button>
@@ -93,7 +103,6 @@ function ConsentimientoActionsMenu({
     </>
   );
 }
-
 export default function AtencionPage() {
   const params = useParams();
   const router = useRouter();
@@ -300,6 +309,20 @@ export default function AtencionPage() {
     }
   };
 
+  const handleRenombrarPlantilla = async (plantillaIdStr: string) => {
+    const template = [...customTemplates, ...customProtocoloTemplates].find(t => t.id.toString() === plantillaIdStr);
+    if (!template) return;
+    const nuevoNombre = window.prompt('Nuevo nombre para la plantilla:', template.nombre);
+    if (!nuevoNombre || nuevoNombre.trim() === '' || nuevoNombre === template.nombre) return;
+    try {
+      await updatePlantilla(Number(plantillaIdStr), { nombre: nuevoNombre.trim() });
+      await fetchAtencion();
+    } catch (err) {
+      console.error(err);
+      alert('Error al renombrar plantilla');
+    }
+  };
+
   const handleEditarPlantilla = (plantillaIdStr: string) => {
     setCreateOpen(false);
     router.push(`/dashboard/atencion/${categoriaPacienteId}/plantilla/${plantillaIdStr}`);
@@ -351,7 +374,7 @@ export default function AtencionPage() {
         });
       }
 
-      await upsertSeccion(atencion.id, 'protocolo', PLANTILLA_PROTOCOLO_ID, datosProtocolo, 'ACTIVO');
+      await createProtocolo(atencion.id, PLANTILLA_PROTOCOLO_ID, datosProtocolo);
       
       // Clear old draft from LocalStorage to ensure new template data isn't overridden
       const cedula = atencion?.categoriaPaciente?.paciente?.cedula || 'new';
@@ -361,7 +384,7 @@ export default function AtencionPage() {
       setSelectedProtocoloTemplate('vacio');
       setProtocoloOpen(false);
       await fetchAtencion();
-      router.push(`/dashboard/atencion/${categoriaPacienteId}/protocolo`);
+      // Creado exitosamente
     } catch {
       /* silently fail */
     } finally {
@@ -395,15 +418,20 @@ export default function AtencionPage() {
     if (!editTarget || !editNombre.trim()) return;
     setEditLoading(true);
     try {
-      await updateConsentimiento(editTarget.id, {
+      const nuevosDatos = {
         ...editTarget.datos,
         nombre: editNombre.trim(),
-      });
+      };
+      if ((editTarget as any).tipo === 'protocolo') {
+        await updateProtocolo(editTarget.id, nuevosDatos);
+      } else {
+        await updateConsentimiento(editTarget.id, nuevosDatos);
+      }
       setEditOpen(false);
       setEditTarget(null);
       await fetchAtencion();
-    } catch {
-      /* silently fail */
+    } catch (err) {
+      console.error('Error al editar nombre:', err);
     } finally {
       setEditLoading(false);
     }
@@ -413,16 +441,21 @@ export default function AtencionPage() {
     if (!deleteTarget) return;
     setDeleteLoading(true);
     try {
-      await deleteConsentimiento(deleteTarget.id);
-      
-      const cedula = atencion?.categoriaPaciente?.paciente?.cedula || 'new';
-      localStorage.removeItem(`draft_consentimiento_${deleteTarget.id}_${cedula}`);
+      if ((deleteTarget as any).tipo === 'protocolo') {
+        await deleteProtocolo(deleteTarget.id);
+        const cedula = atencion?.categoriaPaciente?.paciente?.cedula || 'new';
+        localStorage.removeItem(`draft_protocolo_${deleteTarget.id}_${cedula}`);
+      } else {
+        await deleteConsentimiento(deleteTarget.id);
+        const cedula = atencion?.categoriaPaciente?.paciente?.cedula || 'new';
+        localStorage.removeItem(`draft_consentimiento_${deleteTarget.id}_${cedula}`);
+      }
 
       setDeleteOpen(false);
       setDeleteTarget(null);
       await fetchAtencion();
-    } catch {
-      /* silently fail */
+    } catch (err) {
+      console.error('Error al eliminar:', err);
     } finally {
       setDeleteLoading(false);
     }
@@ -594,48 +627,55 @@ export default function AtencionPage() {
             <div className="seccion-card-title">
               <FolderOpen className="w-4 h-4 text-sky-500" />
               <span>Protocolo</span>
-              {atencion?.protocolo && (
-                <span className="seccion-badge">1</span>
+              {atencion?.protocolos && atencion.protocolos.length > 0 && (
+                <span className="seccion-badge">{atencion.protocolos.length}</span>
               )}
             </div>
-            {!(isReadOnlyUser && !atencion?.protocolo) && (
+            {!isReadOnlyUser && (
               <button
                 type="button"
                 className="btn-create"
                 onClick={() => {
-                  if (atencion?.protocolo) {
-                    router.push(`/dashboard/atencion/${categoriaPacienteId}/protocolo`);
-                  } else {
-                    setSelectedProtocoloTemplate('vacio');
-                    setProtocoloSearch('');
-                    setProtocoloDropdownOpen(false);
-                    setProtocoloOpen(true);
-                  }
+                  setSelectedProtocoloTemplate('vacio');
+                  setProtocoloSearch('');
+                  setProtocoloDropdownOpen(false);
+                  setProtocoloOpen(true);
                 }}
               >
-                <ArrowRight className="w-4 h-4" />
-                Ingresar
+                <Plus className="w-4 h-4" />
+                Añadir Protocolo
               </button>
             )}
           </div>
-          {atencion?.protocolo && (
-            <div className="seccion-items">
-              <div className="seccion-item">
-                <span className="seccion-item-name" style={{ cursor: 'default', textDecoration: 'none', color: '#18181b' }}>
-                  {atencion.protocolo.datos?.nombre || 'Protocolo'}
-                </span>
+          <div className="seccion-items">
+            {atencion?.protocolos?.length === 0 && isReadOnlyUser && (
+              <div className="p-3 text-sm text-gray-400">Sin protocolos</div>
+            )}
+            {atencion?.protocolos?.map((c) => (
+              <div key={c.id} className="seccion-item">
+                <button
+                  type="button"
+                  className="seccion-item-name"
+                  onClick={() => router.push(`/dashboard/atencion/${categoriaPacienteId}/protocolo/${c.id}`)}
+                  title="Abrir formulario"
+                >
+                  {c.datos?.nombre ?? `Protocolo #${c.id}`}
+                </button>
                 {!isReadOnlyUser && (
                   <div className="table-actions">
                     <ConsentimientoActionsMenu
-                      onEdit={() => {}}
-                      onDelete={() => setDeleteSeccionTarget('protocolo')}
-                      hideEdit
+                      onEdit={() => {
+                        setEditTarget({ ...c, tipo: 'protocolo' } as any);
+                        setEditNombre(c.datos?.nombre ?? '');
+                        setEditOpen(true);
+                      }}
+                      onDelete={() => { setDeleteTarget({ ...c, tipo: 'protocolo' } as any); setDeleteOpen(true); }}
                     />
                   </div>
                 )}
               </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
 
         {/* Cuidados — habilitada */}
@@ -1226,7 +1266,8 @@ export default function AtencionPage() {
                         {(t as any).isCustom && (
                           <div style={{ display: 'flex' }} onClick={e => e.stopPropagation()}>
                             <ConsentimientoActionsMenu 
-                              onEdit={() => handleEditarPlantilla(t.id)}
+                              onEdit={() => handleRenombrarPlantilla(t.id)}
+                              onEditContent={() => handleEditarPlantilla(t.id)}
                               onDelete={() => handleEliminarPlantilla(t.id)}
                             />
                           </div>
@@ -1274,7 +1315,7 @@ export default function AtencionPage() {
       <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Editar nombre">
         <div className="flex flex-col gap-4">
           <div className="form-field">
-            <label className="form-label">Nombre del consentimiento</label>
+            <label className="form-label">{`Nombre del ${(editTarget as any)?.tipo === 'protocolo' ? 'protocolo' : 'consentimiento'}`}</label>
             <input
               type="text"
               className="form-input"
@@ -1439,7 +1480,8 @@ export default function AtencionPage() {
                         {(t as any).isCustom && (
                           <div style={{ display: 'flex' }} onClick={e => e.stopPropagation()}>
                             <ConsentimientoActionsMenu 
-                              onEdit={() => handleEditarPlantilla(t.id)}
+                              onEdit={() => handleRenombrarPlantilla(t.id)}
+                              onEditContent={() => handleEditarPlantilla(t.id)}
                               onDelete={() => handleEliminarPlantilla(t.id)}
                             />
                           </div>

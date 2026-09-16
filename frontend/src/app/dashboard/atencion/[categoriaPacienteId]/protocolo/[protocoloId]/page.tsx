@@ -5,7 +5,7 @@ import { getSessionCookie } from '@/lib/utils';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { ArrowLeft } from 'lucide-react';
-import { findOrCreateAtencion, upsertSeccion, exportarSeccion } from '@/lib/services/atencion';
+import { findOrCreateAtencion, updateProtocolo, exportarSeccion } from '@/lib/services/atencion';
 import type { Paciente } from '@/types';
 
 const ProtocoloForm: any = dynamic(
@@ -19,6 +19,7 @@ export default function ProtocoloPage() {
   const params = useParams();
   const router = useRouter();
   const categoriaPacienteId = Number(params.categoriaPacienteId);
+  const protocoloId = Number(params.protocoloId);
 
   const [paciente, setPaciente] = useState<Paciente | null>(null);
   const [atencionId, setAtencionId] = useState<number | null>(null);
@@ -36,8 +37,9 @@ export default function ProtocoloPage() {
         const atencionData = await findOrCreateAtencion(categoriaPacienteId);
         setAtencionId(atencionData.id);
 
-        if (atencionData.protocolo) {
-          setInitialData((atencionData.protocolo.datos ?? {}) as any);
+        const prot = atencionData.protocolos?.find((p: any) => p.id === protocoloId);
+        if (prot) {
+          setInitialData((prot.datos ?? {}) as any);
         }
 
         const catPac = (atencionData as any).categoriaPaciente;
@@ -61,7 +63,7 @@ export default function ProtocoloPage() {
     if (!atencionId) return;
     try {
       setGuardando(true);
-      await upsertSeccion(atencionId, 'protocolo', PLANTILLA_PROTOCOLO_ID, datosPlano);
+      await updateProtocolo(protocoloId, datosPlano);
       formRef.current?.clearAutosave?.();
       alert('Protocolo guardado exitosamente.');
     } catch (err) {
@@ -77,7 +79,7 @@ export default function ProtocoloPage() {
     try {
       setExportando(true);
       // Primero guardamos para asegurar que no se pierdan datos
-      await upsertSeccion(atencionId, 'protocolo', PLANTILLA_PROTOCOLO_ID, datosPlano);
+      await updateProtocolo(protocoloId, datosPlano);
       formRef.current?.clearAutosave?.();
       // Luego exportamos
       const nombrePaciente = paciente ? `${paciente.primerNombre || ''} ${paciente.primerApellido || ''}`.trim() : undefined;

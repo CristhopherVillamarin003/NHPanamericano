@@ -24,7 +24,9 @@ import { AuthGuard } from '../auth/auth.guard';
  * DELETE /atencion/consentimientos/:id                  → eliminar consentimiento
  *
  * PUT    /atencion/:atencionId/historia-clinica         → upsert historia clínica
- * PUT    /atencion/:atencionId/protocolo                → upsert protocolo
+ * POST   /atencion/:atencionId/protocolos                 crear protocolo
+ * PUT    /atencion/protocolos/:id                         actualizar protocolo
+ * DELETE /atencion/protocolos/:id                         eliminar protocolo
  * PUT    /atencion/:atencionId/cuidado                  → upsert cuidado
  * PUT    /atencion/:atencionId/epicrisis                → upsert epicrisis
  * PUT    /atencion/:atencionId/receta                   → upsert receta
@@ -93,22 +95,29 @@ export class AtencionController {
     );
   }
 
-  @Put(':atencionId/protocolo')
-  upsertProtocolo(
+  @Post(':atencionId/protocolos')
+  createProtocolo(
     @Param('atencionId', ParseIntPipe) atencionId: number,
     @Body() dto: SeccionDto,
   ) {
-    return this.atencionService.upsertProtocolo(
+    return this.atencionService.createProtocolo(
       atencionId,
       dto.plantillaId,
       dto.datos ?? {},
-      dto.estado,
     );
   }
 
-  @Delete(':atencionId/protocolo')
-  deleteProtocolo(@Param('atencionId', ParseIntPipe) atencionId: number) {
-    return this.atencionService.deleteProtocolo(atencionId);
+  @Put('protocolos/:id')
+  updateProtocolo(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateSeccionDto,
+  ) {
+    return this.atencionService.updateProtocolo(id, dto.datos ?? {}, dto.estado);
+  }
+
+  @Delete('protocolos/:id')
+  deleteProtocolo(@Param('id', ParseIntPipe) id: number) {
+    return this.atencionService.deleteProtocolo(id);
   }
 
   @Delete(':atencionId/cuidado')

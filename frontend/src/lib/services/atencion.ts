@@ -40,9 +40,34 @@ export async function deleteConsentimiento(id: number): Promise<void> {
   await api.delete(`/atencion/consentimientos/${id}`);
 }
 
+export async function createProtocolo(
+  atencionId: number,
+  plantillaId: number,
+  datos: Record<string, any> = {},
+): Promise<Consentimiento> {
+  const res = await api.post(`/atencion/${atencionId}/protocolos`, {
+    plantillaId,
+    datos,
+  });
+  return res.data;
+}
+
+export async function updateProtocolo(
+  id: number,
+  datos: Record<string, any>,
+  estado?: string,
+): Promise<Consentimiento> {
+  const res = await api.put(`/atencion/protocolos/${id}`, { datos, estado });
+  return res.data;
+}
+
+export async function deleteProtocolo(id: number): Promise<void> {
+  await api.delete(`/atencion/protocolos/${id}`);
+}
+
 // ─── Secciones únicas ─────────────────────────────────────────────────────────
 
-type Seccion = 'historia-clinica' | 'protocolo' | 'cuidado' | 'epicrisis' | 'receta' | 'certificado' | 'liquidacion' | 'enfermeria' | 'escala_riesgo' | 'consulta' | 'examenes' | 'anestesiologia';
+type Seccion = 'historia-clinica' | 'cuidado' | 'epicrisis' | 'receta' | 'certificado' | 'liquidacion' | 'enfermeria' | 'escala_riesgo' | 'consulta' | 'examenes' | 'anestesiologia';
 
 export async function exportarConsentimiento(
   plantillaId: number,

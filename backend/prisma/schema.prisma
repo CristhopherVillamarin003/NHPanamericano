@@ -185,7 +185,7 @@ model Atencion {
 
   consentimientos Consentimiento[]
   historiaClinica HistoriaClinica?
-  protocolo       Protocolo?
+  protocolos      Protocolo[]
   cuidado         Cuidado?
   epicrisis       Epicrisis?
   receta          Receta?
@@ -265,7 +265,7 @@ model HistoriaClinica {
 
 model Protocolo {
   id          Int      @id @default(autoincrement())
-  atencionId  Int      @unique @map("atencion_id")
+  atencionId  Int      @map("atencion_id")
   plantillaId Int      @map("plantilla_id")
   datos       Json     @default("{}")
   estado      String   @default("borrador")

@@ -11,7 +11,7 @@ export class AtencionService {
     categoriaPaciente: { include: { paciente: true } },
     consentimientos:   { include: { plantilla: true }, orderBy: { createdAt: 'asc' as const } },
     historiaClinica:   { include: { plantilla: true } },
-    protocolo:         { include: { plantilla: true } },
+    protocolos:        { include: { plantilla: true }, orderBy: { createdAt: 'asc' as const } },
     cuidado:           { include: { plantilla: true } },
     epicrisis:         { include: { plantilla: true } },
     receta:            { include: { plantilla: true } },
@@ -31,7 +31,7 @@ export class AtencionService {
       include: {
         categoriaPaciente: { include: { paciente: true } },
         historiaClinica: true,
-        protocolo: true,
+        protocolos: true,
         cuidado: true,
         epicrisis: true,
         receta: true,
@@ -85,7 +85,6 @@ export class AtencionService {
     };
 
     if (atencion.historiaClinica) await updateForm(this.prisma.historiaClinica, atencion.historiaClinica);
-    if (atencion.protocolo) await updateForm(this.prisma.protocolo, atencion.protocolo);
     if (atencion.cuidado) await updateForm(this.prisma.cuidado, atencion.cuidado);
     if (atencion.epicrisis) await updateForm(this.prisma.epicrisis, atencion.epicrisis);
     if (atencion.receta) await updateForm(this.prisma.receta, atencion.receta);
@@ -178,20 +177,29 @@ export class AtencionService {
     });
   }
 
-  async upsertProtocolo(atencionId: number, plantillaId: number, datos: object, estado?: string) {
+  // ✨ Protocolos ✨
+  async createProtocolo(atencionId: number, plantillaId: number, datos: object = {}) {
     await this.getAtencion(atencionId);
-    return this.prisma.protocolo.upsert({
-      where: { atencionId },
-      create: { atencionId, plantillaId, datos, ...(estado ? { estado } : {}) },
-      update: { datos, ...(estado ? { estado } : {}), plantillaId },
+    return this.prisma.protocolo.create({
+      data: { atencionId, plantillaId, datos },
       include: { plantilla: true },
     });
   }
 
-  async deleteProtocolo(atencionId: number) {
-    const record = await this.prisma.protocolo.findUnique({ where: { atencionId } });
+  async updateProtocolo(id: number, datos: object, estado?: string) {
+    const record = await this.prisma.protocolo.findUnique({ where: { id } });
     if (!record) throw new NotFoundException('Protocolo no encontrado');
-    return this.prisma.protocolo.delete({ where: { atencionId } });
+    return this.prisma.protocolo.update({
+      where: { id },
+      data: { datos, ...(estado ? { estado } : {}) },
+      include: { plantilla: true },
+    });
+  }
+
+  async deleteProtocolo(id: number) {
+    const record = await this.prisma.protocolo.findUnique({ where: { id } });
+    if (!record) throw new NotFoundException('Protocolo no encontrado');
+    return this.prisma.protocolo.delete({ where: { id } });
   }
 
   async deleteCuidado(atencionId: number) {
@@ -439,7 +447,17 @@ export class AtencionService {
       }
     };
 
-    await cloneSection(source.protocolo, this.upsertProtocolo, 'protocolo');
+    // 3. Clonar Protocolos
+    if (source.protocolos && source.protocolos.length > 0) {
+      await this.prisma.protocolo.deleteMany({ where: { atencionId: targetId } });
+      for (const prot of source.protocolos) {
+        await this.createProtocolo(
+          targetId,
+          prot.plantillaId,
+          overwritePersonalData(prot.datos as object, 'protocolo')
+        );
+      }
+    }
     await cloneSection(source.cuidado, this.upsertCuidado, 'cuidado');
     await cloneSection(source.epicrisis, this.upsertEpicrisis, 'epicrisis');
     await cloneSection(source.receta, this.upsertReceta, 'receta');

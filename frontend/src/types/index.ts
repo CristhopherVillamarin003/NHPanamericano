@@ -44,7 +44,7 @@ export interface Atencion {
   updatedAt: string;
   consentimientos: Consentimiento[];
   historiaClinica: SeccionUnica | null;
-  protocolo: SeccionUnica | null;
+  protocolos: Consentimiento[];
   cuidado: SeccionUnica | null;
   epicrisis: SeccionUnica | null;
   receta: SeccionUnica | null;
