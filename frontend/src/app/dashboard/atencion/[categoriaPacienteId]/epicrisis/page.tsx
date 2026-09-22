@@ -160,14 +160,17 @@ export default function EpicrisisPage() {
           evolucionBloques = hcDatos.evolucion.bloques;
         }
 
-        // Intentar leer borrador (draft) de localStorage
+        // Intentar leer borrador (draft) de localStorage si tiene menos de 24 horas
         try {
           const draftKey = `draft_hc_evolucion_${atencionData.id}_${cedulaPaciente}`;
           const savedDraft = localStorage.getItem(draftKey);
           if (savedDraft) {
             const parsed = JSON.parse(savedDraft);
-            if (parsed.bloques?.length > 0) {
-              evolucionBloques = parsed.bloques;
+            const isEnvelope = parsed && typeof parsed === 'object' && '_savedAt' in parsed && 'data' in parsed;
+            const age = isEnvelope ? (Date.now() - parsed._savedAt) : Infinity;
+            const data = isEnvelope ? parsed.data : parsed;
+            if (age <= 24 * 60 * 60 * 1000 && data?.bloques?.length > 0) {
+              evolucionBloques = data.bloques;
             }
           }
         } catch (e) {}
