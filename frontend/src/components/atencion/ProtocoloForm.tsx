@@ -4,6 +4,7 @@ import React, { useState, useImperativeHandle } from "react";
 import { Cie10DescInput, Cie10CieInput } from "./Cie10Input";
 import { MedicoInput } from "./MedicoInput";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
+import { useFormHistory } from "@/hooks/useFormHistory";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -204,7 +205,7 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
   const [bulkUndoStack, setBulkUndoStack] = useState<{ tipo: string, arr: string[] }[]>([]);
   const [canUndoBulk, setCanUndoBulk] = useState(false);
 
-  const [d, setD] = useState<DatosProtocolo>(() => {
+  const [d, setD, saveSnapshot] = useFormHistory<DatosProtocolo>(() => {
     const base: DatosProtocolo = {
       institucion: isTemplateMode ? "" : (paciente?.tipoPaciente ?? "PARTICULAR"),
       unicodigo: isTemplateMode ? "" : "35865",
@@ -338,7 +339,7 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
   const c = (k: keyof DatosProtocolo) => (v: boolean) => !isReadOnly && setD(p => ({ ...p, [k]: v }));
 
   const setLine = (arr: "proced_quirurgico" | "procedimiento_quirurgico_cont" | "dieresis" | "hallazgos_quirurgicos", idx: number, val: string) => {
-    setCanUndoBulk(false);
+    
     !isReadOnly && setD(p => {
       const next = [...p[arr]];
       if (arr === "proced_quirurgico") {
@@ -454,7 +455,7 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
           setD(curr => ({ ...curr, [last.tipo]: last.arr }));
           return prevStack.slice(0, -1);
         });
-        setCanUndoBulk(false);
+        
         e.preventDefault();
         return;
       }
@@ -479,8 +480,8 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
       if ((e.key === 'Delete' || e.key === 'Backspace') && isMultipleSelected) {
         const tipo = sel.tipo as 'proced_quirurgico' | 'procedimiento_quirurgico_cont';
         const arrSnapshot = [...d[tipo]];
-        setBulkUndoStack(stack => [...stack, { tipo, arr: arrSnapshot }]);
-        setCanUndoBulk(true);
+        
+        
 
         setD(prev => {
           const arr = [...prev[tipo]];
@@ -559,8 +560,8 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
     if (lines.length === 0) return;
 
     const arrSnapshot = [...d[tipo]];
-    setBulkUndoStack(stack => [...stack, { tipo, arr: arrSnapshot }]);
-    setCanUndoBulk(true);
+    
+    
 
     setD(prev => {
       const arr = [...prev[tipo]];
