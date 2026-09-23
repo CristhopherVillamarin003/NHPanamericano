@@ -1146,6 +1146,49 @@ export default function AtencionPage() {
                 </div>
               )}
             </div>
+
+            <div className="seccion-card mt-4">
+              <div className="seccion-card-header">
+                <div className="seccion-card-title">
+                  <FolderOpen className="w-4 h-4 text-sky-500" />
+                  <span>Receta Médica</span>
+                  {atencion?.recetaMedica && (
+                    <span className="seccion-badge">1</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="btn-create"
+                  onClick={() => router.push(`/dashboard/atencion/${categoriaPacienteId}/receta-medica`)}
+                >
+                  <ArrowRight className="w-4 h-4" />
+                  Ingresar
+                </button>
+              </div>
+              {atencion?.recetaMedica && (
+                <div className="seccion-items">
+                  <div className="seccion-item">
+                    <span className="seccion-item-name" style={{ cursor: 'default', textDecoration: 'none', color: '#18181b' }}>
+                      Receta Médica
+                    </span>
+                    <div className="seccion-item-estado">
+                      {atencion.recetaMedica.estado !== 'borrador' && (
+                        <span className={`estado-badge estado-${atencion.recetaMedica.estado}`}>
+                          {atencion.recetaMedica.estado}
+                        </span>
+                      )}
+                    </div>
+                    <div className="table-actions">
+                      <ConsentimientoActionsMenu
+                        onEdit={() => {}}
+                        onDelete={() => setDeleteSeccionTarget('receta-medica')}
+                        hideEdit
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>

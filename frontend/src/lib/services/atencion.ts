@@ -67,7 +67,7 @@ export async function deleteProtocolo(id: number): Promise<void> {
 
 // ─── Secciones únicas ─────────────────────────────────────────────────────────
 
-type Seccion = 'historia-clinica' | 'cuidado' | 'epicrisis' | 'receta' | 'certificado' | 'liquidacion' | 'enfermeria' | 'escala_riesgo' | 'consulta' | 'examenes' | 'anestesiologia';
+type Seccion = 'historia-clinica' | 'cuidado' | 'epicrisis' | 'receta' | 'receta-medica' | 'certificado' | 'liquidacion' | 'enfermeria' | 'escala_riesgo' | 'consulta' | 'examenes' | 'anestesiologia';
 
 export async function exportarConsentimiento(
   plantillaId: number,

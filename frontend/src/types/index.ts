@@ -55,6 +55,7 @@ export interface Atencion {
   consulta: SeccionConsulta | null;
   examenes: SeccionConsulta | null;
   anestesiologia: SeccionConsulta | null;
+  recetaMedica: SeccionConsulta | null;
 }
 
 export interface SeccionConsulta {

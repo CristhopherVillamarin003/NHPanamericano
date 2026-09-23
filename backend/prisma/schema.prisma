@@ -196,6 +196,7 @@ model Atencion {
   consulta        Consulta?
   examenes        Examenes?
   anestesiologia  Anestesiologia?
+  recetaMedica    RecetaMedica?
 
   @@map("atencion")
   @@schema("hospital")
@@ -440,5 +441,19 @@ model Anestesiologia {
   atencion  Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
 
   @@map("anestesiologia")
+  @@schema("hospital")
+}
+
+model RecetaMedica {
+  id          Int      @id @default(autoincrement())
+  atencionId  Int      @unique @map("atencion_id")
+  datos       Json     @default("{}")
+  estado      String   @default("borrador")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  atencion  Atencion  @relation(fields: [atencionId], references: [id], onDelete: Cascade)
+
+  @@map("receta_medica")
   @@schema("hospital")
 }

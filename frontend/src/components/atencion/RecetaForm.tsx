@@ -51,6 +51,7 @@ interface Props {
   exportando?: boolean;
   atencionId?: number;
   isReadOnly?: boolean;
+  formType?: string;
 }
 
 export type HistoriaClinicaRecetaHandle = {
@@ -116,7 +117,7 @@ function FieldRow({ label, value, onChange, readOnly = false, type = "text" }: {
 // ─── Componente Principal ─────────────────────────────────────────────────────
 
 const RecetaForm = React.forwardRef<HistoriaClinicaRecetaHandle, Props>(
-  ({ paciente, medico, establecimiento, initialData, onGuardar, onExportarDocx, guardando = false, exportando = false, atencionId, isReadOnly }, ref) => {
+  ({ paciente, medico, establecimiento, initialData, onGuardar, onExportarDocx, guardando = false, exportando = false, atencionId, isReadOnly, formType }, ref) => {
   const today = new Date().toISOString().split("T")[0];
 
   const [d, setD] = useState<DatosReceta>({
@@ -132,7 +133,7 @@ const RecetaForm = React.forwardRef<HistoriaClinicaRecetaHandle, Props>(
   });
 
   const { isDirty, clearAutosave } = useFormAutosaveAndWarn({
-    formId: `receta_${atencionId || 'new'}_${paciente?.cedula || 'new'}`,
+    formId: `${formType || 'receta'}_${atencionId || 'new'}_${paciente?.cedula || 'new'}`,
     initialData: initialData || {},
     currentData: d,
     onRestore: (saved) => setD(p => ({ ...p, ...saved })),

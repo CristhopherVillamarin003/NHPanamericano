@@ -22,6 +22,7 @@ export class AtencionService {
     consulta:          true,
     examenes:          true,
     anestesiologia:    true,
+    recetaMedica:      true,
   };
 
   
@@ -42,6 +43,7 @@ export class AtencionService {
         consulta: true,
         examenes: true,
         anestesiologia: true,
+        recetaMedica: true,
       }
     });
 
@@ -95,6 +97,7 @@ export class AtencionService {
     if (atencion.consulta) await updateForm(this.prisma.consulta, atencion.consulta);
     if (atencion.examenes) await updateForm(this.prisma.examenes, atencion.examenes);
     if (atencion.anestesiologia) await updateForm(this.prisma.anestesiologia, atencion.anestesiologia);
+    if (atencion.recetaMedica) await updateForm(this.prisma.recetaMedica, atencion.recetaMedica);
     
     return { success: true };
   }
@@ -339,6 +342,22 @@ export class AtencionService {
     return this.prisma.anestesiologia.delete({ where: { atencionId } });
   }
 
+  // ─── Receta Médica (Sin Plantilla - Consulta Externa) ───────────────────────
+  async upsertRecetaMedica(atencionId: number, datos: object, estado?: string) {
+    await this.getAtencion(atencionId);
+    return this.prisma.recetaMedica.upsert({
+      where: { atencionId },
+      create: { atencionId, datos, ...(estado ? { estado } : {}) },
+      update: { datos, ...(estado ? { estado } : {}) },
+    });
+  }
+
+  async deleteRecetaMedica(atencionId: number) {
+    const record = await this.prisma.recetaMedica.findUnique({ where: { atencionId } });
+    if (!record) throw new NotFoundException('Sección Receta Médica no encontrada');
+    return this.prisma.recetaMedica.delete({ where: { atencionId } });
+  }
+
   // ─── Lógica de Clonado ──────────────────────────────────────────────────
   async cloneExpediente(sourceAtencionId: number, targetCategoriaPacienteId: number, targetPaciente: any) {
     const source = await this.prisma.atencion.findUnique({
@@ -479,6 +498,11 @@ export class AtencionService {
     // Clonar Anestesiologia sin plantilla
     if (source.anestesiologia) {
       await this.upsertAnestesiologia(targetId, overwritePersonalData(source.anestesiologia.datos as object, 'anestesiologia'), source.anestesiologia.estado);
+    }
+
+    // Clonar Receta Médica sin plantilla
+    if (source.recetaMedica) {
+      await this.upsertRecetaMedica(targetId, overwritePersonalData(source.recetaMedica.datos as object, 'receta-medica'), source.recetaMedica.estado);
     }
 
     return await this.findByCategoriaPaciente(targetCategoriaPacienteId);

@@ -282,4 +282,23 @@ export class AtencionController {
   deleteAnestesiologia(@Param('atencionId', ParseIntPipe) atencionId: number) {
     return this.atencionService.deleteAnestesiologia(atencionId);
   }
+
+  // ─── Receta Médica (Sin Plantilla - Consulta Externa) ───────────────────────
+
+  @Put(':atencionId/receta-medica')
+  upsertRecetaMedica(
+    @Param('atencionId', ParseIntPipe) atencionId: number,
+    @Body() body: { datos: object; estado?: string },
+  ) {
+    return this.atencionService.upsertRecetaMedica(
+      atencionId,
+      body.datos ?? {},
+      body.estado,
+    );
+  }
+
+  @Delete(':atencionId/receta-medica')
+  deleteRecetaMedica(@Param('atencionId', ParseIntPipe) atencionId: number) {
+    return this.atencionService.deleteRecetaMedica(atencionId);
+  }
 }

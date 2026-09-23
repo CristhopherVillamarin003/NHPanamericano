@@ -1238,7 +1238,7 @@ export function TransanestesicoForm({ d, setD }: { d: DatosAnestesia, setD: Reac
     <div style={{ display: "flex", flexDirection: "column" }}>
 
       {/* ── Formulario — orientación horizontal ────────────────────────── */}
-      <div style={{ overflowX: "auto", background: "#fff" }}>
+      <div style={{ overflowX: "visible", overflowY: "visible", background: "#fff" }}>
         <div style={{ padding: "6px 8px", minWidth: 1300, fontFamily: "Arial, sans-serif" }}>
 
           {/* ══ A. DATOS DEL ESTABLECIMIENTO Y USUARIO ════════════════════ */}
@@ -1457,7 +1457,7 @@ export function TransanestesicoForm({ d, setD }: { d: DatosAnestesia, setD: Reac
           {/* ══ D. REGISTRO TRANSANESTÉSICO ═══════════════════════════════ */}
           <div style={secH({ marginTop: 4 })}>D. REGISTRO TRANSANESTÉSICO</div>
 
-          <div style={{ overflowX: "auto", border: B }}>
+          <div style={{ overflowX: "visible", border: B }}>
             <table style={{ ...tbl, tableLayout: "fixed", width: "100%", minWidth: "100%", borderCollapse: "collapse" }}>
               <tbody>
                 {/* 0. DUMMY ROW FOR EXACT COLUMN WIDTHS */}
@@ -2140,7 +2140,7 @@ export function TransanestesicoForm2({ d, setD }: { d: DatosAnestesia, setD: Rea
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
-      <div style={{ overflowX: "auto", background: "#fff" }}>
+      <div style={{ overflowX: "visible", overflowY: "visible", background: "#fff" }}>
         <div style={{ padding: "8px 12px 12px", minWidth: 900, fontFamily: "Arial, sans-serif" }}>
 
           {/* -- L. TÉCNICAS ESPECIALES ---------------------------------------- */}
@@ -2259,7 +2259,7 @@ export function TransanestesicoForm2({ d, setD }: { d: DatosAnestesia, setD: Rea
 
           {/* -- O. RESULTADO DE EXÁMENES DE LABORATORIO ---------------------- */}
           <div style={secH({ marginTop: 4 })}>O. RESULTADO DE EXÁMENES DE LABORATORIO</div>
-          <div style={{ overflowX: "auto" }}>
+          <div style={{ overflowX: "visible" }}>
             <table style={{ ...tbl, minWidth: 820 }}>
               <tbody>
                 {/* Cabecera */}
