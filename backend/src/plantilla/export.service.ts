@@ -402,6 +402,144 @@ function injectImagenologiaMatematica(workbook: ExcelJS.Workbook, bloques: any[]
   }
 }
 
+function injectInterconsultaMatematica(workbook: ExcelJS.Workbook, bloques: any[]) {
+  const sheet = workbook.getWorksheet('INTERCONSULTA');
+  if (!sheet) return;
+
+  if (!Array.isArray(bloques)) bloques = [];
+
+  const MAX_BLOQUES = 11;
+  const ROW_OFFSET = 62;
+
+  const setCell = (sheet: ExcelJS.Worksheet, cellRef: string, val: any) => {
+    const match = cellRef.match(/^([A-Z]+)(\d+)$/);
+    if (!match) return;
+    const col = match[1];
+    const row = parseInt(match[2], 10);
+    const cell = sheet.getCell(`${col}${row}`);
+    
+    if (val !== undefined && val !== null && val !== '') {
+      if (typeof val === 'string' && val.includes('<')) {
+        cell.value = htmlToRichText(val);
+      } else {
+        cell.value = String(val).toUpperCase();
+      }
+    } else {
+      cell.value = '';
+    }
+    
+    cell.numFmt = '@';
+    const prevAlign = cell.alignment || {};
+    cell.alignment = { ...prevAlign, wrapText: true, vertical: 'top' };
+  };
+
+  const setCellOffset = (cellRef: string, bOffset: number, val: any) => {
+    const match = cellRef.match(/^([A-Z]+)(\d+)$/);
+    if (!match) return;
+    const col = match[1];
+    const row = parseInt(match[2], 10) + bOffset;
+    setCell(sheet, `${col}${row}`, val);
+  };
+
+  // 1. Llenar los bloques activos
+  for (let i = 0; i < bloques.length && i < MAX_BLOQUES; i++) {
+    const b = bloques[i];
+    if (!b) continue;
+    const bOffset = i * ROW_OFFSET;
+
+    // A. Datos del establecimiento y paciente
+    setCellOffset('A3',  bOffset, b.institucion || b.inter_institucion);
+    setCellOffset('N3',  bOffset, b.unicodigo || b.inter_unicodigo);
+    setCellOffset('T3',  bOffset, b.establecimiento || b.inter_establecimiento);
+    setCellOffset('AH3', bOffset, b.numero_historia_clinica || b.inter_numero_historia_clinica);
+    setCellOffset('AZ3', bOffset, b.numero_archivo || b.inter_numero_archivo);
+    setCellOffset('BK3', bOffset, b.no_hoja || b.inter_no_hoja);
+
+    setCellOffset('A6',  bOffset, b.primer_apellido || b.inter_primer_apellido);
+    setCellOffset('R6',  bOffset, b.segundo_apellido || b.inter_segundo_apellido);
+    setCellOffset('AF6', bOffset, b.primer_nombre || b.inter_primer_nombre);
+    setCellOffset('AP6', bOffset, b.segundo_nombre || b.inter_segundo_nombre);
+    setCellOffset('BA6', bOffset, b.sexo || b.inter_sexo);
+    setCellOffset('BD6', bOffset, b.edad || b.inter_edad);
+
+    const condicion = b.condicion_edad || b.inter_condicion_edad;
+    setCellOffset('BH6', bOffset, (condicion === 'H' || b.inter_condicion_edad_h) ? 'X' : '');
+    setCellOffset('BJ6', bOffset, (condicion === 'D' || b.inter_condicion_edad_d) ? 'X' : '');
+    setCellOffset('BL6', bOffset, (condicion === 'M' || b.inter_condicion_edad_m) ? 'X' : '');
+    setCellOffset('BN6', bOffset, (condicion === 'A' || b.inter_condicion_edad_a) ? 'X' : '');
+
+    // B. Característica de la solicitud, motivo y prioridad de atención
+    setCellOffset('G10',  bOffset, (b.servicio_emergencia || b.inter_servicio_emergencia) ? 'X' : '');
+    setCellOffset('N10',  bOffset, (b.servicio_consulta || b.inter_servicio_consulta) ? 'X' : '');
+    setCellOffset('W10',  bOffset, (b.servicio_hospitalizacion || b.inter_servicio_hospitalizacion) ? 'X' : '');
+    setCellOffset('Y10',  bOffset, b.servicio_especialidad || b.inter_servicio_especialidad);
+    setCellOffset('AR10', bOffset, b.no_cama || b.inter_no_cama);
+    setCellOffset('AX10', bOffset, b.no_sala || b.inter_no_sala);
+    setCellOffset('BJ10', bOffset, (b.urgente_si || b.inter_urgente_si) ? 'X' : '');
+    setCellOffset('BN10', bOffset, (b.urgente_no || b.inter_urgente_no) ? 'X' : '');
+    setCellOffset('O11',  bOffset, b.especialidad_consultada || b.inter_especialidad_consultada);
+    setCellOffset('O12',  bOffset, b.descripcion_motivo || b.inter_descripcion_motivo);
+
+    // C. Cuadro clínico actual
+    setCellOffset('A17',  bOffset, b.cuadro_clinico || b.inter_cuadro_clinico);
+
+    // D. Resultados de exámenes y procedimientos diagnósticos relevantes
+    setCellOffset('A27',  bOffset, b.resultados_examenes || b.inter_resultados_examenes);
+
+    // E. Diagnóstico
+    setCellOffset('B37',  bOffset, b.diagnostico_1 || b.inter_diagnostico_1);
+    setCellOffset('AA37', bOffset, b.diagnostico_1_cie || b.inter_diagnostico_1_cie);
+    setCellOffset('AE37', bOffset, (b.diagnostico_1_pre || b.inter_diagnostico_1_pre) ? 'X' : '');
+    setCellOffset('AG37', bOffset, (b.diagnostico_1_def || b.inter_diagnostico_1_def) ? 'X' : '');
+
+    setCellOffset('B38',  bOffset, b.diagnostico_2 || b.inter_diagnostico_2);
+    setCellOffset('AA38', bOffset, b.diagnostico_2_cie || b.inter_diagnostico_2_cie);
+    setCellOffset('AE38', bOffset, (b.diagnostico_2_pre || b.inter_diagnostico_2_pre) ? 'X' : '');
+    setCellOffset('AG38', bOffset, (b.diagnostico_2_def || b.inter_diagnostico_2_def) ? 'X' : '');
+
+    setCellOffset('B39',  bOffset, b.diagnostico_3 || b.inter_diagnostico_3);
+    setCellOffset('AA39', bOffset, b.diagnostico_3_cie || b.inter_diagnostico_3_cie);
+    setCellOffset('AE39', bOffset, (b.diagnostico_3_pre || b.inter_diagnostico_3_pre) ? 'X' : '');
+    setCellOffset('AG39', bOffset, (b.diagnostico_3_def || b.inter_diagnostico_3_def) ? 'X' : '');
+
+    setCellOffset('AJ37', bOffset, b.diagnostico_4 || b.inter_diagnostico_4);
+    setCellOffset('BH37', bOffset, b.diagnostico_4_cie || b.inter_diagnostico_4_cie);
+    setCellOffset('BL37', bOffset, (b.diagnostico_4_pre || b.inter_diagnostico_4_pre) ? 'X' : '');
+    setCellOffset('BN37', bOffset, (b.diagnostico_4_def || b.inter_diagnostico_4_def) ? 'X' : '');
+
+    setCellOffset('AJ38', bOffset, b.diagnostico_5 || b.inter_diagnostico_5);
+    setCellOffset('BH38', bOffset, b.diagnostico_5_cie || b.inter_diagnostico_5_cie);
+    setCellOffset('BL38', bOffset, (b.diagnostico_5_pre || b.inter_diagnostico_5_pre) ? 'X' : '');
+    setCellOffset('BN38', bOffset, (b.diagnostico_5_def || b.inter_diagnostico_5_def) ? 'X' : '');
+
+    setCellOffset('AJ39', bOffset, b.diagnostico_6 || b.inter_diagnostico_6);
+    setCellOffset('BH39', bOffset, b.diagnostico_6_cie || b.inter_diagnostico_6_cie);
+    setCellOffset('BL39', bOffset, (b.diagnostico_6_pre || b.inter_diagnostico_6_pre) ? 'X' : '');
+    setCellOffset('BN39', bOffset, (b.diagnostico_6_def || b.inter_diagnostico_6_def) ? 'X' : '');
+
+    // F. Plan terapéutico realizado
+    setCellOffset('A42',  bOffset, b.plan_terapeutico || b.inter_plan_terapeutico);
+
+    // G. Datos del profesional responsable
+    setCellOffset('A57',  bOffset, b.fecha || b.inter_fecha);
+    setCellOffset('I57',  bOffset, b.hora || b.inter_hora);
+    setCellOffset('O57',  bOffset, b.prof_primer_nombre || b.inter_prof_primer_nombre);
+    setCellOffset('AI57', bOffset, b.prof_primer_apellido || b.inter_prof_primer_apellido);
+    setCellOffset('BA57', bOffset, b.prof_segundo_apellido || b.inter_prof_segundo_apellido);
+    setCellOffset('A59',  bOffset, b.prof_documento || b.inter_prof_documento);
+  }
+
+  // 2. Ocultar los bloques no utilizados
+  for (let i = bloques.length; i < MAX_BLOQUES; i++) {
+    const startRow = 1 + (i * ROW_OFFSET);
+    const endRow = 62 + (i * ROW_OFFSET);
+    for (let r = startRow; r <= endRow; r++) {
+      const rowObj = sheet.getRow(r);
+      if (rowObj) rowObj.hidden = true;
+    }
+  }
+}
+
 /**
  * Calcula el número de líneas aproximado requerido para el texto
  * asumiendo un salto de línea automático (wrap text).
@@ -1316,6 +1454,13 @@ export class ExportService {
       return Buffer.from(buffer);
     }
 
+    // Si es SÓLO Interconsulta
+    if (seccion === 'historia_clinica_interconsulta') {
+      injectInterconsultaMatematica(workbook, datos.bloques || (datos ? [datos] : []));
+      const buffer = await workbook.xlsx.writeBuffer();
+      return Buffer.from(buffer);
+    }
+
     // Si es SÓLO Enfermería
     if (seccion === 'enfermeria') {
       if (datos.is_sppat) {
@@ -1550,7 +1695,7 @@ export class ExportService {
       injectEvolucionMatematica(workbook, evolucionRaw?.bloques || []);
       injectFields(workbook, HISTORIA_CLINICA_LABORATORIO_MAP, laboratorio);
       injectImagenologiaMatematica(workbook, imagenologiaRaw?.bloques || []);
-      injectFields(workbook, HISTORIA_CLINICA_INTERCONSULTA_MAP, interconsulta);
+      injectInterconsultaMatematica(workbook, interconsultaRaw?.bloques || (interconsultaRaw ? [interconsultaRaw] : []));
 
       // ── Inyectar imágenes de Anamnesis (campo img_examen_fisico: string[]) ─────────────
       const anamnesisImg: string[] = Array.isArray(anamnesisRaw['img_examen_fisico']) ? anamnesisRaw['img_examen_fisico'] : [];
