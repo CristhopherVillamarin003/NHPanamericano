@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useImperativeHandle } from "react";
-
 import { BotonBuscarProfesional } from "@/components/ui/BotonBuscarProfesional";
 import { parseNombresMedico } from "@/lib/services/medicos";
 import { Cie10DescInput, Cie10CieInput } from "./Cie10Input";
@@ -9,7 +8,7 @@ import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
-export interface DatosLaboratorio {
+export interface BloqueLaboratorio {
   // A. Datos del establecimiento y paciente
   institucion: string;
   unicodigo: string;
@@ -400,6 +399,11 @@ export interface DatosLaboratorio {
   [key: string]: any;
 }
 
+export interface DatosLaboratorio {
+  bloques: BloqueLaboratorio[];
+  [key: string]: any;
+}
+
 interface Props {
   paciente?: {
     primer_nombre?: string;
@@ -419,8 +423,10 @@ interface Props {
   atencionId?: number;
 }
 
+export const MAX_BLOQUES_LABORATORIO = 5;
+
 export type HistoriaClinicaLaboratorioHandle = {
-  getDatos: () => DatosLaboratorio;
+  getDatos: () => Record<string, any>;
   clearAutosave?: () => void;
   isDirty?: () => boolean;
 };
@@ -491,19 +497,13 @@ const solSep: React.CSSProperties = {
   border: "2px solid #1a3a5c", textAlign: "center", letterSpacing: "0.05em",
 };
 
-// ─── Componente Principal ─────────────────────────────────────────────────────
+// ─── Funciones Auxiliares ────────────────────────────────────────────────────
 
-const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props>(({
-  paciente,
-  initialData,
-  guardando = false,
-  exportando = false,
-  atencionId,
-}, ref) => {
+function crearBloqueVacio(paciente?: Props["paciente"]): BloqueLaboratorio {
   const today = new Date().toISOString().split("T")[0];
   const nowTime = new Date().toTimeString().slice(0, 5);
 
-  const [d, setD] = useState<DatosLaboratorio>({
+  return {
     institucion: paciente?.tipoPaciente ?? "PARTICULAR", unicodigo: "35865", establecimiento: "NUEVO HOSPITAL PANAMERICANO",
     numero_historia_clinica: paciente?.numero_historia_clinica ?? paciente?.cedula ?? "",
     numero_archivo: "",
@@ -645,20 +645,89 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
     sol2_profesional_primer_nombre: "", sol2_profesional_primer_apellido: "",
     sol2_profesional_segundo_apellido: "", sol2_documento: "",
     sol2_fecha_muestra: today, sol2_hora_muestra: nowTime, sol2_tomador_muestra: "",
-    ...initialData,
-  });
+    
+  };
+}
 
-  const { isDirty, clearAutosave } = useFormAutosaveAndWarn({
-    formId: `hc_laboratorio_${atencionId || 'new'}_${paciente?.cedula || 'new'}`,
-    initialData: initialData || {},
-    currentData: d,
-    onRestore: (saved) => setD(p => ({ ...p, ...saved })),
-  });
+function migrarDatosAntiguos(data: any, paciente?: Props["paciente"]): BloqueLaboratorio {
+  const base = crearBloqueVacio(paciente);
+  if (!data || typeof data !== "object") return base;
 
-  useImperativeHandle(
-    ref,
-    () => ({
-      getDatos: () => {
+  const result: any = { ...base };
+
+  for (const k of Object.keys(base)) {
+    if (data[k] !== undefined) {
+      result[k] = data[k];
+    }
+  }
+
+  result.institucion = data.institucion ?? data.lab_institucion ?? base.institucion;
+  result.unicodigo = data.unicodigo ?? data.lab_unicodigo ?? base.unicodigo;
+  result.establecimiento = data.establecimiento ?? data.lab_establecimiento ?? base.establecimiento;
+  result.numero_historia_clinica = data.numero_historia_clinica ?? data.lab_numero_historia_clinica ?? base.numero_historia_clinica;
+  result.numero_archivo = data.numero_archivo ?? data.lab_numero_archivo ?? base.numero_archivo;
+  result.primer_apellido = data.primer_apellido ?? data.lab_primer_apellido ?? base.primer_apellido;
+  result.segundo_apellido = data.segundo_apellido ?? data.lab_segundo_apellido ?? base.segundo_apellido;
+  result.primer_nombre = data.primer_nombre ?? data.lab_primer_nombre ?? base.primer_nombre;
+  result.segundo_nombre = data.segundo_nombre ?? data.lab_segundo_nombre ?? base.segundo_nombre;
+  result.sexo = data.sexo ?? data.lab_sexo ?? base.sexo;
+  result.fecha_nacimiento = (data.fecha_nacimiento ?? data.lab_fecha_nacimiento ?? base.fecha_nacimiento ?? "").slice(0, 10);
+  result.edad = data.edad ? String(data.edad) : (data.lab_edad ? String(data.lab_edad) : base.edad);
+  result.condicion_edad = data.condicion_edad ?? (
+    data.lab_condicion_edad_h ? "H" :
+    data.lab_condicion_edad_d ? "D" :
+    data.lab_condicion_edad_m ? "M" :
+    data.lab_condicion_edad_a ? "A" : base.condicion_edad
+  );
+
+  result.diagnostico_1 = data.diagnostico_1 ?? data.lab_diagnostico_1 ?? base.diagnostico_1;
+  result.diagnostico_1_cie = data.diagnostico_1_cie ?? data.lab_diagnostico_1_cie ?? base.diagnostico_1_cie;
+  result.diagnostico_2 = data.diagnostico_2 ?? data.lab_diagnostico_2 ?? base.diagnostico_2;
+  result.diagnostico_2_cie = data.diagnostico_2_cie ?? data.lab_diagnostico_2_cie ?? base.diagnostico_2_cie;
+
+  result.servicio = data.servicio ?? (
+    data.lab_servicio_emergencia ? "EMERGENCIA" :
+    data.lab_servicio_consulta ? "CONSULTA_EXTERNA" :
+    data.lab_servicio_hosp ? "HOSPITALIZACION" : base.servicio
+  );
+  result.especialidad = data.especialidad ?? data.lab_especialidad ?? base.especialidad;
+  result.sala = data.sala ?? data.lab_sala ?? base.sala;
+  result.cama = data.cama ?? data.lab_cama ?? base.cama;
+  result.prioridad = data.prioridad ?? (
+    data.lab_prioridad_urgente ? "URGENTE" :
+    data.lab_prioridad_rutina ? "RUTINA" : base.prioridad
+  );
+
+  const isX = (v: any) => v === true || v === "X" || v === "x" || v === "true" || v === 1;
+  if (data.lab_biometria_hematica !== undefined) result.ex_biometria_hematica = isX(data.lab_biometria_hematica);
+  if (data.lab_hematocrito !== undefined) result.ex_hematocrito = isX(data.lab_hematocrito);
+  if (data.lab_hemoglobina !== undefined) result.ex_hemoglobina = isX(data.lab_hemoglobina);
+  if (data.lab_plaquetas !== undefined) result.ex_plaquetas = isX(data.lab_plaquetas);
+
+  result.sol1_fecha_pedido = data.sol1_fecha_pedido ?? data.lab_fecha_generacion ?? base.sol1_fecha_pedido;
+  result.sol1_hora_pedido = data.sol1_hora_pedido ?? data.lab_hora_generacion ?? base.sol1_hora_pedido;
+  result.sol1_profesional_primer_nombre = data.sol1_profesional_primer_nombre ?? data.lab_prof_primer_nombre ?? "";
+  result.sol1_profesional_primer_apellido = data.sol1_profesional_primer_apellido ?? data.lab_prof_primer_apellido ?? "";
+  result.sol1_profesional_segundo_apellido = data.sol1_profesional_segundo_apellido ?? data.lab_prof_segundo_apellido ?? "";
+  result.sol1_documento = data.sol1_documento ?? data.lab_prof_documento ?? "";
+  result.sol1_fecha_muestra = data.sol1_fecha_muestra ?? data.lab_fecha_toma_muestra ?? base.sol1_fecha_muestra;
+  result.sol1_hora_muestra = data.sol1_hora_muestra ?? data.lab_hora_toma_muestra ?? base.sol1_hora_muestra;
+  result.sol1_tomador_muestra = data.sol1_tomador_muestra ?? data.lab_persona_toma_muestra ?? "";
+
+  result.sol2_fecha_pedido = data.sol2_fecha_pedido ?? data.lab2_fecha_generacion ?? base.sol2_fecha_pedido;
+  result.sol2_hora_pedido = data.sol2_hora_pedido ?? data.lab2_hora_generacion ?? base.sol2_hora_pedido;
+  result.sol2_profesional_primer_nombre = data.sol2_profesional_primer_nombre ?? data.lab2_prof_primer_nombre ?? "";
+  result.sol2_profesional_primer_apellido = data.sol2_profesional_primer_apellido ?? data.lab2_prof_primer_apellido ?? "";
+  result.sol2_profesional_segundo_apellido = data.sol2_profesional_segundo_apellido ?? data.lab2_prof_segundo_apellido ?? "";
+  result.sol2_documento = data.sol2_documento ?? data.lab2_prof_documento ?? "";
+  result.sol2_fecha_muestra = data.sol2_fecha_muestra ?? data.lab2_fecha_toma_muestra ?? base.sol2_fecha_muestra;
+  result.sol2_hora_muestra = data.sol2_hora_muestra ?? data.lab2_hora_toma_muestra ?? base.sol2_hora_muestra;
+  result.sol2_tomador_muestra = data.sol2_tomador_muestra ?? data.lab2_persona_toma_muestra ?? "";
+
+  return result as BloqueLaboratorio;
+}
+
+function flattenLaboratorioBloque(d: BloqueLaboratorio): Record<string, any> {
         const X = (v: boolean) => (v ? "X" : "");
 
         const flat: Record<string, any> = { ...d };
@@ -1053,49 +1122,58 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
         flat.lab2_hora_toma_muestra = d.sol2_hora_muestra;
         flat.sol2_tomador_muestra = d.sol2_tomador_muestra;
 
-        return flat as DatosLaboratorio;
-      },
-      clearAutosave: () => clearAutosave(),
-      isDirty: () => isDirty,
-    }),
-    [d, clearAutosave, isDirty]
-  );
+        return flat;
+}
 
-  const s = <K extends keyof DatosLaboratorio>(k: K) => (v: DatosLaboratorio[K]) =>
-    setD((p) => ({ ...p, [k]: v }));
-  const str = (k: keyof DatosLaboratorio) => (v: string) => s(k)(v as never);
-  const chk = (k: keyof DatosLaboratorio) => (v: boolean) => s(k)(v as never);
+// ─── Bloque de Laboratorio Único (Solicitud 1 + Solicitud 2) ──────────────────
+
+function LaboratorioBloque({
+  numero,
+  b,
+  onChange,
+  onDiagnosticoChange,
+}: {
+  numero: number;
+  b: BloqueLaboratorio;
+  onChange: <K extends keyof BloqueLaboratorio>(campo: K, valor: BloqueLaboratorio[K]) => void;
+  onDiagnosticoChange: (n: 1 | 2, cie: string, desc: string) => void;
+}) {
+  const s = <K extends keyof BloqueLaboratorio>(k: K) => (v: BloqueLaboratorio[K]) =>
+    onChange(k, v);
+  const str = (k: keyof BloqueLaboratorio) => (v: string) => s(k)(v as never);
+  const chk = (k: keyof BloqueLaboratorio) => (v: boolean) => s(k)(v as never);
 
   const tbl: React.CSSProperties = {
     width: "100%", minWidth: "1100px", borderCollapse: "collapse",
     tableLayout: "fixed", fontFamily: "Arial, sans-serif", fontSize: "10px",
   };
 
-  // Helper: celda label + checkbox en dos columnas
-  const examRow = (items: Array<[keyof DatosLaboratorio, string]>) => (
+  const examRow = (items: Array<[keyof BloqueLaboratorio, string]>) => (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1px 8px" }}>
       {items.map(([k, label]) => (
-        <ChkItem key={k as string} label={label} checked={d[k] as boolean} onChange={chk(k)} />
+        <ChkItem key={k as string} label={label} checked={!!b[k]} onChange={chk(k)} />
       ))}
     </div>
   );
 
-  const examCol = (items: Array<[keyof DatosLaboratorio, string]>) => (
+  const examCol = (items: Array<[keyof BloqueLaboratorio, string]>) => (
     <div style={{ display: "flex", flexDirection: "column" }}>
       {items.map(([k, label]) => (
-        <ChkItem key={k as string} label={label} checked={d[k] as boolean} onChange={chk(k)} />
+        <ChkItem key={k as string} label={label} checked={!!b[k]} onChange={chk(k)} />
       ))}
     </div>
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
-      <div style={{ overflowX: "visible", overflowY: "visible", background: "#fff", minHeight: "70vh" }}>
-
-        {/* ════════════════════════════════════════════════════════════════
-            ══════  SOLICITUD (1)  ══════════════════════════════════════
-            ════════════════════════════════════════════════════════════════ */}
-        <div style={{ ...solSep }}>LABORATORIO CLÍNICO — SOLICITUD (1)</div>
+    <div style={{ marginBottom: 0 }}>
+      <div style={{
+        ...solSep,
+        marginTop: numero > 1 ? 24 : 0,
+        borderTop: numero > 1 ? "4px solid #1a3a5c" : "2px solid #1a3a5c",
+      }}>
+        {numero > 1 && <span style={{ fontSize: "11px", opacity: 0.8, marginRight: 8 }}>#{numero}</span>}
+        LABORATORIO CLÍNICO — SOLICITUD (1)
+      </div>
 
         <table style={tbl}>
           <tbody>
@@ -1110,11 +1188,11 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
               <td colSpan={2} style={tdM}><Lbl>N° ARCHIVO</Lbl></td>
             </tr>
             <tr style={{ height: 22 }}>
-              <td colSpan={4} style={td}><TxtInput value={d.institucion} onChange={str("institucion")} /></td>
-              <td colSpan={2} style={td}><TxtInput value={d.unicodigo} onChange={str("unicodigo")} center /></td>
-              <td colSpan={7} style={td}><TxtInput value={d.establecimiento} onChange={str("establecimiento")} /></td>
-              <td colSpan={5} style={td}><TxtInput value={d.numero_historia_clinica} onChange={str("numero_historia_clinica")} center /></td>
-              <td colSpan={2} style={td}><TxtInput value={d.numero_archivo} onChange={str("numero_archivo")} center /></td>
+              <td colSpan={4} style={td}><TxtInput value={b.institucion} onChange={str("institucion")} /></td>
+              <td colSpan={2} style={td}><TxtInput value={b.unicodigo} onChange={str("unicodigo")} center /></td>
+              <td colSpan={7} style={td}><TxtInput value={b.establecimiento} onChange={str("establecimiento")} /></td>
+              <td colSpan={5} style={td}><TxtInput value={b.numero_historia_clinica} onChange={str("numero_historia_clinica")} center /></td>
+              <td colSpan={2} style={td}><TxtInput value={b.numero_archivo} onChange={str("numero_archivo")} center /></td>
             </tr>
             <tr>
               <td colSpan={4} style={tdM}><Lbl>PRIMER APELLIDO</Lbl></td>
@@ -1132,22 +1210,22 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
               </td>
             </tr>
             <tr style={{ height: 22 }}>
-              <td colSpan={4} style={td}><TxtInput value={d.primer_apellido} onChange={str("primer_apellido")} /></td>
-              <td colSpan={3} style={td}><TxtInput value={d.segundo_apellido} onChange={str("segundo_apellido")} /></td>
-              <td colSpan={3} style={td}><TxtInput value={d.primer_nombre} onChange={str("primer_nombre")} /></td>
-              <td colSpan={3} style={td}><TxtInput value={d.segundo_nombre} onChange={str("segundo_nombre")} /></td>
-              <td colSpan={1} style={td}><TxtInput value={d.sexo} onChange={str("sexo")} center /></td>
+              <td colSpan={4} style={td}><TxtInput value={b.primer_apellido} onChange={str("primer_apellido")} /></td>
+              <td colSpan={3} style={td}><TxtInput value={b.segundo_apellido} onChange={str("segundo_apellido")} /></td>
+              <td colSpan={3} style={td}><TxtInput value={b.primer_nombre} onChange={str("primer_nombre")} /></td>
+              <td colSpan={3} style={td}><TxtInput value={b.segundo_nombre} onChange={str("segundo_nombre")} /></td>
+              <td colSpan={1} style={td}><TxtInput value={b.sexo} onChange={str("sexo")} center /></td>
               <td colSpan={2} style={td}>
-                <input type="date" value={d.fecha_nacimiento} onChange={(e) => str("fecha_nacimiento")(e.target.value)}
+                <input type="date" value={b.fecha_nacimiento} onChange={(e) => str("fecha_nacimiento")(e.target.value)}
                   style={{ border: "none", outline: "none", fontSize: "9px", padding: "2px", width: "100%", background: "#fff" }} />
               </td>
-              <td colSpan={1} style={td}><TxtInput value={d.edad} onChange={str("edad")} center /></td>
+              <td colSpan={1} style={td}><TxtInput value={b.edad} onChange={str("edad")} center /></td>
               <td colSpan={3} style={td}>
                 <div style={{ display: "flex", justifyContent: "space-around", padding: "3px 2px" }}>
                   {(["H", "D", "M", "A"] as const).map((op) => (
-                    <input key={op} type="radio" name="lab_condicion_edad" value={op}
-                      checked={d.condicion_edad === op}
-                      onChange={() => setD(p => ({ ...p, condicion_edad: op }))}
+                    <input key={op} type="radio" name={`lab_condicion_edad_${numero}`} value={op}
+                      checked={b.condicion_edad === op}
+                      onChange={() => onChange("condicion_edad", op)}
                       style={{ width: 10, height: 10, cursor: "pointer" }} title={op} />
                   ))}
                 </div>
@@ -1168,17 +1246,17 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
             <tr style={{ height: 22 }}>
               <td colSpan={5} style={td}>
                 <Cie10DescInput
-                  cie={d.diagnostico_1_cie}
-                  descripcion={d.diagnostico_1}
-                  onChange={(cie, desc) => setD(p => ({ ...p, diagnostico_1: desc, diagnostico_1_cie: cie }))}
+                  cie={b.diagnostico_1_cie}
+                  descripcion={b.diagnostico_1}
+                  onChange={(cie, desc) => onDiagnosticoChange(1, cie, desc)}
                   placeholder="Diagnóstico 1"
                 />
               </td>
               <td colSpan={2} style={td}>
                 <Cie10CieInput
-                  cie={d.diagnostico_1_cie}
-                  descripcion={d.diagnostico_1}
-                  onChange={(cie, desc) => setD(p => ({ ...p, diagnostico_1: desc, diagnostico_1_cie: cie }))}
+                  cie={b.diagnostico_1_cie}
+                  descripcion={b.diagnostico_1}
+                  onChange={(cie, desc) => onDiagnosticoChange(1, cie, desc)}
                 />
               </td>
               <td colSpan={4} rowSpan={2} style={{ ...td, verticalAlign: "middle" }}>
@@ -1189,9 +1267,9 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
                     ["HOSPITALIZACION", "Hospitalización"],
                   ] as const).map(([val, lbl]) => (
                     <label key={val} style={{ display: "flex", alignItems: "center", gap: 3, fontSize: "9px", cursor: "pointer" }}>
-                      <input type="radio" name="lab_servicio" value={val}
-                        checked={d.servicio === val}
-                        onChange={() => setD(p => ({ ...p, servicio: val }))}
+                      <input type="radio" name={`lab_servicio_${numero}`} value={val}
+                        checked={b.servicio === val}
+                        onChange={() => onChange("servicio", val)}
                         style={{ width: 10, height: 10 }} />
                       {lbl}
                     </label>
@@ -1199,21 +1277,21 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
                 </div>
               </td>
               <td colSpan={3} rowSpan={2} style={{ ...td, verticalAlign: "middle" }}>
-                <TxtInput value={d.especialidad} onChange={str("especialidad")} placeholder="Especialidad" />
+                <TxtInput value={b.especialidad} onChange={str("especialidad")} placeholder="Especialidad" />
               </td>
               <td colSpan={2} rowSpan={2} style={{ ...td, verticalAlign: "middle" }}>
-                <TxtInput value={d.sala} onChange={str("sala")} placeholder="Sala" />
+                <TxtInput value={b.sala} onChange={str("sala")} placeholder="Sala" />
               </td>
               <td colSpan={1} rowSpan={2} style={{ ...td, verticalAlign: "middle" }}>
-                <TxtInput value={d.cama} onChange={str("cama")} placeholder="" center />
+                <TxtInput value={b.cama} onChange={str("cama")} placeholder="" center />
               </td>
               <td colSpan={3} rowSpan={2} style={{ ...td, verticalAlign: "middle" }}>
                 <div style={{ padding: "2px 4px" }}>
                   {([["URGENTE", "Urgente"], ["RUTINA", "Rutina"]] as const).map(([val, lbl]) => (
                     <label key={val} style={{ display: "flex", alignItems: "center", gap: 3, fontSize: "9px", cursor: "pointer" }}>
-                      <input type="radio" name="lab_prioridad" value={val}
-                        checked={d.prioridad === val}
-                        onChange={() => setD(p => ({ ...p, prioridad: val }))}
+                      <input type="radio" name={`lab_prioridad_${numero}`} value={val}
+                        checked={b.prioridad === val}
+                        onChange={() => onChange("prioridad", val)}
                         style={{ width: 10, height: 10 }} />
                       {lbl}
                     </label>
@@ -1224,17 +1302,17 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
             <tr style={{ height: 22 }}>
               <td colSpan={5} style={td}>
                 <Cie10DescInput
-                  cie={d.diagnostico_2_cie}
-                  descripcion={d.diagnostico_2}
-                  onChange={(cie, desc) => setD(p => ({ ...p, diagnostico_2: desc, diagnostico_2_cie: cie }))}
+                  cie={b.diagnostico_2_cie}
+                  descripcion={b.diagnostico_2}
+                  onChange={(cie, desc) => onDiagnosticoChange(2, cie, desc)}
                   placeholder="Diagnóstico 2"
                 />
               </td>
               <td colSpan={2} style={td}>
                 <Cie10CieInput
-                  cie={d.diagnostico_2_cie}
-                  descripcion={d.diagnostico_2}
-                  onChange={(cie, desc) => setD(p => ({ ...p, diagnostico_2: desc, diagnostico_2_cie: cie }))}
+                  cie={b.diagnostico_2_cie}
+                  descripcion={b.diagnostico_2}
+                  onChange={(cie, desc) => onDiagnosticoChange(2, cie, desc)}
                 />
               </td>
             </tr>
@@ -1585,9 +1663,9 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
             <tr style={{ verticalAlign: "top" }}>
               <td colSpan={5} style={td}>
                 <Lbl>MUESTRA:</Lbl>
-                <TxtInput value={d.micro_muestra} onChange={str("micro_muestra")} placeholder="Tipo de muestra" />
+                <TxtInput value={b.micro_muestra} onChange={str("micro_muestra")} placeholder="Tipo de muestra" />
                 <Lbl>SITIO ANATÓMICO:</Lbl>
-                <TxtInput value={d.micro_sitio_anatomico} onChange={str("micro_sitio_anatomico")} placeholder="Sitio anatómico" />
+                <TxtInput value={b.micro_sitio_anatomico} onChange={str("micro_sitio_anatomico")} placeholder="Sitio anatómico" />
               </td>
               <td colSpan={4} style={td}>
                 {examCol([
@@ -1599,18 +1677,18 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
               </td>
               <td colSpan={5} style={td}>
                 <Lbl small>ESTUDIO MICOLÓGICO (KOH) DE:</Lbl>
-                <TxtInput value={d.ex_estudio_micologico} onChange={str("ex_estudio_micologico")} />
+                <TxtInput value={b.ex_estudio_micologico} onChange={str("ex_estudio_micologico")} />
                 <Lbl small>CULTIVO MICÓTICO DE:</Lbl>
-                <TxtInput value={d.ex_cultivo_micotico} onChange={str("ex_cultivo_micotico")} />
+                <TxtInput value={b.ex_cultivo_micotico} onChange={str("ex_cultivo_micotico")} />
                 <div style={{ marginTop: 4 }}>
-                  <ChkItem label="Investigación Paragonimus spp" checked={d.ex_investigacion_paragonimus} onChange={chk("ex_investigacion_paragonimus")} />
-                  <ChkItem label="Coloración Zhiel-Nielssen" checked={d.ex_coloracion_zhiel} onChange={chk("ex_coloracion_zhiel")} />
-                  <ChkItem label="Investigación Histoplasma spp" checked={d.ex_investigacion_histoplasma} onChange={chk("ex_investigacion_histoplasma")} />
+                  <ChkItem label="Investigación Paragonimus spp" checked={b.ex_investigacion_paragonimus} onChange={chk("ex_investigacion_paragonimus")} />
+                  <ChkItem label="Coloración Zhiel-Nielssen" checked={b.ex_coloracion_zhiel} onChange={chk("ex_coloracion_zhiel")} />
+                  <ChkItem label="Investigación Histoplasma spp" checked={b.ex_investigacion_histoplasma} onChange={chk("ex_investigacion_histoplasma")} />
                 </div>
               </td>
               <td colSpan={6} style={td}>
                 <Lbl>BIOLOGÍA MOLECULAR Y GENÉTICA</Lbl>
-                <textarea value={d.biologia_molecular} onChange={(e) => str("biologia_molecular")(e.target.value)}
+                <textarea value={b.biologia_molecular} onChange={(e) => str("biologia_molecular")(e.target.value)}
                   rows={6} placeholder="Especificar examen..."
                   style={{ width: "100%", border: "none", outline: "none", fontSize: "10px", fontFamily: "Arial, sans-serif", resize: "none", padding: "3px 4px", boxSizing: "border-box" }} />
               </td>
@@ -1622,13 +1700,10 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
                 <span>D. DATOS DEL PROFESIONAL RESPONSABLE</span>
                 <BotonBuscarProfesional onSelect={(m) => {
                   const partes = parseNombresMedico(m.nombre);
-                  setD(p => ({
-                    ...p,
-                    sol1_profesional_primer_nombre: partes.nombres,
-                    sol1_profesional_primer_apellido: partes.primerApellido,
-                    sol1_profesional_segundo_apellido: partes.segundoApellido,
-                    sol1_documento: m.identificacion
-                  }));
+                  onChange("sol1_profesional_primer_nombre", partes.nombres);
+                  onChange("sol1_profesional_primer_apellido", partes.primerApellido);
+                  onChange("sol1_profesional_segundo_apellido", partes.segundoApellido);
+                  onChange("sol1_documento", m.identificacion);
                 }} />
               </div>
             </td></tr>
@@ -1641,16 +1716,16 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
             </tr>
             <tr style={{ height: 22 }}>
               <td colSpan={3} style={td}>
-                <input type="date" value={d.sol1_fecha_pedido} onChange={(e) => str("sol1_fecha_pedido")(e.target.value)}
+                <input type="date" value={b.sol1_fecha_pedido} onChange={(e) => str("sol1_fecha_pedido")(e.target.value)}
                   style={{ border: "none", outline: "none", fontSize: "9px", padding: "2px", width: "100%" }} />
               </td>
               <td colSpan={2} style={td}>
-                <input type="time" value={d.sol1_hora_pedido} onChange={(e) => str("sol1_hora_pedido")(e.target.value)}
+                <input type="time" value={b.sol1_hora_pedido} onChange={(e) => str("sol1_hora_pedido")(e.target.value)}
                   style={{ border: "none", outline: "none", fontSize: "9px", padding: "2px", width: "100%" }} />
               </td>
-              <td colSpan={5} style={td}><TxtInput value={d.sol1_profesional_primer_nombre} onChange={str("sol1_profesional_primer_nombre")} /></td>
-              <td colSpan={5} style={td}><TxtInput value={d.sol1_profesional_primer_apellido} onChange={str("sol1_profesional_primer_apellido")} /></td>
-              <td colSpan={5} style={td}><TxtInput value={d.sol1_profesional_segundo_apellido} onChange={str("sol1_profesional_segundo_apellido")} /></td>
+              <td colSpan={5} style={td}><TxtInput value={b.sol1_profesional_primer_nombre} onChange={str("sol1_profesional_primer_nombre")} /></td>
+              <td colSpan={5} style={td}><TxtInput value={b.sol1_profesional_primer_apellido} onChange={str("sol1_profesional_primer_apellido")} /></td>
+              <td colSpan={5} style={td}><TxtInput value={b.sol1_profesional_segundo_apellido} onChange={str("sol1_profesional_segundo_apellido")} /></td>
             </tr>
             <tr>
               <td colSpan={5} style={tdM}><Lbl>N° DOCUMENTO DE IDENTIFICACIÓN</Lbl></td>
@@ -1662,7 +1737,7 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
               </td>
             </tr>
             <tr style={{ height: 22 }}>
-              <td colSpan={5} style={td}><TxtInput value={d.sol1_documento} onChange={str("sol1_documento")} /></td>
+              <td colSpan={5} style={td}><TxtInput value={b.sol1_documento} onChange={str("sol1_documento")} /></td>
               <td colSpan={8} style={{ ...td, background: "#f8f8f8", height: 30 }} />
               <td colSpan={7} style={{ ...td, background: "#f8f8f8", height: 30 }} />
             </tr>
@@ -1676,14 +1751,14 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
             </tr>
             <tr style={{ height: 22 }}>
               <td colSpan={3} style={td}>
-                <input type="date" value={d.sol1_fecha_muestra} onChange={(e) => str("sol1_fecha_muestra")(e.target.value)}
+                <input type="date" value={b.sol1_fecha_muestra} onChange={(e) => str("sol1_fecha_muestra")(e.target.value)}
                   style={{ border: "none", outline: "none", fontSize: "9px", padding: "2px", width: "100%" }} />
               </td>
               <td colSpan={2} style={td}>
-                <input type="time" value={d.sol1_hora_muestra} onChange={(e) => str("sol1_hora_muestra")(e.target.value)}
+                <input type="time" value={b.sol1_hora_muestra} onChange={(e) => str("sol1_hora_muestra")(e.target.value)}
                   style={{ border: "none", outline: "none", fontSize: "9px", padding: "2px", width: "100%" }} />
               </td>
-              <td colSpan={10} style={td}><TxtInput value={d.sol1_tomador_muestra} onChange={str("sol1_tomador_muestra")} /></td>
+              <td colSpan={10} style={td}><TxtInput value={b.sol1_tomador_muestra} onChange={str("sol1_tomador_muestra")} /></td>
               <td colSpan={5} style={{ ...td, background: "#f8f8f8" }} />
             </tr>
 
@@ -1703,7 +1778,10 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
         {/* ════════════════════════════════════════════════════════════════
             ══════  SOLICITUD (2)  ══════════════════════════════════════
             ════════════════════════════════════════════════════════════════ */}
-        <div style={{ ...solSep, marginTop: 8 }}>LABORATORIO CLÍNICO — SOLICITUD (2)</div>
+        <div style={{ ...solSep, marginTop: 8 }}>
+        {numero > 1 && <span style={{ fontSize: "11px", opacity: 0.8, marginRight: 8 }}>#{numero}</span>}
+        LABORATORIO CLÍNICO — SOLICITUD (2)
+      </div>
 
         <table style={tbl}>
           <tbody>
@@ -1720,19 +1798,19 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
             </tr>
             <tr>
               <td colSpan={3} style={{ ...td, textAlign: "center", paddingTop: 2 }}>
-                <input type="checkbox" checked={d.vih_prueba_rapida} onChange={(e) => chk("vih_prueba_rapida")(e.target.checked)} style={{ width: 13, height: 13 }} />
+                <input type="checkbox" checked={b.vih_prueba_rapida} onChange={(e) => chk("vih_prueba_rapida")(e.target.checked)} style={{ width: 13, height: 13 }} />
               </td>
               <td colSpan={3} style={{ ...td, textAlign: "center", paddingTop: 2 }}>
-                <input type="checkbox" checked={d.vih_elisa} onChange={(e) => chk("vih_elisa")(e.target.checked)} style={{ width: 13, height: 13 }} />
+                <input type="checkbox" checked={b.vih_elisa} onChange={(e) => chk("vih_elisa")(e.target.checked)} style={{ width: 13, height: 13 }} />
               </td>
               <td colSpan={3} style={{ ...td, textAlign: "center", paddingTop: 2 }}>
-                <input type="checkbox" checked={d.vih_clia} onChange={(e) => chk("vih_clia")(e.target.checked)} style={{ width: 13, height: 13 }} />
+                <input type="checkbox" checked={b.vih_clia} onChange={(e) => chk("vih_clia")(e.target.checked)} style={{ width: 13, height: 13 }} />
               </td>
               <td colSpan={3} style={{ ...td, textAlign: "center", paddingTop: 2 }}>
-                <input type="checkbox" checked={d.vih_ifi} onChange={(e) => chk("vih_ifi")(e.target.checked)} style={{ width: 13, height: 13 }} />
+                <input type="checkbox" checked={b.vih_ifi} onChange={(e) => chk("vih_ifi")(e.target.checked)} style={{ width: 13, height: 13 }} />
               </td>
               <td colSpan={3} style={{ ...td, textAlign: "center", paddingTop: 2 }}>
-                <input type="checkbox" checked={d.vih_carga_viral} onChange={(e) => chk("vih_carga_viral")(e.target.checked)} style={{ width: 13, height: 13 }} />
+                <input type="checkbox" checked={b.vih_carga_viral} onChange={(e) => chk("vih_carga_viral")(e.target.checked)} style={{ width: 13, height: 13 }} />
               </td>
               <td colSpan={5} style={td} />
             </tr>
@@ -1745,16 +1823,16 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
             </tr>
             <tr>
               <td colSpan={3} style={{ ...td, textAlign: "center", paddingTop: 2 }}>
-                <input type="checkbox" checked={d.vih_cd4} onChange={(e) => chk("vih_cd4")(e.target.checked)} style={{ width: 13, height: 13 }} />
+                <input type="checkbox" checked={b.vih_cd4} onChange={(e) => chk("vih_cd4")(e.target.checked)} style={{ width: 13, height: 13 }} />
               </td>
               <td colSpan={4} style={{ ...td, textAlign: "center", paddingTop: 2 }}>
-                <input type="checkbox" checked={d.vih_tamizaje_sifilis} onChange={(e) => chk("vih_tamizaje_sifilis")(e.target.checked)} style={{ width: 13, height: 13 }} />
+                <input type="checkbox" checked={b.vih_tamizaje_sifilis} onChange={(e) => chk("vih_tamizaje_sifilis")(e.target.checked)} style={{ width: 13, height: 13 }} />
               </td>
               <td colSpan={3} style={{ ...td, textAlign: "center", paddingTop: 2 }}>
-                <input type="checkbox" checked={d.vih_vdrl} onChange={(e) => chk("vih_vdrl")(e.target.checked)} style={{ width: 13, height: 13 }} />
+                <input type="checkbox" checked={b.vih_vdrl} onChange={(e) => chk("vih_vdrl")(e.target.checked)} style={{ width: 13, height: 13 }} />
               </td>
               <td colSpan={5} style={{ ...td, textAlign: "center", paddingTop: 2 }}>
-                <input type="checkbox" checked={d.vih_hepatitis_b} onChange={(e) => chk("vih_hepatitis_b")(e.target.checked)} style={{ width: 13, height: 13 }} />
+                <input type="checkbox" checked={b.vih_hepatitis_b} onChange={(e) => chk("vih_hepatitis_b")(e.target.checked)} style={{ width: 13, height: 13 }} />
               </td>
               <td colSpan={5} style={td} />
             </tr>
@@ -1765,30 +1843,30 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
             <tr>
               <td colSpan={20} style={{ ...td, padding: "4px 6px" }}>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "3px 16px" }}>
-                  <ChkItem label="Nuevo" checked={d.tb_tipo_afectado_nuevo} onChange={chk("tb_tipo_afectado_nuevo")} />
-                  <ChkItem label="Recaída" checked={d.tb_tipo_afectado_recaida} onChange={chk("tb_tipo_afectado_recaida")} />
-                  <ChkItem label="Fracaso" checked={d.tb_tipo_afectado_fracaso} onChange={chk("tb_tipo_afectado_fracaso")} />
-                  <ChkItem label="Pérdida en el seguimiento" checked={d.tb_tipo_afectado_perdida} onChange={chk("tb_tipo_afectado_perdida")} />
-                  <ChkItem label="PVV" checked={d.tb_pvv} onChange={chk("tb_pvv")} />
-                  <ChkItem label="PPL" checked={d.tb_ppl} onChange={chk("tb_ppl")} />
-                  <ChkItem label="Niño &lt; 5 años" checked={d.tb_nino_5} onChange={chk("tb_nino_5")} />
+                  <ChkItem label="Nuevo" checked={b.tb_tipo_afectado_nuevo} onChange={chk("tb_tipo_afectado_nuevo")} />
+                  <ChkItem label="Recaída" checked={b.tb_tipo_afectado_recaida} onChange={chk("tb_tipo_afectado_recaida")} />
+                  <ChkItem label="Fracaso" checked={b.tb_tipo_afectado_fracaso} onChange={chk("tb_tipo_afectado_fracaso")} />
+                  <ChkItem label="Pérdida en el seguimiento" checked={b.tb_tipo_afectado_perdida} onChange={chk("tb_tipo_afectado_perdida")} />
+                  <ChkItem label="PVV" checked={b.tb_pvv} onChange={chk("tb_pvv")} />
+                  <ChkItem label="PPL" checked={b.tb_ppl} onChange={chk("tb_ppl")} />
+                  <ChkItem label="Niño &lt; 5 años" checked={b.tb_nino_5} onChange={chk("tb_nino_5")} />
                 </div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "3px 16px", marginTop: 4 }}>
-                  <ChkItem label="Sospecha de Meningitis TB" checked={d.tb_sospecha_meningitis} onChange={chk("tb_sospecha_meningitis")} />
-                  <ChkItem label="Alta sospecha clínica y/o radiológica BK(-)" checked={d.tb_alta_sospecha} onChange={chk("tb_alta_sospecha")} />
-                  <ChkItem label="Comorbilidad" checked={d.tb_comorbilidad} onChange={chk("tb_comorbilidad")} />
-                  <ChkItem label="Contacto TBR" checked={d.tb_contacto_tbr} onChange={chk("tb_contacto_tbr")} />
-                  <ChkItem label="Sospecha de TB EP" checked={d.tb_sospecha_ep} onChange={chk("tb_sospecha_ep")} />
-                  <ChkItem label="Talento humano en salud" checked={d.tb_talento_humano} onChange={chk("tb_talento_humano")} />
-                  <ChkItem label="Irregularidad en toma del Tto" checked={d.tb_irregularidad_tto} onChange={chk("tb_irregularidad_tto")} />
-                  <ChkItem label="Reversión" checked={d.ex_reversion} onChange={chk("ex_reversion")} />
-                  <ChkItem label="Embarazo" checked={d.tb_embarazo} onChange={chk("tb_embarazo")} />
-                  <ChkItem label="BK (+) al 2do. mes" checked={d.tb_bk_2mes} onChange={chk("tb_bk_2mes")} />
-                  <ChkItem label="Condiciones especiales" checked={d.tb_condiciones_especiales} onChange={chk("tb_condiciones_especiales")} />
+                  <ChkItem label="Sospecha de Meningitis TB" checked={b.tb_sospecha_meningitis} onChange={chk("tb_sospecha_meningitis")} />
+                  <ChkItem label="Alta sospecha clínica y/o radiológica BK(-)" checked={b.tb_alta_sospecha} onChange={chk("tb_alta_sospecha")} />
+                  <ChkItem label="Comorbilidad" checked={b.tb_comorbilidad} onChange={chk("tb_comorbilidad")} />
+                  <ChkItem label="Contacto TBR" checked={b.tb_contacto_tbr} onChange={chk("tb_contacto_tbr")} />
+                  <ChkItem label="Sospecha de TB EP" checked={b.tb_sospecha_ep} onChange={chk("tb_sospecha_ep")} />
+                  <ChkItem label="Talento humano en salud" checked={b.tb_talento_humano} onChange={chk("tb_talento_humano")} />
+                  <ChkItem label="Irregularidad en toma del Tto" checked={b.tb_irregularidad_tto} onChange={chk("tb_irregularidad_tto")} />
+                  <ChkItem label="Reversión" checked={b.ex_reversion} onChange={chk("ex_reversion")} />
+                  <ChkItem label="Embarazo" checked={b.tb_embarazo} onChange={chk("tb_embarazo")} />
+                  <ChkItem label="BK (+) al 2do. mes" checked={b.tb_bk_2mes} onChange={chk("tb_bk_2mes")} />
+                  <ChkItem label="Condiciones especiales" checked={b.tb_condiciones_especiales} onChange={chk("tb_condiciones_especiales")} />
                 </div>
                 <div style={{ display: "flex", gap: 8, marginTop: 4, alignItems: "center" }}>
                   <span style={{ fontSize: "9px", fontWeight: 700 }}>Otros:</span>
-                  <TxtInput value={d.tb_otros} onChange={str("tb_otros")} placeholder="Especificar..." />
+                  <TxtInput value={b.tb_otros} onChange={str("tb_otros")} placeholder="Especificar..." />
                 </div>
               </td>
             </tr>
@@ -1797,13 +1875,13 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
             <tr>
               <td colSpan={6} style={tdM}><Lbl>Antecedentes de tuberculosis</Lbl></td>
               <td colSpan={3} style={tdM}><Lbl>TIPO DE RESISTENCIA</Lbl></td>
-              <td colSpan={3} style={td}><TxtInput value={d.tb_antecedentes} onChange={str("tb_antecedentes")} /></td>
+              <td colSpan={3} style={td}><TxtInput value={b.tb_antecedentes} onChange={str("tb_antecedentes")} /></td>
               <td colSpan={8} style={td}>
                 <div style={{ display: "flex", gap: 8, padding: "2px 4px" }}>
                   {(["SENSIBLE", "RESISTENTE"] as const).map((v) => (
                     <label key={v} style={{ display: "flex", alignItems: "center", gap: 3, fontSize: "9px", cursor: "pointer" }}>
-                      <input type="radio" name="tb_resistencia" value={v} checked={d.tb_tipo_resistencia === v}
-                        onChange={() => setD(p => ({ ...p, tb_tipo_resistencia: v }))} style={{ width: 10, height: 10 }} />
+                      <input type="radio" name={`tb_resistencia_${numero}`} value={v} checked={b.tb_tipo_resistencia === v}
+                        onChange={() => onChange("tb_tipo_resistencia", v)} style={{ width: 10, height: 10 }} />
                       {v === "SENSIBLE" ? "TB Sensible" : "TB Resistente"}
                     </label>
                   ))}
@@ -1814,11 +1892,11 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
               <td colSpan={6} style={tdM}><Lbl>Tipo de muestra</Lbl></td>
               <td colSpan={3} style={tdM}>
                 <div style={{ display: "flex", gap: 4, padding: "2px 4px" }}>
-                  <ChkItem label="Esputo" checked={d.tb_esputo} onChange={chk("tb_esputo")} />
+                  <ChkItem label="Esputo" checked={b.tb_esputo} onChange={chk("tb_esputo")} />
                 </div>
               </td>
               <td colSpan={2} style={tdM}><Lbl small>Otro:</Lbl></td>
-              <td colSpan={9} style={td}><TxtInput value={d.tb_otro_muestra} onChange={str("tb_otro_muestra")} /></td>
+              <td colSpan={9} style={td}><TxtInput value={b.tb_otro_muestra} onChange={str("tb_otro_muestra")} /></td>
             </tr>
 
             {/* Solicitud para diagnóstico */}
@@ -1834,22 +1912,22 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
             </tr>
             <tr style={{ height: 24 }}>
               <td colSpan={2} style={{ ...td, textAlign: "center" }}>
-                <input type="checkbox" checked={d.tb_ada} onChange={(e) => chk("tb_ada")(e.target.checked)} style={{ width: 12, height: 12 }} />
+                <input type="checkbox" checked={b.tb_ada} onChange={(e) => chk("tb_ada")(e.target.checked)} style={{ width: 12, height: 12 }} />
               </td>
               <td colSpan={3} style={{ ...tdM, textAlign: "center" }}>
                 <Lbl small>Baciloscopia</Lbl>
               </td>
               <td colSpan={2} style={{ ...td, textAlign: "center" }}>
-                <input type="checkbox" checked={d.tb_baciloscopia_dx_check} onChange={(e) => chk("tb_baciloscopia_dx_check")(e.target.checked)} style={{ width: 12, height: 12 }} />
+                <input type="checkbox" checked={b.tb_baciloscopia_dx_check} onChange={(e) => chk("tb_baciloscopia_dx_check")(e.target.checked)} style={{ width: 12, height: 12 }} />
               </td>
-              <td colSpan={2} style={td}><TxtInput value={d.tb_baciloscopia_dx_no} onChange={str("tb_baciloscopia_dx_no")} center /></td>
+              <td colSpan={2} style={td}><TxtInput value={b.tb_baciloscopia_dx_no} onChange={str("tb_baciloscopia_dx_no")} center /></td>
               <td colSpan={4} style={{ ...tdM, textAlign: "center" }}>
                 <Lbl small>Cultivo Medio Sólido (OK)</Lbl>
               </td>
               <td colSpan={2} style={{ ...td, textAlign: "center" }}>
-                <input type="checkbox" checked={d.tb_cultivo_solido_dx_check} onChange={(e) => chk("tb_cultivo_solido_dx_check")(e.target.checked)} style={{ width: 12, height: 12 }} />
+                <input type="checkbox" checked={b.tb_cultivo_solido_dx_check} onChange={(e) => chk("tb_cultivo_solido_dx_check")(e.target.checked)} style={{ width: 12, height: 12 }} />
               </td>
-              <td colSpan={5} style={td}><TxtInput value={d.tb_cultivo_solido_dx_no} onChange={str("tb_cultivo_solido_dx_no")} center /></td>
+              <td colSpan={5} style={td}><TxtInput value={b.tb_cultivo_solido_dx_no} onChange={str("tb_cultivo_solido_dx_no")} center /></td>
             </tr>
             <tr>
               <td colSpan={5} style={tdM}><Lbl small> </Lbl></td>
@@ -1862,14 +1940,14 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
             <tr style={{ height: 24 }}>
               <td colSpan={5} style={td} />
               <td colSpan={2} style={{ ...td, textAlign: "center" }}>
-                <input type="checkbox" checked={d.tb_baciloscopia_ctrl} onChange={(e) => chk("tb_baciloscopia_ctrl")(e.target.checked)} style={{ width: 12, height: 12 }} />
+                <input type="checkbox" checked={b.tb_baciloscopia_ctrl} onChange={(e) => chk("tb_baciloscopia_ctrl")(e.target.checked)} style={{ width: 12, height: 12 }} />
               </td>
-              <td colSpan={2} style={td}><TxtInput value={d.tb_baciloscopia_ctrl_mes} onChange={str("tb_baciloscopia_ctrl_mes")} center placeholder="Mes" /></td>
+              <td colSpan={2} style={td}><TxtInput value={b.tb_baciloscopia_ctrl_mes} onChange={str("tb_baciloscopia_ctrl_mes")} center placeholder="Mes" /></td>
               <td colSpan={4} style={td} />
               <td colSpan={2} style={{ ...td, textAlign: "center" }}>
-                <input type="checkbox" checked={d.tb_cultivo_solido_ctrl} onChange={(e) => chk("tb_cultivo_solido_ctrl")(e.target.checked)} style={{ width: 12, height: 12 }} />
+                <input type="checkbox" checked={b.tb_cultivo_solido_ctrl} onChange={(e) => chk("tb_cultivo_solido_ctrl")(e.target.checked)} style={{ width: 12, height: 12 }} />
               </td>
-              <td colSpan={5} style={td}><TxtInput value={d.tb_cultivo_solido_ctrl_mes} onChange={str("tb_cultivo_solido_ctrl_mes")} center placeholder="Mes" /></td>
+              <td colSpan={5} style={td}><TxtInput value={b.tb_cultivo_solido_ctrl_mes} onChange={str("tb_cultivo_solido_ctrl_mes")} center placeholder="Mes" /></td>
             </tr>
 
             {/* PCR / Nitrato / MGIT / Genotipificación / Tipificación */}
@@ -1886,8 +1964,8 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
                 ["tb_genotipificacion", ""], ["tb_tipificacion", ""],
               ].map(([k], i) => (
                 <td key={k} colSpan={4} style={{ ...td, textAlign: "center" }}>
-                  <input type="checkbox" checked={d[k as keyof DatosLaboratorio] as boolean}
-                    onChange={(e) => chk(k as keyof DatosLaboratorio)(e.target.checked)}
+                  <input type="checkbox" checked={b[k as keyof BloqueLaboratorio] as boolean}
+                    onChange={(e) => chk(k as keyof BloqueLaboratorio)(e.target.checked)}
                     style={{ width: 12, height: 12 }} />
                 </td>
               ))}
@@ -1903,7 +1981,7 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
             <tr style={{ height: 24 }}>
               {(["tb_psd1_proporciones", "tb_psd1_mgit", "tb_psd2_proporciones", "tb_psd2_mgit"] as const).map((k) => (
                 <td key={k} colSpan={5} style={{ ...td, textAlign: "center" }}>
-                  <input type="checkbox" checked={d[k]} onChange={(e) => chk(k)(e.target.checked)} style={{ width: 12, height: 12 }} />
+                  <input type="checkbox" checked={b[k]} onChange={(e) => chk(k)(e.target.checked)} style={{ width: 12, height: 12 }} />
                 </td>
               ))}
             </tr>
@@ -1914,13 +1992,10 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
                 <span>C. DATOS DEL PROFESIONAL RESPONSABLE</span>
                 <BotonBuscarProfesional onSelect={(m) => {
                   const partes = parseNombresMedico(m.nombre);
-                  setD(p => ({
-                    ...p,
-                    sol2_profesional_primer_nombre: partes.nombres,
-                    sol2_profesional_primer_apellido: partes.primerApellido,
-                    sol2_profesional_segundo_apellido: partes.segundoApellido,
-                    sol2_documento: m.identificacion
-                  }));
+                  onChange("sol2_profesional_primer_nombre", partes.nombres);
+                  onChange("sol2_profesional_primer_apellido", partes.primerApellido);
+                  onChange("sol2_profesional_segundo_apellido", partes.segundoApellido);
+                  onChange("sol2_documento", m.identificacion);
                 }} />
               </div>
             </td></tr>
@@ -1933,16 +2008,16 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
             </tr>
             <tr style={{ height: 22 }}>
               <td colSpan={3} style={td}>
-                <input type="date" value={d.sol2_fecha_pedido} onChange={(e) => str("sol2_fecha_pedido")(e.target.value)}
+                <input type="date" value={b.sol2_fecha_pedido} onChange={(e) => str("sol2_fecha_pedido")(e.target.value)}
                   style={{ border: "none", outline: "none", fontSize: "9px", padding: "2px", width: "100%" }} />
               </td>
               <td colSpan={2} style={td}>
-                <input type="time" value={d.sol2_hora_pedido} onChange={(e) => str("sol2_hora_pedido")(e.target.value)}
+                <input type="time" value={b.sol2_hora_pedido} onChange={(e) => str("sol2_hora_pedido")(e.target.value)}
                   style={{ border: "none", outline: "none", fontSize: "9px", padding: "2px", width: "100%" }} />
               </td>
-              <td colSpan={5} style={td}><TxtInput value={d.sol2_profesional_primer_nombre} onChange={str("sol2_profesional_primer_nombre")} /></td>
-              <td colSpan={5} style={td}><TxtInput value={d.sol2_profesional_primer_apellido} onChange={str("sol2_profesional_primer_apellido")} /></td>
-              <td colSpan={5} style={td}><TxtInput value={d.sol2_profesional_segundo_apellido} onChange={str("sol2_profesional_segundo_apellido")} /></td>
+              <td colSpan={5} style={td}><TxtInput value={b.sol2_profesional_primer_nombre} onChange={str("sol2_profesional_primer_nombre")} /></td>
+              <td colSpan={5} style={td}><TxtInput value={b.sol2_profesional_primer_apellido} onChange={str("sol2_profesional_primer_apellido")} /></td>
+              <td colSpan={5} style={td}><TxtInput value={b.sol2_profesional_segundo_apellido} onChange={str("sol2_profesional_segundo_apellido")} /></td>
             </tr>
             <tr>
               <td colSpan={5} style={tdM}><Lbl>N° DOCUMENTO DE IDENTIFICACIÓN</Lbl></td>
@@ -1954,7 +2029,7 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
               </td>
             </tr>
             <tr style={{ height: 22 }}>
-              <td colSpan={5} style={td}><TxtInput value={d.sol2_documento} onChange={str("sol2_documento")} /></td>
+              <td colSpan={5} style={td}><TxtInput value={b.sol2_documento} onChange={str("sol2_documento")} /></td>
               <td colSpan={8} style={{ ...td, background: "#f8f8f8", height: 30 }} />
               <td colSpan={7} style={{ ...td, background: "#f8f8f8", height: 30 }} />
             </tr>
@@ -1968,14 +2043,14 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
             </tr>
             <tr style={{ height: 22 }}>
               <td colSpan={3} style={td}>
-                <input type="date" value={d.sol2_fecha_muestra} onChange={(e) => str("sol2_fecha_muestra")(e.target.value)}
+                <input type="date" value={b.sol2_fecha_muestra} onChange={(e) => str("sol2_fecha_muestra")(e.target.value)}
                   style={{ border: "none", outline: "none", fontSize: "9px", padding: "2px", width: "100%" }} />
               </td>
               <td colSpan={2} style={td}>
-                <input type="time" value={d.sol2_hora_muestra} onChange={(e) => str("sol2_hora_muestra")(e.target.value)}
+                <input type="time" value={b.sol2_hora_muestra} onChange={(e) => str("sol2_hora_muestra")(e.target.value)}
                   style={{ border: "none", outline: "none", fontSize: "9px", padding: "2px", width: "100%" }} />
               </td>
-              <td colSpan={10} style={td}><TxtInput value={d.sol2_tomador_muestra} onChange={str("sol2_tomador_muestra")} /></td>
+              <td colSpan={10} style={td}><TxtInput value={b.sol2_tomador_muestra} onChange={str("sol2_tomador_muestra")} /></td>
               <td colSpan={5} style={{ ...td, background: "#f8f8f8" }} />
             </tr>
 
@@ -1991,6 +2066,188 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
 
           </tbody>
         </table>
+      
+    </div>
+  );
+}
+
+// ─── Componente Principal ─────────────────────────────────────────────────────
+
+const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props>(({
+  paciente,
+  initialData,
+  guardando = false,
+  exportando = false,
+  atencionId,
+}, ref) => {
+  const [datos, setDatos] = useState<DatosLaboratorio>(() => {
+    if (initialData?.bloques && Array.isArray(initialData.bloques) && initialData.bloques.length > 0) {
+      return { bloques: [...initialData.bloques] };
+    }
+    if (initialData && Object.keys(initialData).length > 0) {
+      return { bloques: [migrarDatosAntiguos(initialData, paciente)] };
+    }
+    return { bloques: [crearBloqueVacio(paciente)] };
+  });
+
+  const { isDirty, clearAutosave } = useFormAutosaveAndWarn({
+    formId: `hc_laboratorio_${atencionId || 'new'}_${paciente?.cedula || 'new'}`,
+    initialData: initialData || { bloques: [crearBloqueVacio(paciente)] },
+    currentData: datos,
+    onRestore: (saved) => setDatos(p => ({ ...p, ...saved })),
+  });
+
+  const handleAddBloque = () => {
+    if (datos.bloques.length >= MAX_BLOQUES_LABORATORIO) return;
+    setDatos((prev) => {
+      const firstBlock = prev.bloques[0];
+      const newBlock: BloqueLaboratorio = firstBlock
+        ? {
+            ...crearBloqueVacio(paciente),
+            institucion: firstBlock.institucion,
+            unicodigo: firstBlock.unicodigo,
+            establecimiento: firstBlock.establecimiento,
+            numero_historia_clinica: firstBlock.numero_historia_clinica,
+            numero_archivo: firstBlock.numero_archivo,
+            primer_apellido: firstBlock.primer_apellido,
+            segundo_apellido: firstBlock.segundo_apellido,
+            primer_nombre: firstBlock.primer_nombre,
+            segundo_nombre: firstBlock.segundo_nombre,
+            sexo: firstBlock.sexo,
+            fecha_nacimiento: firstBlock.fecha_nacimiento,
+            edad: firstBlock.edad,
+            condicion_edad: firstBlock.condicion_edad,
+            servicio: firstBlock.servicio,
+            especialidad: firstBlock.especialidad,
+            sala: firstBlock.sala,
+            cama: firstBlock.cama,
+            prioridad: firstBlock.prioridad,
+          }
+        : crearBloqueVacio(paciente);
+
+      return {
+        bloques: [...prev.bloques, newBlock],
+      };
+    });
+  };
+
+  const handleRemoveBloque = (idx: number) => {
+    if (datos.bloques.length <= 1) return;
+    setDatos((prev) => ({
+      bloques: prev.bloques.filter((_, i) => i !== idx),
+    }));
+  };
+
+  const handleChange = <K extends keyof BloqueLaboratorio>(
+    idx: number,
+    campo: K,
+    valor: BloqueLaboratorio[K]
+  ) => {
+    setDatos((prev) => {
+      const bloques = [...prev.bloques];
+      bloques[idx] = { ...bloques[idx], [campo]: valor };
+      return { bloques };
+    });
+  };
+
+  const handleDiagnosticoChange = (idx: number, n: 1 | 2, cie: string, desc: string) => {
+    setDatos((prev) => {
+      const bloques = [...prev.bloques];
+      bloques[idx] = {
+        ...bloques[idx],
+        [`diagnostico_${n}`]: desc,
+        [`diagnostico_${n}_cie`]: cie,
+      };
+      return { bloques };
+    });
+  };
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      getDatos: () => {
+        const flat: Record<string, any> = {
+          bloques: datos.bloques.map((b) => flattenLaboratorioBloque(b)),
+        };
+
+        datos.bloques.forEach((b, idx) => {
+          const blockFlat = flattenLaboratorioBloque(b);
+          const prefix = `lab${idx + 1}_`;
+          for (const [k, v] of Object.entries(blockFlat)) {
+            flat[`${prefix}${k}`] = v;
+          }
+          if (idx === 0) {
+            for (const [k, v] of Object.entries(blockFlat)) {
+              flat[k] = v;
+            }
+          }
+        });
+
+        return flat;
+      },
+      clearAutosave: () => clearAutosave(),
+      isDirty: () => isDirty,
+    }),
+    [datos, clearAutosave, isDirty]
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+      <div style={{ overflowX: "visible", overflowY: "visible", background: "#fff", minHeight: "70vh" }}>
+        {datos.bloques.map((b, idx) => (
+          <div key={idx} style={{ position: "relative", marginBottom: "24px" }}>
+            <LaboratorioBloque
+              numero={idx + 1}
+              b={b}
+              onChange={(campo, valor) => handleChange(idx, campo, valor)}
+              onDiagnosticoChange={(n, cie, desc) => handleDiagnosticoChange(idx, n, cie, desc)}
+            />
+            {datos.bloques.length > 1 && (
+              <button
+                type="button"
+                onClick={() => handleRemoveBloque(idx)}
+                style={{
+                  position: "absolute",
+                  top: 10,
+                  right: 10,
+                  background: "#fee2e2",
+                  color: "#ef4444",
+                  border: "1px solid #fca5a5",
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  zIndex: 10,
+                }}
+                title="Eliminar este bloque"
+              >
+                ✕ Eliminar Bloque #{idx + 1}
+              </button>
+            )}
+          </div>
+        ))}
+
+        <div style={{ padding: "16px", textAlign: "center", borderTop: "2px dashed #ccc", marginTop: "10px" }}>
+          <button
+            type="button"
+            onClick={handleAddBloque}
+            disabled={datos.bloques.length >= MAX_BLOQUES_LABORATORIO}
+            style={{
+              background: datos.bloques.length >= MAX_BLOQUES_LABORATORIO ? "#f3f4f6" : "#eff6ff",
+              color: datos.bloques.length >= MAX_BLOQUES_LABORATORIO ? "#9ca3af" : "#3b82f6",
+              border: `1px solid ${datos.bloques.length >= MAX_BLOQUES_LABORATORIO ? "#e5e7eb" : "#bfdbfe"}`,
+              padding: "8px 16px",
+              borderRadius: "6px",
+              fontSize: "14px",
+              fontWeight: "bold",
+              cursor: datos.bloques.length >= MAX_BLOQUES_LABORATORIO ? "not-allowed" : "pointer",
+            }}
+          >
+            + Añadir Nueva Solicitud de Laboratorio
+            {datos.bloques.length >= MAX_BLOQUES_LABORATORIO && " (máx. 5)"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1999,3 +2256,4 @@ const LaboratorioForm = React.forwardRef<HistoriaClinicaLaboratorioHandle, Props
 LaboratorioForm.displayName = "HistoriaClinicaLaboratorioForm";
 
 export default LaboratorioForm;
+

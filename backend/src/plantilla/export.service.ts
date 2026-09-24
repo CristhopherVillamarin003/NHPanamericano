@@ -540,6 +540,124 @@ function injectInterconsultaMatematica(workbook: ExcelJS.Workbook, bloques: any[
   }
 }
 
+function injectLaboratorioMatematica(workbook: ExcelJS.Workbook, bloques: any[]) {
+  const sheet = workbook.getWorksheet('LABORATORIO');
+  if (!sheet) return;
+
+  if (!Array.isArray(bloques)) bloques = [];
+
+  const MAX_BLOQUES = 5;
+  const ROW_OFFSET = 134;
+
+  const setCell = (sheet: ExcelJS.Worksheet, cellRef: string, val: any) => {
+    const match = cellRef.match(/^([A-Z]+)(\d+)$/);
+    if (!match) return;
+    const col = match[1];
+    const row = parseInt(match[2], 10);
+    const cell = sheet.getCell(`${col}${row}`);
+
+    if (val !== undefined && val !== null && val !== '') {
+      if (typeof val === 'string' && val.includes('<')) {
+        cell.value = htmlToRichText(val);
+      } else {
+        cell.value = String(val).toUpperCase();
+      }
+    } else {
+      cell.value = '';
+    }
+
+    cell.numFmt = '@';
+    const prevAlign = cell.alignment || {};
+    cell.alignment = { ...prevAlign, wrapText: true, vertical: 'top' };
+  };
+
+  const setCellOffset = (cellRef: string, bOffset: number, val: any) => {
+    const match = cellRef.match(/^([A-Z]+)(\d+)$/);
+    if (!match) return;
+    const col = match[1];
+    const row = parseInt(match[2], 10) + bOffset;
+    setCell(sheet, `${col}${row}`, val);
+  };
+
+  for (let i = 0; i < bloques.length && i < MAX_BLOQUES; i++) {
+    const b = bloques[i];
+    if (!b) continue;
+    const bOffset = i * ROW_OFFSET;
+
+    for (const [mapKey, mapping] of Object.entries(HISTORIA_CLINICA_LABORATORIO_MAP)) {
+      let val = b[mapKey];
+
+      if (val === undefined || val === '') {
+        // Fallbacks si b contiene los nombres del frontend o sin prefijo
+        if (mapKey.startsWith('lab_')) {
+          const stripped = mapKey.replace(/^lab_/, '');
+          val = b[stripped] ?? b[`ex_${stripped}`];
+        } else if (mapKey.startsWith('lab2_')) {
+          const stripped = mapKey.replace(/^lab2_/, '');
+          val = b[stripped] ?? b[`sol2_${stripped}`];
+        } else {
+          val = b[`ex_${mapKey}`] ?? b[`lab_${mapKey}`];
+        }
+      }
+
+      // Fallbacks especiales para campos de solicitud 1 y 2
+      if (val === undefined || val === '') {
+        switch (mapKey) {
+          case 'lab_fecha_generacion': val = b.sol1_fecha_pedido; break;
+          case 'lab_hora_generacion': val = b.sol1_hora_pedido; break;
+          case 'lab_prof_primer_nombre': val = b.sol1_profesional_primer_nombre; break;
+          case 'lab_prof_primer_apellido': val = b.sol1_profesional_primer_apellido; break;
+          case 'lab_prof_segundo_apellido': val = b.sol1_profesional_segundo_apellido; break;
+          case 'lab_prof_documento': val = b.sol1_documento; break;
+          case 'lab_fecha_toma_muestra': val = b.sol1_fecha_muestra; break;
+          case 'lab_hora_toma_muestra': val = b.sol1_hora_muestra; break;
+          case 'lab_persona_toma_muestra': val = b.sol1_tomador_muestra; break;
+
+          case 'lab2_fecha_generacion': val = b.sol2_fecha_pedido; break;
+          case 'lab2_hora_generacion': val = b.sol2_hora_pedido; break;
+          case 'lab2_prof_primer_nombre': val = b.sol2_profesional_primer_nombre; break;
+          case 'lab2_prof_primer_apellido': val = b.sol2_profesional_primer_apellido; break;
+          case 'lab2_prof_segundo_apellido': val = b.sol2_profesional_segundo_apellido; break;
+          case 'lab2_prof_documento': val = b.sol2_documento; break;
+          case 'lab2_fecha_toma_muestra': val = b.sol2_fecha_muestra; break;
+          case 'lab2_hora_toma_muestra': val = b.sol2_hora_muestra; break;
+          case 'lab2_persona_toma_muestra': val = b.sol2_tomador_muestra; break;
+
+          case 'lab_condicion_edad_h': val = b.condicion_edad === 'H' ? 'X' : ''; break;
+          case 'lab_condicion_edad_d': val = b.condicion_edad === 'D' ? 'X' : ''; break;
+          case 'lab_condicion_edad_m': val = b.condicion_edad === 'M' ? 'X' : ''; break;
+          case 'lab_condicion_edad_a': val = b.condicion_edad === 'A' ? 'X' : ''; break;
+
+          case 'lab_servicio_emergencia': val = b.servicio === 'EMERGENCIA' ? 'X' : ''; break;
+          case 'lab_servicio_consulta': val = b.servicio === 'CONSULTA_EXTERNA' ? 'X' : ''; break;
+          case 'lab_servicio_hosp': val = b.servicio === 'HOSPITALIZACION' ? 'X' : ''; break;
+
+          case 'lab_prioridad_urgente': val = b.prioridad === 'URGENTE' ? 'X' : ''; break;
+          case 'lab_prioridad_rutina': val = b.prioridad === 'RUTINA' ? 'X' : ''; break;
+        }
+      }
+
+      if (typeof val === 'boolean') {
+        val = val ? 'X' : '';
+      }
+
+      if (val !== undefined && val !== null && val !== '') {
+        setCellOffset(mapping.cell, bOffset, val);
+      }
+    }
+  }
+
+  // Ocultar bloques no utilizados
+  for (let i = bloques.length; i < MAX_BLOQUES; i++) {
+    const startRow = 1 + (i * ROW_OFFSET);
+    const endRow = 134 + (i * ROW_OFFSET);
+    for (let r = startRow; r <= endRow; r++) {
+      const rowObj = sheet.getRow(r);
+      if (rowObj) rowObj.hidden = true;
+    }
+  }
+}
+
 /**
  * Calcula el número de líneas aproximado requerido para el texto
  * asumiendo un salto de línea automático (wrap text).
@@ -1461,6 +1579,13 @@ export class ExportService {
       return Buffer.from(buffer);
     }
 
+    // Si es SÓLO Laboratorio
+    if (seccion === 'historia_clinica_laboratorio') {
+      injectLaboratorioMatematica(workbook, datos.bloques || (datos ? [datos] : []));
+      const buffer = await workbook.xlsx.writeBuffer();
+      return Buffer.from(buffer);
+    }
+
     // Si es SÓLO Enfermería
     if (seccion === 'enfermeria') {
       if (datos.is_sppat) {
@@ -1686,14 +1811,13 @@ export class ExportService {
       }
 
       const anamnesis = preprocessShared(anamnesisRaw);
-      const laboratorio = preprocessShared(laboratorioRaw);
       const imagenologia = preprocessShared(imagenologiaRaw);
       const interconsulta = preprocessShared(interconsultaRaw);
 
       injectFields(workbook, HISTORIA_CLINICA_MAP, emergencia);
       injectFields(workbook, HISTORIA_CLINICA_ANAMNESIS_MAP, anamnesis);
       injectEvolucionMatematica(workbook, evolucionRaw?.bloques || []);
-      injectFields(workbook, HISTORIA_CLINICA_LABORATORIO_MAP, laboratorio);
+      injectLaboratorioMatematica(workbook, laboratorioRaw?.bloques || (laboratorioRaw ? [laboratorioRaw] : []));
       injectImagenologiaMatematica(workbook, imagenologiaRaw?.bloques || []);
       injectInterconsultaMatematica(workbook, interconsultaRaw?.bloques || (interconsultaRaw ? [interconsultaRaw] : []));
 
