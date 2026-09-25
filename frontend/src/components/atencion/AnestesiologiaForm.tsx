@@ -1,4 +1,4 @@
-import React, { useState, forwardRef, useImperativeHandle } from "react";
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
 "use client";
 import { Cie10DescInput, Cie10CieInput } from "./Cie10Input";
@@ -237,22 +237,31 @@ interface Props {
 const B  = "1px solid #5b8db8";
 const BL = "1px solid #a8c4d8";
 
-const secH = (extra?: React.CSSProperties): React.CSSProperties => ({
-  background: "#cfe2f3", fontWeight: 700, fontSize: "9.5px",
-  fontFamily: "Arial, sans-serif", padding: "3px 7px",
-  border: B, letterSpacing: "0.03em", color: "#1a3a5c",
-  ...extra,
-});
+const secH = (extra?: React.CSSProperties): React.CSSProperties => {
+  const { border, ...rest } = extra || {};
+  const baseBorders: React.CSSProperties = border === "none"
+    ? { borderTop: "none", borderRight: "none", borderBottom: "none", borderLeft: "none" }
+    : { borderTop: B, borderRight: B, borderBottom: B, borderLeft: B };
+  return {
+    background: "#cfe2f3", fontWeight: 700, fontSize: "9.5px",
+    fontFamily: "Arial, sans-serif", padding: "3px 7px",
+    ...baseBorders,
+    letterSpacing: "0.03em", color: "#1a3a5c",
+    ...rest,
+  };
+};
 
 const thC: React.CSSProperties = {
   background: "#ddeef8", fontWeight: 700, fontSize: "8px",
   fontFamily: "Arial, sans-serif", padding: "2px 4px",
-  border: B, textAlign: "center", color: "#1a3a5c",
+  borderTop: B, borderRight: B, borderBottom: B, borderLeft: B,
+  textAlign: "center", color: "#1a3a5c",
   verticalAlign: "middle", whiteSpace: "nowrap",
 };
 
 const tdL: React.CSSProperties = {
-  border: B, padding: "2px 4px", fontSize: "8px", verticalAlign: "middle", fontFamily: "Arial, sans-serif"
+  borderTop: B, borderRight: B, borderBottom: B, borderLeft: B,
+  padding: "2px 4px", fontSize: "8px", verticalAlign: "middle", fontFamily: "Arial, sans-serif"
 };
 
 const tdC: React.CSSProperties = {
@@ -260,7 +269,8 @@ const tdC: React.CSSProperties = {
 };
 
 const tdLbl: React.CSSProperties = {
-  border: B, padding: "2px 5px",
+  borderTop: B, borderRight: B, borderBottom: B, borderLeft: B,
+  padding: "2px 5px",
   background: "#ddeef8", fontWeight: 700,
   fontSize: "8px", fontFamily: "Arial, sans-serif",
   color: "#1a3a5c", whiteSpace: "nowrap", verticalAlign: "middle",
@@ -369,6 +379,19 @@ function btnStyle(bg: string): React.CSSProperties {
     padding: "6px 14px", fontSize: "11px", fontWeight: 700,
     cursor: "pointer", fontFamily: "Arial, sans-serif",
   };
+}
+
+export function HospitalHeader() {
+  return (
+    <div className="print-only-header" style={{ display: "none", textAlign: "center", color: "#1a3a5c", fontFamily: "Arial, sans-serif", padding: "6px 0 10px 0" }}>
+      <div style={{ fontSize: "17px", fontWeight: 900, letterSpacing: "0.5px" }}>NUEVO HOSPITAL PANAMERICANO</div>
+      <div style={{ fontSize: "11.5px", fontWeight: 700, letterSpacing: "0.5px", marginTop: "2px" }}>CENTRO MÉDICO DE ESPECIALIDADES</div>
+      <div style={{ fontSize: "9px", marginTop: "3px", color: "#334155" }}>
+        Juan de Arguello Oe2-157 y Pedro de Alfaro (Esq.) junto al Retén de Policía Villa Flora - Quito<br/>
+        Telfs.: 2612 802 / 2617 984 / 099 700 6406 / 099 416 8380 • e-mail: nhpanamericano.vlc@gmail.com
+      </div>
+    </div>
+  );
 }
 
 // ─── Componente Principal ─────────────────────────────────────────────────────
@@ -508,7 +531,44 @@ const AnestesiologiaForm = forwardRef<{ getDatos: () => DatosAnestesia; clearAut
   }));
 
 
-  const handlePrint = () => { window.print(); };
+  const [printTarget, setPrintTarget] = useState<"all" | "current" | "pre" | "pre1" | "pre2" | "trans1" | "trans2">("all");
+  const [showPdfModal, setShowPdfModal] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowPdfModal(false);
+    };
+    if (showPdfModal) {
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [showPdfModal]);
+
+  const executePrint = (target: "all" | "current" | "pre" | "pre1" | "pre2" | "trans1" | "trans2") => {
+    setPrintTarget(target);
+    setShowPdfModal(false);
+
+    const patientName = `${paciente?.primerApellido || d.primer_apellido || ''} ${paciente?.primerNombre || d.primer_nombre || ''}`.trim() || 'Paciente';
+    const originalTitle = document.title;
+
+    let docTitle = `Anestesiologia_Completo_${patientName}`;
+    if (target === "pre1") docTitle = `PreAnestesico_1_${patientName}`;
+    else if (target === "pre2") docTitle = `PreAnestesico_2_${patientName}`;
+    else if (target === "pre") docTitle = `PreAnestesico_Completo_${patientName}`;
+    else if (target === "trans1") docTitle = `Transanestesico_${patientName}`;
+    else if (target === "trans2") docTitle = `Transanestesico_2_${patientName}`;
+    else if (target === "current") docTitle = `${hoja.replace(/[\s()]/g, '_')}_${patientName}`;
+
+    document.title = docTitle;
+
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        document.title = originalTitle;
+        setPrintTarget("all");
+      }, 500);
+    }, 150);
+  };
 
   const s = (k: keyof DatosAnestesia) => (v: string) => setD(p => ({ ...p, [k]: v }));
 
@@ -521,13 +581,324 @@ const AnestesiologiaForm = forwardRef<{ getDatos: () => DatosAnestesia; clearAut
   const rowH = 20;
   const ROW_H = 20;
 
-
-
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
+    <div className={`anestesia-main-container print-target-${printTarget}`} style={{ display: "flex", flexDirection: "column" }}>
+
+      <style>{`
+        @media print {
+          /* Ocultar botones, barras de navegación y encabezados externos */
+          button, .no-print, .app-sidebar, .form-page-container > div:first-child {
+            display: none !important;
+          }
+
+          html, body, .dashboard-layout, .dashboard-main, .form-page-container, .form-page-body, .anestesia-main-container {
+            overflow: visible !important;
+            height: auto !important;
+            min-height: auto !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: block !important;
+            width: 100% !important;
+            background: #fff !important;
+          }
+
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          /* Quitar bordes de inputs en impresión */
+          input[type="text"], input[type="date"], input[type="time"], textarea {
+            border: none !important;
+            background: transparent !important;
+            outline: none !important;
+            box-shadow: none !important;
+          }
+
+          /* Checkboxes personalizados para impresión */
+          input[type="checkbox"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 9px;
+            height: 9px;
+            border: 1px solid #1a3a5c !important;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: #fff !important;
+            margin: 0;
+            vertical-align: middle;
+            border-radius: 0;
+          }
+          input[type="checkbox"]:checked::before {
+            content: "X";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 8px;
+            font-weight: bold;
+            color: #000;
+            line-height: 1;
+          }
+
+          input[type="radio"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 9px;
+            height: 9px;
+            border: 1px solid #1a3a5c !important;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: #fff !important;
+            margin: 0;
+            vertical-align: middle;
+          }
+          input[type="radio"]:checked::before {
+            content: "•";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
+            font-weight: bold;
+            color: #000;
+            line-height: 1;
+          }
+
+          /* Visibilidad por pestañas */
+          .anestesia-tab-wrapper {
+            display: none !important;
+          }
+          .anestesia-sheet {
+            display: none !important;
+          }
+
+          /* Todo el formulario (4 hojas) */
+          .print-target-all .anestesia-tab-wrapper,
+          .print-target-all .anestesia-sheet {
+            display: block !important;
+          }
+
+          /* Pre-anestésico completo (Hojas 1 y 2) */
+          .print-target-pre .anestesia-tab-pre,
+          .print-target-pre .anestesia-sheet-pre1,
+          .print-target-pre .anestesia-sheet-pre2 {
+            display: block !important;
+          }
+
+          /* Pre-anestésico 1 */
+          .print-target-pre1 .anestesia-tab-pre,
+          .print-target-pre1 .anestesia-sheet-pre1 {
+            display: block !important;
+          }
+
+          /* Pre-anestésico 2 */
+          .print-target-pre2 .anestesia-tab-pre,
+          .print-target-pre2 .anestesia-sheet-pre2 {
+            display: block !important;
+          }
+
+          /* Transanestésico 1 (Horizontal) */
+          .print-target-trans1 .anestesia-tab-trans1,
+          .print-target-trans1 .anestesia-sheet-trans1 {
+            display: block !important;
+          }
+
+          /* Transanestésico 2 (Vertical) */
+          .print-target-trans2 .anestesia-tab-trans2,
+          .print-target-trans2 .anestesia-sheet-trans2 {
+            display: block !important;
+          }
+
+          /* Hoja actual */
+          .print-target-current .anestesia-tab-wrapper.current-active,
+          .print-target-current .anestesia-tab-wrapper.current-active .anestesia-sheet {
+            display: block !important;
+          }
+
+          /* Formatos de página y saltos */
+          .anestesia-sheet-pre1 {
+            page: portrait-sheet;
+            page-break-after: always;
+            break-after: page;
+            min-width: 0 !important;
+            width: 100% !important;
+            zoom: 0.83;
+          }
+
+          .anestesia-sheet-pre2 {
+            page: portrait-sheet;
+            page-break-after: always;
+            break-after: page;
+            min-width: 0 !important;
+            width: 100% !important;
+            zoom: 0.77;
+            padding: 0 4px !important;
+          }
+
+          .anestesia-sheet-pre2 td, .anestesia-sheet-pre2 th {
+            padding-top: 1px !important;
+            padding-bottom: 1px !important;
+          }
+
+          .anestesia-sheet-pre2 textarea {
+            min-height: 28px !important;
+            line-height: 1.2 !important;
+            padding: 1px 3px !important;
+          }
+
+          .print-target-all .anestesia-tab-trans1,
+          .print-target-all .anestesia-tab-trans1 > div,
+          .print-target-all .anestesia-tab-trans1 > div > div,
+          .print-target-trans1 .anestesia-tab-trans1,
+          .print-target-trans1 .anestesia-tab-trans1 > div,
+          .print-target-trans1 .anestesia-tab-trans1 > div > div,
+          .print-target-current .anestesia-tab-wrapper.current-active.anestesia-tab-trans1,
+          .print-target-current .anestesia-tab-wrapper.current-active.anestesia-tab-trans1 > div,
+          .print-target-current .anestesia-tab-wrapper.current-active.anestesia-tab-trans1 > div > div {
+            overflow: visible !important;
+            display: block !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+
+          .anestesia-sheet-trans1 {
+            page: landscape-sheet !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            page-break-after: always;
+            break-after: page;
+            min-width: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            zoom: 0.72;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+          }
+
+          .anestesia-sheet-trans1 table {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            width: 100% !important;
+            margin-top: 1px !important;
+            margin-bottom: 0 !important;
+          }
+
+          .anestesia-sheet-trans1 td,
+          .anestesia-sheet-trans1 th {
+            padding-top: 0.5px !important;
+            padding-bottom: 0.5px !important;
+          }
+
+          .anestesia-sheet-trans1 div[style*="background: #cfe2f3"],
+          .anestesia-sheet-trans1 div[style*="background:#cfe2f3"] {
+            margin-top: 1px !important;
+            padding-top: 1px !important;
+            padding-bottom: 1px !important;
+          }
+
+          .anestesia-sheet-trans1 input[type="text"],
+          .anestesia-sheet-trans1 input[type="date"],
+          .anestesia-sheet-trans1 input[type="time"] {
+            font-size: 7.5px !important;
+            padding: 0 1px !important;
+          }
+
+          .anestesia-sheet-trans1 tr[style*="height: 20"],
+          .anestesia-sheet-trans1 tr[style*="height:20"] {
+            height: 14px !important;
+          }
+          .anestesia-sheet-trans1 tr[style*="height: 14"],
+          .anestesia-sheet-trans1 tr[style*="height:14"] {
+            height: 11px !important;
+          }
+          .anestesia-sheet-trans1 tr[style*="height: 12"],
+          .anestesia-sheet-trans1 tr[style*="height:12"] {
+            height: 9.5px !important;
+          }
+          .anestesia-sheet-trans1 tr[style*="height: 16"],
+          .anestesia-sheet-trans1 tr[style*="height:16"] {
+            height: 12px !important;
+          }
+
+          .anestesia-sheet-trans2 {
+            page: portrait-sheet;
+            page-break-after: auto;
+            break-after: auto;
+            min-width: 0 !important;
+            width: 100% !important;
+            zoom: 0.83;
+          }
+
+          /* Anulación de salto de página en hojas individuales de remate */
+          .print-target-pre1 .anestesia-sheet-pre1,
+          .print-target-pre2 .anestesia-sheet-pre2,
+          .print-target-trans1 .anestesia-sheet-trans1,
+          .print-target-trans2 .anestesia-sheet-trans2,
+          .print-target-pre .anestesia-sheet-pre2,
+          .print-target-all .anestesia-sheet-trans2,
+          .print-target-current .anestesia-sheet-pre2,
+          .print-target-current .anestesia-sheet-trans1,
+          .print-target-current .anestesia-sheet-trans2 {
+            page-break-after: auto !important;
+            break-after: auto !important;
+          }
+
+          /* Encabezado del hospital visible */
+          .print-only-header {
+            display: block !important;
+          }
+
+          table {
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+          tr {
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+        }
+      `}</style>
+
+      {printTarget === "trans1" || (printTarget === "current" && hoja === "TRANSANASTÉSICO") ? (
+        <style>{`
+          @page {
+            size: A4 landscape;
+            margin: 4mm;
+          }
+        `}</style>
+      ) : printTarget === "all" ? (
+        <style>{`
+          @page portrait-sheet {
+            size: A4 portrait;
+            margin: 6mm;
+          }
+          @page landscape-sheet {
+            size: A4 landscape;
+            margin: 4mm;
+          }
+          @page {
+            margin: 6mm;
+          }
+        `}</style>
+      ) : (
+        <style>{`
+          @page {
+            size: A4 portrait;
+            margin: 6mm;
+          }
+        `}</style>
+      )}
 
       {/* Barra de acciones */}
-      <div style={{
+      <div className="no-print" style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "8px 14px", background: "#f5f7fa", borderBottom: "1px solid #dde3ea", gap: 8,
       }}>
@@ -538,7 +909,9 @@ const AnestesiologiaForm = forwardRef<{ getDatos: () => DatosAnestesia; clearAut
           <button onClick={() => { onGuardar?.(d); clearAutosave(); }} disabled={guardando} style={btnStyle("#1a3a5c")}>
             {guardando ? "Guardando..." : "💾 Guardar"}
           </button>
-          
+          <button type="button" onClick={() => setShowPdfModal(true)} style={btnStyle("#b91c1c")}>
+            📄 Descargar PDF
+          </button>
         </div>
       </div>
 
@@ -567,8 +940,9 @@ const AnestesiologiaForm = forwardRef<{ getDatos: () => DatosAnestesia; clearAut
         ))}
       </div>
 
-      <div style={{ overflowX: "visible", overflowY: "visible", background: "#fff", display: hoja === "PRE ANESTÉSICO" ? "block" : "none" }}>
-        <div style={{ padding: "6px 10px 10px", minWidth: 900 }}>
+      <div className={`anestesia-tab-wrapper anestesia-tab-pre ${hoja === "PRE ANESTÉSICO" ? "current-active" : ""}`} style={{ overflowX: "visible", overflowY: "visible", background: "#fff", display: hoja === "PRE ANESTÉSICO" ? "block" : "none" }}>
+        <div className="anestesia-sheet anestesia-sheet-pre1" style={{ padding: "6px 10px 10px", minWidth: 900 }}>
+          <HospitalHeader />
 
           {/* ══ A. DATOS DEL ESTABLECIMIENTO Y USUARIO / PACIENTE ═══════════ */}
           <div style={secH({ marginTop: 6 })}>A. DATOS DEL ESTABLECIMIENTO Y USUARIO / PACIENTE</div>
@@ -807,9 +1181,12 @@ const AnestesiologiaForm = forwardRef<{ getDatos: () => DatosAnestesia; clearAut
             <span style={{ fontSize: "8px", color: "#555", fontFamily: "Arial, sans-serif" }}>SNS-MSP/HCU-form.018/2021</span>
             <span style={{ fontSize: "9px", fontWeight: 700, color: "#1a3a5c", fontFamily: "Arial, sans-serif" }}>PRE ANESTÉSICO (1)</span>
           </div>
+        </div>
 
+        {/* ── HOJA 2: PRE ANESTÉSICO (2) [Secc. D a J] (Formato Vertical) ── */}
+        <div className="anestesia-sheet anestesia-sheet-pre2" style={{ padding: "6px 10px 10px", minWidth: 900 }}>
           {/* ══ D. EXAMEN FÍSICO ════════════════════════════════════════════ */}
-          <div style={secH({ marginTop: 8 })}>D. EXAMEN FÍSICO</div>
+          <div style={secH({ marginTop: 2 })}>D. EXAMEN FÍSICO</div>
 
           {/* Constantes vitales */}
           <table style={tbl}>
@@ -1104,15 +1481,15 @@ const AnestesiologiaForm = forwardRef<{ getDatos: () => DatosAnestesia; clearAut
           </table>
 
           {/* ══ H. PLAN ANESTÉSICO ══════════════════════════════════════════ */}
-          <div style={secH({ marginTop: 5 })}>H. PLAN ANESTÉSICO</div>
-          <div style={{ border: B, minHeight: 56 }}>
-            {area(d.plan_anestesico, s("plan_anestesico"), 3)}
+          <div style={secH({ marginTop: 4 })}>H. PLAN ANESTÉSICO</div>
+          <div style={{ border: B, minHeight: 38 }}>
+            {area(d.plan_anestesico, s("plan_anestesico"), 2)}
           </div>
 
           {/* ══ I. OBSERVACIONES ════════════════════════════════════════════ */}
-          <div style={secH({ marginTop: 5 })}>I. OBSERVACIONES</div>
-          <div style={{ border: B, minHeight: 48 }}>
-            {area(d.observaciones, s("observaciones"), 3)}
+          <div style={secH({ marginTop: 4 })}>I. OBSERVACIONES</div>
+          <div style={{ border: B, minHeight: 34 }}>
+            {area(d.observaciones, s("observaciones"), 2)}
           </div>
 
           {/* ══ J. DATOS DEL PROFESIONAL RESPONSABLE ════════════════════════ */}
@@ -1174,13 +1551,313 @@ const AnestesiologiaForm = forwardRef<{ getDatos: () => DatosAnestesia; clearAut
         </div>
       </div>
 
-      <div style={{ overflowX: "visible", overflowY: "visible", background: "#fff", display: hoja === "TRANSANASTÉSICO" ? "block" : "none" }}>
+      <div className={`anestesia-tab-wrapper anestesia-tab-trans1 ${hoja === "TRANSANASTÉSICO" ? "current-active" : ""}`} style={{ overflowX: "visible", overflowY: "visible", background: "#fff", display: hoja === "TRANSANASTÉSICO" ? "block" : "none" }}>
         <TransanestesicoForm d={d} setD={setD} />
       </div>
 
-      <div style={{ overflowX: "visible", overflowY: "visible", background: "#fff", display: hoja === "TRANSANASTÉSICO (2)" ? "block" : "none" }}>
+      <div className={`anestesia-tab-wrapper anestesia-tab-trans2 ${hoja === "TRANSANASTÉSICO (2)" ? "current-active" : ""}`} style={{ overflowX: "visible", overflowY: "visible", background: "#fff", display: hoja === "TRANSANASTÉSICO (2)" ? "block" : "none" }}>
         <TransanestesicoForm2 d={d} setD={setD} />
       </div>
+
+      {/* ── Modal de Descarga de PDF / Impresión (Estilo Google Drive) ─────────────────── */}
+      {showPdfModal && (
+        <div
+          onClick={() => setShowPdfModal(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.75)",
+            backdropFilter: "blur(3px)",
+            zIndex: 99999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#ffffff",
+              borderRadius: "12px",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.4)",
+              width: "100%",
+              maxWidth: "580px",
+              overflow: "hidden",
+              border: "1px solid #cbd5e1",
+              display: "flex",
+              flexDirection: "column",
+              animation: "fadeIn 0.15s ease-out",
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{
+              background: "#1a3a5c",
+              color: "#ffffff",
+              padding: "14px 20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "20px" }}>📄</span>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "#fff" }}>
+                    Descargar Formulario Anestésico en PDF
+                  </h3>
+                  <span style={{ fontSize: "11px", color: "#93c5fd" }}>
+                    SNS-MSP Form. 018 / 018A — Hospital Panamericano
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPdfModal(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#cbd5e1",
+                  fontSize: "18px",
+                  cursor: "pointer",
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                }}
+                title="Cerrar"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+              
+              {/* Opción 1: Formulario Completo (Destacada) */}
+              <div style={{
+                background: "#f0f7ff",
+                border: "2px solid #0284c7",
+                borderRadius: "10px",
+                padding: "14px 16px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span style={{ fontSize: "16px" }}>📑</span>
+                      <span style={{ fontSize: "13px", fontWeight: 800, color: "#0369a1" }}>
+                        Expediente Completo (4 Hojas Oficiales)
+                      </span>
+                      <span style={{ fontSize: "9px", fontWeight: 700, background: "#0284c7", color: "#fff", padding: "2px 6px", borderRadius: "4px" }}>
+                        RECOMENDADO
+                      </span>
+                    </div>
+                    <p style={{ margin: "4px 0 0 22px", fontSize: "10.5px", color: "#475569", lineHeight: "1.4" }}>
+                      Descarga el documento completo con la orientación oficial para cada hoja:
+                    </p>
+                    <ul style={{ margin: "6px 0 0 22px", padding: 0, listStyle: "none", fontSize: "10px", color: "#334155", display: "flex", flexDirection: "column", gap: "2px" }}>
+                      <li>• <strong>Hoja 1:</strong> Pre-Anestésico (1) [Secc. A - C] — <em>Vertical (Portrait)</em></li>
+                      <li>• <strong>Hoja 2:</strong> Pre-Anestésico (2) [Secc. D - J] — <em>Vertical (Portrait)</em></li>
+                      <li>• <strong>Hoja 3:</strong> Transanestésico [Secc. A - J] — <em>Horizontal (Landscape)</em></li>
+                      <li>• <strong>Hoja 4:</strong> Transanestésico (2) [Secc. L - S] — <em>Vertical (Portrait)</em></li>
+                    </ul>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => executePrint("all")}
+                  style={{
+                    background: "#1a3a5c",
+                    color: "#ffffff",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "9px 16px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    boxShadow: "0 2px 4px rgba(26,58,92,0.3)",
+                    transition: "all 0.15s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#0f253d")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "#1a3a5c")}
+                >
+                  <span>📑</span> Descargar Todo el Expediente (4 Hojas)
+                </button>
+              </div>
+
+              {/* Opción 2: Solo Hoja Actual */}
+              <div style={{
+                background: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                borderRadius: "8px",
+                padding: "10px 14px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "10px",
+              }}>
+                <div>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#1e293b" }}>
+                    Solo Hoja Actual: <span style={{ color: "#0284c7" }}>{hoja}</span>
+                  </div>
+                  <div style={{ fontSize: "10px", color: "#64748b" }}>
+                    Descarga únicamente la pestaña que estás visualizando con su orientación adecuada.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => executePrint("current")}
+                  style={{
+                    background: "#0284c7",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "7px 14px",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Descargar Actual
+                </button>
+              </div>
+
+              {/* Opción 3: Descargar Hojas Individuales */}
+              <div>
+                <div style={{ fontSize: "11px", fontWeight: 700, color: "#64748b", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  O descargar hojas individuales por separado:
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                  <button
+                    type="button"
+                    onClick={() => executePrint("pre1")}
+                    style={{
+                      padding: "8px 10px",
+                      background: "#ffffff",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: "6px",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "2px",
+                      transition: "all 0.1s",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#1a3a5c")}
+                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
+                  >
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#1a3a5c" }}>📄 Hoja 1: Pre-Anestésico (1)</span>
+                    <span style={{ fontSize: "9.5px", color: "#64748b" }}>Secciones A a C • Vertical</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => executePrint("pre2")}
+                    style={{
+                      padding: "8px 10px",
+                      background: "#ffffff",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: "6px",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "2px",
+                      transition: "all 0.1s",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#1a3a5c")}
+                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
+                  >
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#1a3a5c" }}>📄 Hoja 2: Pre-Anestésico (2)</span>
+                    <span style={{ fontSize: "9.5px", color: "#64748b" }}>Secciones D a J • Vertical</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => executePrint("trans1")}
+                    style={{
+                      padding: "8px 10px",
+                      background: "#ffffff",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: "6px",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "2px",
+                      transition: "all 0.1s",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#1a3a5c")}
+                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
+                  >
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#1a3a5c" }}>📄 Hoja 3: Transanestésico (1)</span>
+                    <span style={{ fontSize: "9.5px", color: "#64748b" }}>Secciones A a J • Horizontal</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => executePrint("trans2")}
+                    style={{
+                      padding: "8px 10px",
+                      background: "#ffffff",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: "6px",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "2px",
+                      transition: "all 0.1s",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#1a3a5c")}
+                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
+                  >
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#1a3a5c" }}>📄 Hoja 4: Transanestésico (2)</span>
+                    <span style={{ fontSize: "9.5px", color: "#64748b" }}>Secciones L a S • Vertical</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              background: "#f8fafc",
+              borderTop: "1px solid #e2e8f0",
+              padding: "10px 20px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}>
+              <span style={{ fontSize: "10px", color: "#64748b" }}>
+                💡 En la vista previa seleccione <em>"Guardar como PDF"</em> como destino.
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowPdfModal(false)}
+                style={{
+                  padding: "6px 14px",
+                  background: "#f1f5f9",
+                  color: "#475569",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "6px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
@@ -1212,7 +1889,242 @@ function RadioBtn({ checked, onCheck, label }: { checked: boolean; onCheck: () =
   );
 }
 
+export interface SimboloAnestesia {
+  id: string;
+  name: string;
+  icon: (size?: number) => React.ReactNode;
+}
+
+export const SIMBOLOS_ANESTESIA: SimboloAnestesia[] = [
+  {
+    id: "inicio_anestesia",
+    name: "INICIO ANESTESIA",
+    icon: (s = 12) => (
+      <svg width={s} height={s} viewBox="0 0 12 12" style={{ display: "block" }}>
+        <line x1="6" y1="1" x2="6" y2="10.5" stroke="#000" strokeWidth="1.3" strokeLinecap="round" />
+        <polyline points="3.5,7 6,10.5 8.5,7" fill="none" stroke="#000" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "induccion",
+    name: "INDUCCIÓN",
+    icon: (s = 12) => (
+      <svg width={s} height={s} viewBox="0 0 12 12" style={{ display: "block" }}>
+        <line x1="2" y1="2" x2="10" y2="10" stroke="#000" strokeWidth="2.6" strokeLinecap="square" />
+        <line x1="10" y1="2" x2="2" y2="10" stroke="#000" strokeWidth="2.6" strokeLinecap="square" />
+      </svg>
+    ),
+  },
+  {
+    id: "inicio_cirugia",
+    name: "INICIO CIRUGÍA",
+    icon: (s = 12) => (
+      <svg width={s} height={s} viewBox="0 0 12 12" style={{ display: "block" }}>
+        <path d="M 3.8 2.2 A 4.5 4.5 0 0 0 3.8 9.8" fill="none" stroke="#000" strokeWidth="1.2" strokeLinecap="round" />
+        <path d="M 8.2 2.2 A 4.5 4.5 0 0 1 8.2 9.8" fill="none" stroke="#000" strokeWidth="1.2" strokeLinecap="round" />
+        <circle cx="6" cy="6" r="1.3" fill="#000" />
+      </svg>
+    ),
+  },
+  {
+    id: "fin_cirugia",
+    name: "FIN DE CIRUGÍA",
+    icon: (s = 12) => (
+      <svg width={s} height={s} viewBox="0 0 12 12" style={{ display: "block" }}>
+        <circle cx="6" cy="6" r="4.5" fill="none" stroke="#000" strokeWidth="1.2" />
+        <circle cx="6" cy="6" r="1.3" fill="#000" />
+      </svg>
+    ),
+  },
+  {
+    id: "fin_anestesia",
+    name: "FIN DE ANESTESIA",
+    icon: (s = 12) => (
+      <svg width={s} height={s} viewBox="0 0 12 12" style={{ display: "block" }}>
+        <circle cx="6" cy="6" r="4.5" fill="none" stroke="#000" strokeWidth="1.2" />
+        <line x1="2.8" y1="2.8" x2="9.2" y2="9.2" stroke="#000" strokeWidth="1.2" />
+        <line x1="9.2" y1="2.8" x2="2.8" y2="9.2" stroke="#000" strokeWidth="1.2" />
+      </svg>
+    ),
+  },
+  {
+    id: "tas",
+    name: "TAS",
+    icon: (s = 12) => (
+      <svg width={s} height={s} viewBox="0 0 12 12" style={{ display: "block" }}>
+        <polyline points="2.5,4 6,9.5 9.5,4" fill="none" stroke="#000" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "tad",
+    name: "TAD",
+    icon: (s = 12) => (
+      <svg width={s} height={s} viewBox="0 0 12 12" style={{ display: "block" }}>
+        <polyline points="2.5,8 6,2.5 9.5,8" fill="none" stroke="#000" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "tam",
+    name: "TAM",
+    icon: (s = 12) => (
+      <svg width={s} height={s} viewBox="0 0 12 12" style={{ display: "block" }}>
+        <line x1="2.5" y1="2.5" x2="9.5" y2="9.5" stroke="#000" strokeWidth="1.2" strokeLinecap="round" />
+        <line x1="9.5" y1="2.5" x2="2.5" y2="9.5" stroke="#000" strokeWidth="1.2" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "fc",
+    name: "FRECUENCIA CARDÍACA",
+    icon: (s = 12) => (
+      <svg width={s} height={s} viewBox="0 0 12 12" style={{ display: "block" }}>
+        <circle cx="6" cy="6" r="4.5" fill="#000" />
+      </svg>
+    ),
+  },
+  {
+    id: "temperatura",
+    name: "TEMPERATURA",
+    icon: (s = 12) => (
+      <svg width={s} height={s} viewBox="0 0 12 12" style={{ display: "block" }}>
+        <polygon points="6,2 1.8,9.8 10.2,9.8" fill="none" stroke="#000" strokeWidth="1.2" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "pvc",
+    name: "PVC",
+    icon: (s = 12) => (
+      <svg width={s} height={s} viewBox="0 0 12 12" style={{ display: "block" }}>
+        <line x1="6" y1="1.8" x2="6" y2="10.2" stroke="#000" strokeWidth="1.4" strokeLinecap="round" />
+        <line x1="1.8" y1="6" x2="10.2" y2="6" stroke="#000" strokeWidth="1.4" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "resp_espontanea",
+    name: "RESPIRACIÓN ESPONTÁNEA",
+    icon: (s = 12) => (
+      <svg width={s} height={s} viewBox="0 0 12 12" style={{ display: "block" }}>
+        <circle cx="6" cy="6" r="4.5" fill="none" stroke="#000" strokeWidth="1.2" />
+      </svg>
+    ),
+  },
+  {
+    id: "resp_asistida",
+    name: "RESPIRACIÓN ASISTIDA",
+    icon: (s = 12) => (
+      <svg width={s} height={s} viewBox="0 0 12 12" style={{ display: "block" }}>
+        <circle cx="6" cy="6" r="4.5" fill="none" stroke="#000" strokeWidth="1.2" />
+        <line x1="2.8" y1="9.2" x2="9.2" y2="2.8" stroke="#000" strokeWidth="1.2" />
+      </svg>
+    ),
+  },
+  {
+    id: "resp_controlada",
+    name: "RESPIRACIÓN CONTROLADA",
+    icon: (s = 12) => (
+      <svg width={s} height={s} viewBox="0 0 12 12" style={{ display: "block" }}>
+        <defs>
+          <pattern id={`respCtrlHatch_${s}`} width="2" height="2" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="0" x2="0" y2="2" stroke="#000" strokeWidth="0.8" />
+          </pattern>
+        </defs>
+        <circle cx="6" cy="6" r="4.5" fill={`url(#respCtrlHatch_${s})`} stroke="#000" strokeWidth="1.2" />
+      </svg>
+    ),
+  },
+  {
+    id: "torniquete",
+    name: "TORNIQUETE",
+    icon: (s = 12) => (
+      <svg width={s} height={s} viewBox="0 0 12 12" style={{ display: "block" }}>
+        <line x1="2" y1="2.5" x2="10" y2="2.5" stroke="#000" strokeWidth="1.6" strokeLinecap="round" />
+        <line x1="6" y1="2.5" x2="6" y2="10.5" stroke="#000" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    id: "feto",
+    name: "FETO",
+    icon: (s = 12) => {
+      const w = Math.round(s * (15 / 12));
+      return (
+        <svg width={w} height={s} viewBox="0 0 15 13" style={{ display: "block" }}>
+          {/* Símbolo femenino ♀ (izquierda) */}
+          <circle cx="4" cy="4" r="2.3" fill="none" stroke="#000" strokeWidth="1.1" />
+          <line x1="4" y1="6.3" x2="4" y2="11.5" stroke="#000" strokeWidth="1.1" strokeLinecap="round" />
+          <line x1="2" y1="9" x2="6" y2="9" stroke="#000" strokeWidth="1.1" strokeLinecap="round" />
+          {/* Símbolo masculino ♂ (derecha) */}
+          <circle cx="10" cy="8" r="2.3" fill="none" stroke="#000" strokeWidth="1.1" />
+          <line x1="11.6" y1="6.4" x2="14" y2="4" stroke="#000" strokeWidth="1.1" strokeLinecap="round" />
+          <polyline points="12,3.8 14.2,3.8 14.2,6" fill="none" stroke="#000" strokeWidth="1.1" strokeLinejoin="round" />
+        </svg>
+      );
+    },
+  },
+];
+
+export const SIMBOLOS_MAP = new Map(SIMBOLOS_ANESTESIA.map(s => [s.id, s]));
+
+export function renderAnestesiaIcon(id: string, size = 10) {
+  const item = SIMBOLOS_MAP.get(id);
+  if (!item) return null;
+  return item.icon(size);
+}
+
 export function TransanestesicoForm({ d, setD }: { d: DatosAnestesia, setD: React.Dispatch<React.SetStateAction<DatosAnestesia>> }) {
+  const [symbolPicker, setSymbolPicker] = useState<{
+    key: string;
+    desc: string;
+    currentSymbol: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSymbolPicker(null);
+    };
+    if (symbolPicker) {
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [symbolPicker]);
+
+  const handleSismoClick = (e: React.MouseEvent<HTMLDivElement>, r: number, i: number) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+    const normX = Math.max(0, Math.min(1, clickX / rect.width));
+    const normY = Math.max(0, Math.min(1, clickY / rect.height));
+
+    const dCenter = Math.hypot(normX - 0.5, normY - 0.5);
+
+    const nearRight = normX >= 0.5;
+    const nearBottom = normY >= 0.5;
+    const cornerX = nearRight ? 1 : 0;
+    const cornerY = nearBottom ? 1 : 0;
+    const dCorner = Math.hypot(normX - cornerX, normY - cornerY);
+
+    let targetKey: string;
+    let desc: string;
+
+    if (dCorner < dCenter) {
+      const vR = nearBottom ? r + 1 : r;
+      const vC = nearRight ? i + 1 : i;
+      targetKey = `sismo_v_${vR}_${vC}`;
+      desc = `Intersección (Fila ${vR}, Columna ${vC})`;
+    } else {
+      targetKey = `sismo_c_${r}_${i}`;
+      desc = `Celda (Fila ${r + 1}, Columna ${i + 1})`;
+    }
+
+    const currentSymbol = (d.d_grid || {})[targetKey] || "";
+    setSymbolPicker({ key: targetKey, desc, currentSymbol });
+  };
+
   const s = (k: string) => (v: string) => setD((p: any) => ({ ...p, [k]: v }));
   const c = (k: string) => (v: boolean) => setD((p: any) => ({ ...p, [k]: v }));
   const toggle = (k: string) => () => setD((p: any) => ({ ...p, [k]: !p[k] }));
@@ -1239,8 +2151,7 @@ export function TransanestesicoForm({ d, setD }: { d: DatosAnestesia, setD: Reac
 
       {/* ── Formulario — orientación horizontal ────────────────────────── */}
       <div style={{ overflowX: "visible", overflowY: "visible", background: "#fff" }}>
-        <div style={{ padding: "6px 8px", minWidth: 1300, fontFamily: "Arial, sans-serif" }}>
-
+        <div className="anestesia-sheet anestesia-sheet-trans1" style={{ padding: "6px 8px", minWidth: 1300, fontFamily: "Arial, sans-serif" }}>
           {/* ══ A. DATOS DEL ESTABLECIMIENTO Y USUARIO ════════════════════ */}
           <div style={secH()}>A. DATOS DEL ESTABLECIMIENTO Y USUARIO</div>
           <table style={tbl}>
@@ -1455,9 +2366,7 @@ export function TransanestesicoForm({ d, setD }: { d: DatosAnestesia, setD: Reac
           </table>
 
           {/* ══ D. REGISTRO TRANSANESTÉSICO ═══════════════════════════════ */}
-          <div style={secH({ marginTop: 4 })}>D. REGISTRO TRANSANESTÉSICO</div>
-
-          <div style={{ overflowX: "visible", border: B }}>
+          <div style={{ overflowX: "visible", border: B, marginTop: 4 }}>
             <table style={{ ...tbl, tableLayout: "fixed", width: "100%", minWidth: "100%", borderCollapse: "collapse" }}>
               <tbody>
                 {/* 0. DUMMY ROW FOR EXACT COLUMN WIDTHS */}
@@ -1467,6 +2376,60 @@ export function TransanestesicoForm({ d, setD }: { d: DatosAnestesia, setD: Reac
                   <td style={{ width: 12, padding: 0, border: "none" }} />
                   <td style={{ width: 14, padding: 0, border: "none" }} />
                   {Array(108).fill(0).map((_, i) => <td key={i} style={{ padding: 0, border: "none" }} />)}
+                </tr>
+
+                {/* D. REGISTRO TRANSANESTÉSICO Y ENTRADA DE HORAS */}
+                <tr style={{ height: 20, borderBottom: B, background: "#cfe2f3" }}>
+                  <td colSpan={4} style={{
+                    ...secH({ border: "none", marginTop: 0 }),
+                    borderRight: B,
+                    verticalAlign: "middle",
+                    padding: "2px 6px",
+                  }}>
+                    D. REGISTRO TRANSANESTÉSICO
+                  </td>
+                  <td colSpan={108} style={{ padding: 0, verticalAlign: "middle", background: "#cfe2f3", position: "relative" }}>
+                    <div style={{ display: "flex", width: "100%", height: "100%", alignItems: "center" }}>
+                      {Array(36).fill(0).map((_, i) => {
+                        const isThick = i % 4 === 3;
+                        const horaIdx = Math.floor(i / 4) + 1; // Horas 1 a 9
+                        const valKey = `hora_reg_${horaIdx}`;
+                        return (
+                          <div key={i} style={{ flex: 1, position: "relative", height: "100%" }}>
+                            {isThick && (
+                              <input
+                                type="text"
+                                value={(d.d_grid || {})[valKey] || ""}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  setD(p => ({ ...p, d_grid: { ...(p.d_grid || {}), [valKey]: v } }));
+                                }}
+                                style={{
+                                  position: "absolute",
+                                  right: 0,
+                                  top: "50%",
+                                  transform: i === 35 ? "translate(0%, -50%)" : "translate(50%, -50%)",
+                                  width: 22,
+                                  height: 14,
+                                  fontSize: "8.5px",
+                                  fontWeight: 700,
+                                  textAlign: "center",
+                                  border: "1px solid #7ea6cc",
+                                  borderRadius: 2,
+                                  background: "#fff",
+                                  color: "#1a3a5c",
+                                  outline: "none",
+                                  zIndex: 10,
+                                  padding: 0,
+                                }}
+                                title={`Hora ${horaIdx}`}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </td>
                 </tr>
 
                 {/* 1. AGENTE INHALATORIO */}
@@ -1498,15 +2461,36 @@ export function TransanestesicoForm({ d, setD }: { d: DatosAnestesia, setD: Reac
                     </td>
                     {Array(36).fill(0).map((_, i) => {
                       const k = `agente_${r}_${i}`;
-                      const active = (d.d_grid || {})[k];
                       return (
-                        <td key={i} colSpan={3} onClick={() => {
-                          setD(p => {
-                            const grid = { ...(p.d_grid || {}) };
-                            if (grid[k]) delete grid[k]; else grid[k] = "1";
-                            return { ...p, d_grid: grid };
-                          });
-                        }} style={{ ...tdL, cursor: "pointer", background: active ? "#1a3a5c" : "transparent", borderRight: (i % 4 === 3) ? "1.5px solid #1a3a5c" : B }} />
+                        <td key={i} colSpan={3} style={{
+                          ...tdL,
+                          padding: 0,
+                          background: "#fff",
+                          borderRight: (i % 4 === 3) ? "1.5px solid #1a3a5c" : B,
+                          height: 14,
+                        }}>
+                          <input
+                            type="text"
+                            value={(d.d_grid || {})[k] || ""}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setD(p => ({ ...p, d_grid: { ...(p.d_grid || {}), [k]: v } }));
+                            }}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              border: "none",
+                              outline: "none",
+                              textAlign: "center",
+                              fontSize: "7.5px",
+                              fontWeight: 600,
+                              color: "#1a3a5c",
+                              background: "transparent",
+                              padding: 0,
+                              margin: 0,
+                            }}
+                          />
+                        </td>
                       );
                     })}
                   </tr>
@@ -1522,15 +2506,36 @@ export function TransanestesicoForm({ d, setD }: { d: DatosAnestesia, setD: Reac
                     <td colSpan={4} style={{ ...tdLbl, borderRight: B, textAlign: "right", paddingRight: 4, fontSize: "6.5px" }}>{lbl}</td>
                     {Array(36).fill(0).map((_, i) => {
                       const k = `param_${r+1}_${i}`;
-                      const active = (d.d_grid || {})[k];
                       return (
-                        <td key={i} colSpan={3} onClick={() => {
-                          setD(p => {
-                            const grid = { ...(p.d_grid || {}) };
-                            if (grid[k]) delete grid[k]; else grid[k] = "1";
-                            return { ...p, d_grid: grid };
-                          });
-                        }} style={{ ...tdL, cursor: "pointer", background: active ? "#1a3a5c" : "transparent", borderRight: (i % 4 === 3) ? "1.5px solid #1a3a5c" : B }} />
+                        <td key={i} colSpan={3} style={{
+                          ...tdL,
+                          padding: 0,
+                          background: "#fff",
+                          borderRight: (i % 4 === 3) ? "1.5px solid #1a3a5c" : B,
+                          height: 14,
+                        }}>
+                          <input
+                            type="text"
+                            value={(d.d_grid || {})[k] || ""}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setD(p => ({ ...p, d_grid: { ...(p.d_grid || {}), [k]: v } }));
+                            }}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              border: "none",
+                              outline: "none",
+                              textAlign: "center",
+                              fontSize: "7.5px",
+                              fontWeight: 600,
+                              color: "#1a3a5c",
+                              background: "transparent",
+                              padding: 0,
+                              margin: 0,
+                            }}
+                          />
+                        </td>
                       );
                     })}
                   </tr>
@@ -1538,39 +2543,37 @@ export function TransanestesicoForm({ d, setD }: { d: DatosAnestesia, setD: Reac
 
                 {/* 3. SIMBOLOGÍA / ESCALAS HEADER */}
                 <tr style={{ height: 14, borderTop: "1.5px solid #1a3a5c" }}>
-                  <td rowSpan={28} style={{ borderRight: B, verticalAlign: "top", padding: "2px 4px", background: "#fff" }}>
-                    <div style={{ ...secH({ border: "none", background: "transparent" }), textAlign: "center", marginBottom: 4, fontSize: "8px" }}>SISMOLOGÍA</div>
+                  <td rowSpan={28} style={{ borderRight: B, verticalAlign: "top", padding: "2px 8px 4px 6px", background: "#fff" }}>
+                    <div style={{ ...secH({ border: "none", background: "transparent" }), textAlign: "center", marginBottom: 5, fontSize: "8.5px" }}>SIMBOLOGÍA</div>
                     
-                    <div style={{ display: "flex", fontSize: "6px" }}>
-                       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px" }}>
-                          {[
-                            "INICIO ANESTESIA",
-                            "INDUCCIÓN",
-                            "INICIO CIRUGÍA",
-                            "FIN DE CIRUGÍA",
-                            "FIN DE ANESTESIA",
-                            "TAS",
-                            "TAD",
-                            "TAM",
-                            "FRECUENCIA CARDÍACA",
-                            "TEMPERATURA",
-                            "PVC",
-                            "RESPIRACIÓN ESPONTÁNEA",
-                            "RESPIRACIÓN ASISTIDA",
-                            "RESPIRACIÓN CONTROLADA",
-                            "TORNIQUETE",
-                            "FETO"
-                          ].map((name, idx) => (
-                            <div key={idx} style={{ display: "flex", fontWeight: 700 }}>
-                              <span>{name}</span>
-                            </div>
-                          ))}
-                       </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "2.5px" }}>
+                      {SIMBOLOS_ANESTESIA.map(({ id, name, icon }) => (
+                        <div key={id} style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "1px 0",
+                          minHeight: "13px",
+                        }}>
+                          <span style={{ fontSize: "6.5px", fontWeight: 700, color: "#1a3a5c", letterSpacing: "0.1px", whiteSpace: "nowrap" }}>
+                            {name}
+                          </span>
+                          <div style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: "20px",
+                            flexShrink: 0,
+                          }}>
+                            {icon(12)}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </td>
                   <td style={{ ...tdC, borderRight: B, fontSize: "5px", padding: 0 }}>Tº</td>
                   <td style={{ ...tdC, borderRight: B, fontSize: "5px", padding: 0 }}>PV</td>
-                  <td style={{ ...tdC, borderRight: B, fontSize: "4.5px", lineHeight: "5px", padding: 0 }}>TA /<br/>P /<br/>R</td>
+                  <td style={{ ...tdC, borderRight: B, fontSize: "4.5px", lineHeight: "5px", padding: 0 }}>TA /<br/>P. /<br/>R.</td>
                   <td colSpan={108} style={{ padding: 0, borderBottom: B }}>
                     <div style={{ display: "flex", width: "100%", height: "100%" }}>
                       {Array(36).fill(0).map((_, i) => {
@@ -1591,29 +2594,423 @@ export function TransanestesicoForm({ d, setD }: { d: DatosAnestesia, setD: Reac
                 {Array.from({ length: 27 }).map((_, r) => {
                   const scaleTA = ["240", "", "220", "", "200", "", "180", "", "160", "", "140", "", "120", "", "100", "", "80", "", "60", "", "40", "", "20", "", "0", "", ""];
                   const scalePV = ["", "", "", "", "", "", "", "17", "", "15", "", "13", "", "11", "", "9", "", "7", "", "5", "", "3", "", "1", "", "", ""];
-                  const scaleT  = ["", "", "", "", "", "", "", "", "", "42", "", "41", "", "40", "", "39", "", "38", "", "37", "", "36", "", "35", "", "", ""];
+                  const scaleT  = ["", "", "", "", "", "", "", "", "", "42", "", "41", "", "40", "", "38", "", "37", "", "36", "", "35", "", "", "", "", ""];
                   
                   return (
                     <tr key={`sismo_${r}`} style={{ height: 12 }}>
-                      <td style={{ ...tdC, borderRight: B, fontSize: "5px", padding: 0 }}>{scaleT[r]}</td>
-                      <td style={{ ...tdC, borderRight: B, fontSize: "5px", padding: 0 }}>{scalePV[r]}</td>
-                      <td style={{ ...tdC, borderRight: B, fontSize: "5px", padding: 0 }}>{scaleTA[r]}</td>
+                      {/* Tº y PV: números centrados en la celda */}
+                      {[scaleT[r], scalePV[r]].map((val, cIdx) => (
+                        <td key={cIdx} style={{
+                          borderLeft: "none",
+                          borderTop: "none",
+                          borderBottom: r === 26 ? B : "none",
+                          borderRight: B,
+                          padding: 0,
+                          background: "#fff",
+                          verticalAlign: "middle",
+                          height: 12,
+                        }}>
+                          <div style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            height: 12,
+                            width: "100%",
+                            fontSize: "5.5px",
+                            fontWeight: 700,
+                            color: "#1a3a5c",
+                            lineHeight: 1,
+                            pointerEvents: "none",
+                          }}>
+                            {val}
+                          </div>
+                        </td>
+                      ))}
+
+                      {/* TA / P. / R.: números en la intersección / línea divisoria horizontal */}
+                      <td style={{
+                        borderLeft: "none",
+                        borderTop: "none",
+                        borderBottom: r === 26 ? B : "none",
+                        borderRight: B,
+                        padding: 0,
+                        background: "#fff",
+                        verticalAlign: "middle",
+                        height: 12,
+                      }}>
+                        <div style={{ position: "relative", width: "100%", height: 12 }}>
+                          {scaleTA[r] && (
+                            <span style={{
+                              position: "absolute",
+                              top: "100%",
+                              left: 0,
+                              right: 0,
+                              transform: "translateY(-50%)",
+                              fontSize: "5.5px",
+                              fontWeight: 700,
+                              color: "#1a3a5c",
+                              lineHeight: 1,
+                              textAlign: "center",
+                              zIndex: 2,
+                              pointerEvents: "none",
+                            }}>
+                              {scaleTA[r]}
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       {Array(108).fill(0).map((_, i) => {
-                        const k = `sismo_${r}_${i}`;
-                        const active = (d.d_grid || {})[k];
+                        const grid = d.d_grid || {};
+                        const centerSym = grid[`sismo_c_${r}_${i}`];
+                        const tlSym     = grid[`sismo_v_${r}_${i}`];
+                        const blSym     = r === 26 ? grid[`sismo_v_27_${i}`] : undefined;
+                        const trSym     = i === 107 ? grid[`sismo_v_${r}_108`] : undefined;
+                        const brSym     = (r === 26 && i === 107) ? grid[`sismo_v_27_108`] : undefined;
+
                         return (
-                          <td key={i} onClick={() => {
-                            setD(p => {
-                              const grid = { ...(p.d_grid || {}) };
-                              if (grid[k]) delete grid[k]; else grid[k] = "1";
-                              return { ...p, d_grid: grid };
-                            });
-                          }} style={{ ...tdL, cursor: "pointer", background: active ? "#1a3a5c" : "transparent", borderRight: (i % 12 === 11) ? "1.5px solid #1a3a5c" : B, borderBottom: r === 14 ? "1.5px solid #1a3a5c" : B }} />
+                          <td
+                            key={i}
+                            style={{
+                              ...tdL,
+                              padding: 0,
+                              margin: 0,
+                              height: 12,
+                              background: "#fff",
+                              borderRight: (i % 12 === 11) ? "1.5px solid #1a3a5c" : B,
+                              borderBottom: r === 14 ? "1.5px solid #1a3a5c" : B,
+                            }}
+                          >
+                            <div
+                              onClick={(e) => handleSismoClick(e, r, i)}
+                              title={`Celda Fila ${r + 1}, Col ${i + 1} (Click en centro o esquina)`}
+                              style={{
+                                position: "relative",
+                                width: "100%",
+                                height: 12,
+                                cursor: "crosshair",
+                              }}
+                            >
+                              {/* Símbolo en el centro de la celda */}
+                              {centerSym && (
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    inset: 0,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    pointerEvents: "none",
+                                    zIndex: 3,
+                                  }}
+                                >
+                                  {renderAnestesiaIcon(centerSym, 10)}
+                                </div>
+                              )}
+
+                              {/* Símbolo en la intersección superior izquierda (r, i) */}
+                              {tlSym && (
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    left: 0,
+                                    top: 0,
+                                    transform: "translate(-50%, -50%)",
+                                    pointerEvents: "none",
+                                    zIndex: 6,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    width: 11,
+                                    height: 11,
+                                    background: "#ffffff",
+                                    borderRadius: "50%",
+                                    boxShadow: "0 0 1px rgba(0,0,0,0.5)",
+                                  }}
+                                >
+                                  {renderAnestesiaIcon(tlSym, 9)}
+                                </div>
+                              )}
+
+                              {/* Símbolo en la intersección inferior izquierda (r=26, i) */}
+                              {blSym && (
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    left: 0,
+                                    top: "100%",
+                                    transform: "translate(-50%, -50%)",
+                                    pointerEvents: "none",
+                                    zIndex: 6,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    width: 11,
+                                    height: 11,
+                                    background: "#ffffff",
+                                    borderRadius: "50%",
+                                    boxShadow: "0 0 1px rgba(0,0,0,0.5)",
+                                  }}
+                                >
+                                  {renderAnestesiaIcon(blSym, 9)}
+                                </div>
+                              )}
+
+                              {/* Símbolo en la intersección superior derecha (r, i=107) */}
+                              {trSym && (
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    left: "100%",
+                                    top: 0,
+                                    transform: "translate(-50%, -50%)",
+                                    pointerEvents: "none",
+                                    zIndex: 6,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    width: 11,
+                                    height: 11,
+                                    background: "#ffffff",
+                                    borderRadius: "50%",
+                                    boxShadow: "0 0 1px rgba(0,0,0,0.5)",
+                                  }}
+                                >
+                                  {renderAnestesiaIcon(trSym, 9)}
+                                </div>
+                              )}
+
+                              {/* Símbolo en la intersección inferior derecha (r=26, i=107) */}
+                              {brSym && (
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    left: "100%",
+                                    top: "100%",
+                                    transform: "translate(-50%, -50%)",
+                                    pointerEvents: "none",
+                                    zIndex: 6,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    width: 11,
+                                    height: 11,
+                                    background: "#ffffff",
+                                    borderRadius: "50%",
+                                    boxShadow: "0 0 1px rgba(0,0,0,0.5)",
+                                  }}
+                                >
+                                  {renderAnestesiaIcon(brSym, 9)}
+                                </div>
+                              )}
+                            </div>
+                          </td>
                         );
                       })}
                     </tr>
                   );
                 })}
+
+                {/* 4. DROGAS ADMINISTRADAS (LÍNEA DE TIEMPO: 3 FILAS CON 11 INTERSECCIONES POR HORA) */}
+                <tr style={{ height: 18 }}>
+                  <td rowSpan={3} colSpan={4} style={{
+                    ...tdLbl,
+                    textAlign: "center",
+                    verticalAlign: "middle",
+                    fontSize: "8.5px",
+                    fontWeight: 700,
+                    letterSpacing: "0.04em",
+                    background: "#ddeef8",
+                    padding: "4px",
+                    borderTop: "1.5px solid #1a3a5c",
+                    borderBottom: B,
+                    borderLeft: B,
+                    borderRight: B,
+                  }}>
+                    DROGAS ADMINISTRADAS
+                  </td>
+                  {Array(108).fill(0).map((_, i) => {
+                    const isThick = i % 12 === 11;
+                    const isIntersection = !isThick;
+                    const k = `droga_col_${i}_0`;
+                    const val = (d.d_grid || {})[k] || "";
+                    return (
+                      <td
+                        key={`droga_cell_0_${i}`}
+                        style={{
+                          padding: 0,
+                          margin: 0,
+                          borderTop: "1.5px solid #1a3a5c",
+                          borderBottom: "1.5px solid #1a3a5c",
+                          borderRight: isThick ? "1.5px solid #1a3a5c" : "none",
+                          borderLeft: "none",
+                          background: "#fff",
+                          verticalAlign: "middle",
+                          height: 18,
+                          position: "relative",
+                        }}
+                      >
+                        {isIntersection && (
+                          <input
+                            type="text"
+                            value={val}
+                            maxLength={2}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setD(p => ({ ...p, d_grid: { ...(p.d_grid || {}), [k]: v } }));
+                            }}
+                            style={{
+                              position: "absolute",
+                              right: 0,
+                              top: "50%",
+                              transform: "translate(50%, -50%)",
+                              width: 10,
+                              height: 14,
+                              fontSize: "7.5px",
+                              fontWeight: 700,
+                              textAlign: "center",
+                              borderTop: "none",
+                              borderRight: "none",
+                              borderLeft: "none",
+                              borderBottom: "none",
+                              background: val ? "#e8f2fa" : "transparent",
+                              borderRadius: 1,
+                              color: "#1a3a5c",
+                              outline: "none",
+                              padding: 0,
+                              margin: 0,
+                              zIndex: 2,
+                            }}
+                            title={`Droga fila 1, intersección ${(i % 12) + 1}`}
+                          />
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+
+                {/* FILA 2 DE DROGAS ADMINISTRADAS */}
+                <tr style={{ height: 18 }}>
+                  {Array(108).fill(0).map((_, i) => {
+                    const isThick = i % 12 === 11;
+                    const isIntersection = !isThick;
+                    const k = `droga_col_${i}_1`;
+                    const val = (d.d_grid || {})[k] || "";
+                    return (
+                      <td
+                        key={`droga_cell_1_${i}`}
+                        style={{
+                          padding: 0,
+                          margin: 0,
+                          borderTop: "none",
+                          borderBottom: "1.5px solid #1a3a5c",
+                          borderRight: isThick ? "1.5px solid #1a3a5c" : "none",
+                          borderLeft: "none",
+                          background: "#fff",
+                          verticalAlign: "middle",
+                          height: 18,
+                          position: "relative",
+                        }}
+                      >
+                        {isIntersection && (
+                          <input
+                            type="text"
+                            value={val}
+                            maxLength={2}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setD(p => ({ ...p, d_grid: { ...(p.d_grid || {}), [k]: v } }));
+                            }}
+                            style={{
+                              position: "absolute",
+                              right: 0,
+                              top: "50%",
+                              transform: "translate(50%, -50%)",
+                              width: 10,
+                              height: 14,
+                              fontSize: "7.5px",
+                              fontWeight: 700,
+                              textAlign: "center",
+                              borderTop: "none",
+                              borderRight: "none",
+                              borderLeft: "none",
+                              borderBottom: "none",
+                              background: val ? "#e8f2fa" : "transparent",
+                              borderRadius: 1,
+                              color: "#1a3a5c",
+                              outline: "none",
+                              padding: 0,
+                              margin: 0,
+                              zIndex: 2,
+                            }}
+                            title={`Droga fila 2, intersección ${(i % 12) + 1}`}
+                          />
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+
+                {/* FILA 3 DE DROGAS ADMINISTRADAS */}
+                <tr style={{ height: 18 }}>
+                  {Array(108).fill(0).map((_, i) => {
+                    const isThick = i % 12 === 11;
+                    const isIntersection = !isThick;
+                    const k = `droga_col_${i}_2`;
+                    const val = (d.d_grid || {})[k] || "";
+                    return (
+                      <td
+                        key={`droga_cell_2_${i}`}
+                        style={{
+                          padding: 0,
+                          margin: 0,
+                          borderTop: "none",
+                          borderBottom: B,
+                          borderRight: isThick ? "1.5px solid #1a3a5c" : "none",
+                          borderLeft: "none",
+                          background: "#fff",
+                          verticalAlign: "middle",
+                          height: 18,
+                          position: "relative",
+                        }}
+                      >
+                        {isIntersection && (
+                          <input
+                            type="text"
+                            value={val}
+                            maxLength={2}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setD(p => ({ ...p, d_grid: { ...(p.d_grid || {}), [k]: v } }));
+                            }}
+                            style={{
+                              position: "absolute",
+                              right: 0,
+                              top: "50%",
+                              transform: "translate(50%, -50%)",
+                              width: 10,
+                              height: 14,
+                              fontSize: "7.5px",
+                              fontWeight: 700,
+                              textAlign: "center",
+                              borderTop: "none",
+                              borderRight: "none",
+                              borderLeft: "none",
+                              borderBottom: "none",
+                              background: val ? "#e8f2fa" : "transparent",
+                              borderRadius: 1,
+                              color: "#1a3a5c",
+                              outline: "none",
+                              padding: 0,
+                              margin: 0,
+                              zIndex: 2,
+                            }}
+                            title={`Droga fila 3, intersección ${(i % 12) + 1}`}
+                          />
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
 
               </tbody>
             </table>
@@ -1621,12 +3018,12 @@ export function TransanestesicoForm({ d, setD }: { d: DatosAnestesia, setD: Reac
 
           {/* ══ E. DROGAS ADMINISTRADAS (listado) ════════════════════════ */}
           <div style={secH({ marginTop: 4 })}>E. DROGAS ADMINISTRADAS</div>
-          <div style={{ display: "grid", gridTemplateRows: "repeat(4, 1fr)", gridAutoFlow: "column", gap: 0, border: B, borderRight: "none", borderBottom: "none" }}>
+          <div style={{ display: "grid", gridTemplateRows: "repeat(4, 1fr)", gridAutoFlow: "column", gap: 0, borderTop: B, borderLeft: B }}>
             {Array.from({ length: 24 }).map((_, i) => {
               const dr = d.drogas?.[i] || { droga: "" };
               return (
                 <div key={i} style={{ display: "flex", alignItems: "center", borderRight: B, borderBottom: B }}>
-                  <span style={{ ...tdLbl, border: "none", minWidth: 18, textAlign: "center", borderRight: B }}>{i + 1}</span>
+                  <span style={{ ...tdLbl, borderTop: "none", borderBottom: "none", borderLeft: "none", borderRight: B, minWidth: 18, textAlign: "center" }}>{i + 1}</span>
                   <div style={{ flex: 1 }}>
                     <TxtIn value={dr.droga} onChange={(v) => setDroga(i, "droga", v)} />
                   </div>
@@ -2079,6 +3476,188 @@ export function TransanestesicoForm({ d, setD }: { d: DatosAnestesia, setD: Reac
 
         </div>
       </div>
+
+      {/* Modal / Selector de Símbolo Anestésico */}
+      {symbolPicker && (
+        <div
+          onClick={() => setSymbolPicker(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.5)",
+            backdropFilter: "blur(2px)",
+            zIndex: 99999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#ffffff",
+              borderRadius: "10px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)",
+              width: "100%",
+              maxWidth: "520px",
+              padding: "18px 20px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "14px",
+              border: "1px solid #cbd5e1",
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1px solid #e2e8f0", paddingBottom: "10px" }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#1a3a5c" }}>
+                  Seleccionar Símbolo Anestésico
+                </h3>
+                <p style={{ margin: "3px 0 0 0", fontSize: "11px", color: "#64748b" }}>
+                  {symbolPicker.desc}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSymbolPicker(null)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "18px",
+                  color: "#64748b",
+                  cursor: "pointer",
+                  padding: "2px 6px",
+                  lineHeight: 1,
+                  borderRadius: "4px",
+                }}
+                title="Cerrar"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Grid de 16 símbolos */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: "8px",
+              maxHeight: "360px",
+              overflowY: "auto",
+              padding: "2px",
+            }}>
+              {SIMBOLOS_ANESTESIA.map((simbolo) => {
+                const isSelected = symbolPicker.currentSymbol === simbolo.id;
+                return (
+                  <button
+                    key={simbolo.id}
+                    type="button"
+                    onClick={() => {
+                      setD(p => ({
+                        ...p,
+                        d_grid: { ...(p.d_grid || {}), [symbolPicker.key]: simbolo.id }
+                      }));
+                      setSymbolPicker(null);
+                    }}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      padding: "8px 4px",
+                      background: isSelected ? "#e0f2fe" : "#ffffff",
+                      border: isSelected ? "2px solid #0284c7" : "1px solid #e2e8f0",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      transition: "all 0.12s ease-in-out",
+                      boxShadow: isSelected ? "0 0 0 1px #0284c7" : "0 1px 2px rgba(0,0,0,0.05)",
+                    }}
+                  >
+                    <div style={{
+                      width: 26,
+                      height: 26,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: isSelected ? "#bae6fd" : "#f8fafc",
+                      borderRadius: "6px",
+                      border: "1px solid #e2e8f0",
+                    }}>
+                      {simbolo.icon(16)}
+                    </div>
+                    <span style={{
+                      fontSize: "8.5px",
+                      fontWeight: isSelected ? 700 : 600,
+                      color: isSelected ? "#0369a1" : "#1e293b",
+                      textAlign: "center",
+                      lineHeight: "1.15",
+                      whiteSpace: "normal",
+                    }}>
+                      {simbolo.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              borderTop: "1px solid #e2e8f0",
+              paddingTop: "12px",
+            }}>
+              {symbolPicker.currentSymbol ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setD(p => {
+                      const grid = { ...(p.d_grid || {}) };
+                      delete grid[symbolPicker.key];
+                      return { ...p, d_grid: grid };
+                    });
+                    setSymbolPicker(null);
+                  }}
+                  style={{
+                    padding: "6px 14px",
+                    background: "#fee2e2",
+                    color: "#991b1b",
+                    border: "1px solid #fca5a5",
+                    borderRadius: "6px",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                >
+                  🗑️ Quitar símbolo
+                </button>
+              ) : <div />}
+
+              <button
+                type="button"
+                onClick={() => setSymbolPicker(null)}
+                style={{
+                  padding: "6px 16px",
+                  background: "#f1f5f9",
+                  color: "#475569",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "6px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2141,7 +3720,8 @@ export function TransanestesicoForm2({ d, setD }: { d: DatosAnestesia, setD: Rea
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <div style={{ overflowX: "visible", overflowY: "visible", background: "#fff" }}>
-        <div style={{ padding: "8px 12px 12px", minWidth: 900, fontFamily: "Arial, sans-serif" }}>
+        <div className="anestesia-sheet anestesia-sheet-trans2" style={{ padding: "8px 12px 12px", minWidth: 900, fontFamily: "Arial, sans-serif" }}>
+          <HospitalHeader />
 
           {/* -- L. TÉCNICAS ESPECIALES ---------------------------------------- */}
           <div style={secH()}>L. TÉCNICAS ESPECIALES</div>
@@ -2409,6 +3989,12 @@ export function TransanestesicoForm2({ d, setD }: { d: DatosAnestesia, setD: Rea
               </tr>
             </tbody>
           </table>
+
+          {/* Pie de página Hoja 4 */}
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", borderTop: B, marginTop: 6 }}>
+            <span style={{ fontSize: "8px", color: "#555", fontFamily: "Arial, sans-serif" }}>SNS-MSP / HCU-form.018A/2021</span>
+            <span style={{ fontSize: "9px", fontWeight: 700, color: "#1a3a5c", fontFamily: "Arial, sans-serif" }}>TRANSANESTÉSICO (2)</span>
+          </div>
 
         </div>
       </div>
