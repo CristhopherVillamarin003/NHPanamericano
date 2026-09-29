@@ -727,30 +727,147 @@ function migrarDatosAntiguos(data: any, paciente?: Props["paciente"]): BloqueInt
   };
 }
 
+function migrarBloquePrefijado(data: any, num: number, paciente?: Props["paciente"]): BloqueInterconsulta {
+  const base = crearBloqueVacio(paciente, num);
+  if (!data || typeof data !== "object") return base;
+
+  const prefix = `inter${num}_`;
+  const legacyPrefix = num === 1 ? "inter_" : null;
+
+  const getVal = (field: string) => {
+    return data[`${prefix}${field}`] ?? (legacyPrefix ? data[`${legacyPrefix}${field}`] : undefined);
+  };
+
+  const getBool = (field: string) => {
+    const val = getVal(field);
+    return val === "X" || val === true || !!val;
+  };
+
+  return {
+    ...base,
+    institucion: getVal("institucion") ?? base.institucion,
+    unicodigo: getVal("unicodigo") ?? base.unicodigo,
+    establecimiento: getVal("establecimiento") ?? base.establecimiento,
+    numero_historia_clinica: getVal("numero_historia_clinica") ?? base.numero_historia_clinica,
+    numero_archivo: getVal("numero_archivo") ?? base.numero_archivo,
+    no_hoja: getVal("no_hoja") ?? String(num),
+
+    primer_apellido: getVal("primer_apellido") ?? base.primer_apellido,
+    segundo_apellido: getVal("segundo_apellido") ?? base.segundo_apellido,
+    primer_nombre: getVal("primer_nombre") ?? base.primer_nombre,
+    segundo_nombre: getVal("segundo_nombre") ?? base.segundo_nombre,
+    sexo: getVal("sexo") ?? base.sexo,
+    edad: getVal("edad") ? String(getVal("edad")) : base.edad,
+    condicion_edad: (getVal("condicion_edad") ??
+      (getVal("condicion_edad_h") === "X" ? "H" :
+       getVal("condicion_edad_d") === "X" ? "D" :
+       getVal("condicion_edad_m") === "X" ? "M" :
+       getVal("condicion_edad_a") === "X" ? "A" : "A")) as "H" | "D" | "M" | "A",
+
+    servicio_emergencia: getBool("servicio_emergencia"),
+    servicio_consulta: getBool("servicio_consulta"),
+    servicio_hospitalizacion: getBool("servicio_hospitalizacion"),
+    servicio_especialidad: getVal("servicio_especialidad") ?? "",
+    no_cama: getVal("no_cama") ?? "",
+    no_sala: getVal("no_sala") ?? "",
+    urgente_si: getBool("urgente_si"),
+    urgente_no: getBool("urgente_no"),
+    especialidad_consultada: getVal("especialidad_consultada") ?? "",
+    descripcion_motivo: getVal("descripcion_motivo") ?? "",
+
+    cuadro_clinico: getVal("cuadro_clinico") ?? "",
+    resultados_examenes: getVal("resultados_examenes") ?? "",
+
+    diagnostico_1: getVal("diagnostico_1") ?? "",
+    diagnostico_1_cie: getVal("diagnostico_1_cie") ?? "",
+    diagnostico_1_pre: getBool("diagnostico_1_pre"),
+    diagnostico_1_def: getBool("diagnostico_1_def"),
+
+    diagnostico_2: getVal("diagnostico_2") ?? "",
+    diagnostico_2_cie: getVal("diagnostico_2_cie") ?? "",
+    diagnostico_2_pre: getBool("diagnostico_2_pre"),
+    diagnostico_2_def: getBool("diagnostico_2_def"),
+
+    diagnostico_3: getVal("diagnostico_3") ?? "",
+    diagnostico_3_cie: getVal("diagnostico_3_cie") ?? "",
+    diagnostico_3_pre: getBool("diagnostico_3_pre"),
+    diagnostico_3_def: getBool("diagnostico_3_def"),
+
+    diagnostico_4: getVal("diagnostico_4") ?? "",
+    diagnostico_4_cie: getVal("diagnostico_4_cie") ?? "",
+    diagnostico_4_pre: getBool("diagnostico_4_pre"),
+    diagnostico_4_def: getBool("diagnostico_4_def"),
+
+    diagnostico_5: getVal("diagnostico_5") ?? "",
+    diagnostico_5_cie: getVal("diagnostico_5_cie") ?? "",
+    diagnostico_5_pre: getBool("diagnostico_5_pre"),
+    diagnostico_5_def: getBool("diagnostico_5_def"),
+
+    diagnostico_6: getVal("diagnostico_6") ?? "",
+    diagnostico_6_cie: getVal("diagnostico_6_cie") ?? "",
+    diagnostico_6_pre: getBool("diagnostico_6_pre"),
+    diagnostico_6_def: getBool("diagnostico_6_def"),
+
+    plan_terapeutico: getVal("plan_terapeutico") ?? "",
+
+    fecha: getVal("fecha") ?? base.fecha,
+    hora: getVal("hora") ?? base.hora,
+    prof_primer_nombre: getVal("prof_primer_nombre") ?? "",
+    prof_primer_apellido: getVal("prof_primer_apellido") ?? "",
+    prof_segundo_apellido: getVal("prof_segundo_apellido") ?? "",
+    prof_documento: getVal("prof_documento") ?? "",
+  };
+}
+
+function parsearBloquesIniciales(data: any, paciente?: Props["paciente"]): BloqueInterconsulta[] {
+  if (data?.bloques && Array.isArray(data.bloques) && data.bloques.length > 0) {
+    return [...data.bloques];
+  }
+  if (!data || typeof data !== "object" || Object.keys(data).length === 0) {
+    return [crearBloqueVacio(paciente, 1)];
+  }
+
+  // Detectar si hay bloques con prefijo inter1_, inter2_, etc.
+  const indices = new Set<number>();
+  Object.keys(data).forEach((key) => {
+    const m = key.match(/^inter(\d+)_/);
+    if (m) {
+      indices.add(parseInt(m[1], 10));
+    }
+  });
+
+  if (indices.size > 0) {
+    const sortedIndices = Array.from(indices).sort((a, b) => a - b);
+    return sortedIndices.map((idx) => migrarBloquePrefijado(data, idx, paciente));
+  }
+
+  return [migrarDatosAntiguos(data, paciente)];
+}
+
 // ─── Componente Principal ─────────────────────────────────────────────────────
 
 const InterconsultaForm = React.forwardRef<HistoriaClinicaInterconsultaHandle, Props>(
   ({ paciente, initialData, atencionId }, ref) => {
-    const [datos, setDatos] = useState<DatosInterconsulta>(() => {
-      if (initialData?.bloques && initialData.bloques.length > 0) {
-        return { bloques: [...initialData.bloques] };
-      }
-      if (initialData && Object.keys(initialData).length > 0) {
-        return { bloques: [migrarDatosAntiguos(initialData, paciente)] };
-      }
-      return { bloques: [crearBloqueVacio(paciente, 1)] };
-    });
+    const [datos, setDatos] = useState<DatosInterconsulta>(() => ({
+      bloques: parsearBloquesIniciales(initialData, paciente),
+    }));
 
     const { isDirty, clearAutosave } = useFormAutosaveAndWarn({
       formId: `hc_interconsulta_${atencionId || 'new'}_${paciente?.cedula || 'new'}`,
       initialData: initialData || { bloques: [crearBloqueVacio(paciente, 1)] },
       currentData: datos,
-      onRestore: (saved) => setDatos(p => ({ ...p, ...saved })),
+      onRestore: (saved) => {
+        if (saved?.bloques && Array.isArray(saved.bloques) && saved.bloques.length > 0) {
+          setDatos({ bloques: saved.bloques });
+        } else if (saved && typeof saved === "object") {
+          setDatos({ bloques: parsearBloquesIniciales(saved, paciente) });
+        }
+      },
     });
 
     const handleAddBloque = () => {
-      if (datos.bloques.length >= MAX_BLOQUES_INTERCONSULTA) return;
       setDatos((prev) => {
+        if (prev.bloques.length >= MAX_BLOQUES_INTERCONSULTA) return prev;
         const firstBlock = prev.bloques[0];
         const nextHoja = prev.bloques.length + 1;
         const newBlock: BloqueInterconsulta = firstBlock
@@ -785,10 +902,12 @@ const InterconsultaForm = React.forwardRef<HistoriaClinicaInterconsultaHandle, P
     };
 
     const handleRemoveBloque = (idx: number) => {
-      if (datos.bloques.length <= 1) return;
-      setDatos((prev) => ({
-        bloques: prev.bloques.filter((_, i) => i !== idx),
-      }));
+      setDatos((prev) => {
+        if (prev.bloques.length <= 1) return prev;
+        return {
+          bloques: prev.bloques.filter((_, i) => i !== idx),
+        };
+      });
     };
 
     const handleChange = <K extends keyof BloqueInterconsulta>(
@@ -802,6 +921,7 @@ const InterconsultaForm = React.forwardRef<HistoriaClinicaInterconsultaHandle, P
         return { bloques };
       });
 
+      // Solo el primer bloque (idx === 0) sincroniza cuadro clínico hacia otras hojas
       if (campo === "cuadro_clinico" && idx === 0) {
         window.dispatchEvent(
           new CustomEvent("sync_enfermedad_actual", {
@@ -812,38 +932,43 @@ const InterconsultaForm = React.forwardRef<HistoriaClinicaInterconsultaHandle, P
     };
 
     const handleDiagnosticoChange = (idx: number, n: number, cie: string, desc: string) => {
-      const nextBloques = [...datos.bloques];
-      nextBloques[idx] = {
-        ...nextBloques[idx],
-        [`diagnostico_${n}`]: desc,
-        [`diagnostico_${n}_cie`]: cie,
-      };
-      setDatos(prev => ({ ...prev, bloques: nextBloques }));
+      setDatos((prev) => {
+        const nextBloques = [...prev.bloques];
+        nextBloques[idx] = {
+          ...nextBloques[idx],
+          [`diagnostico_${n}`]: desc,
+          [`diagnostico_${n}_cie`]: cie,
+        };
 
-      if (paciente?.tipoPaciente?.toUpperCase() === 'SPPAT') {
-        const diagnosticos = [];
-        for (let i = 1; i <= 6; i++) {
-          const descVal = nextBloques[idx][`diagnostico_${i}` as keyof BloqueInterconsulta] as string;
-          const cieVal = nextBloques[idx][`diagnostico_${i}_cie` as keyof BloqueInterconsulta] as string;
-          if (descVal || cieVal) {
-            diagnosticos.push({ descripcion: descVal, cie: cieVal });
+        // Solo el primer bloque (idx === 0) sincroniza diagnósticos con las otras hojas si es SPPAT
+        if (idx === 0 && paciente?.tipoPaciente?.toUpperCase() === 'SPPAT') {
+          const diagnosticos = [];
+          for (let i = 1; i <= 6; i++) {
+            const descVal = nextBloques[0][`diagnostico_${i}` as keyof BloqueInterconsulta] as string;
+            const cieVal = nextBloques[0][`diagnostico_${i}_cie` as keyof BloqueInterconsulta] as string;
+            if (descVal || cieVal) {
+              diagnosticos.push({ descripcion: descVal, cie: cieVal });
+            }
           }
+
+          window.dispatchEvent(
+            new CustomEvent("sync_diagnosticos", {
+              detail: { source: "interconsulta", diagnosticos },
+            })
+          );
         }
 
-        window.dispatchEvent(
-          new CustomEvent("sync_diagnosticos", {
-            detail: { source: "interconsulta", diagnosticos },
-          })
-        );
-      }
+        return { ...prev, bloques: nextBloques };
+      });
     };
 
-    // Sincronizaciones SPPAT
+    // Sincronizaciones SPPAT (SOLO para el primer bloque)
     useEffect(() => {
       const handleSyncDiagnosticos = (e: CustomEvent) => {
         if (e.detail.source !== "interconsulta") {
           const diagnosticos = e.detail.diagnosticos || [];
-          setDatos(p => {
+          setDatos((p) => {
+            if (p.bloques.length === 0) return p;
             const updates: any = {};
             for (let i = 0; i < 6; i++) {
               const num = i + 1;
@@ -859,12 +984,10 @@ const InterconsultaForm = React.forwardRef<HistoriaClinicaInterconsultaHandle, P
                 updates[`diagnostico_${num}_pre`] = false;
               }
             }
-            if (p.bloques.length > 0) {
-              const newBloques = [...p.bloques];
-              newBloques[0] = { ...newBloques[0], ...updates };
-              return { ...p, bloques: newBloques };
-            }
-            return p;
+            // Solo sincronizar el primer bloque
+            const newBloques = [...p.bloques];
+            newBloques[0] = { ...newBloques[0], ...updates };
+            return { ...p, bloques: newBloques };
           });
         }
       };
@@ -881,13 +1004,14 @@ const InterconsultaForm = React.forwardRef<HistoriaClinicaInterconsultaHandle, P
       const handleSyncEA = (e: CustomEvent) => {
         if (e.detail.source !== "interconsulta") {
           setDatos((prev) => {
-            const nuevosBloques = prev.bloques.map((b) => {
-              if (b.institucion.trim().toUpperCase() === "SPPAT") {
-                return { ...b, cuadro_clinico: e.detail.value };
-              }
-              return b;
-            });
-            return { ...prev, bloques: nuevosBloques };
+            if (prev.bloques.length === 0) return prev;
+            // Solo sincronizar el primer bloque si es SPPAT
+            if (prev.bloques[0].institucion.trim().toUpperCase() === "SPPAT") {
+              const nuevosBloques = [...prev.bloques];
+              nuevosBloques[0] = { ...nuevosBloques[0], cuadro_clinico: e.detail.value };
+              return { ...prev, bloques: nuevosBloques };
+            }
+            return prev;
           });
         }
       };
