@@ -178,6 +178,7 @@ export function PacienteForm({ defaultValues, onSubmit, onCancel, loading, error
             <option value="">Seleccionar</option>
             <option value="SPPAT">SPPAT</option>
             <option value="Particular">Particular</option>
+            <option value="IESS">IESS</option>
           </select>
           {errors.tipoPaciente && (
             <p className="form-error">{errors.tipoPaciente.message}</p>

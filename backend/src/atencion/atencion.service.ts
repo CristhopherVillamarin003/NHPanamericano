@@ -57,7 +57,8 @@ export class AtencionService {
       paciente.segundoApellido
     ].filter(Boolean).join(" ").toUpperCase();
     const dni = paciente.cedula || '';
-    const is_sppat = (atencion.categoriaPaciente.tipoPaciente || paciente.tipoPaciente) === 'SPPAT';
+    const currentTipo = (atencion.categoriaPaciente.tipoPaciente || paciente.tipoPaciente || 'PARTICULAR').toUpperCase();
+    const is_sppat = currentTipo === 'SPPAT';
 
     const updateForm = async (model: any, form: any) => {
       if (!form) return;
@@ -73,8 +74,15 @@ export class AtencionService {
         datos.dni = dni;
         modified = true;
       }
+      if (datos.institucion !== undefined && datos.institucion !== currentTipo) {
+        datos.institucion = currentTipo;
+        modified = true;
+      }
       if (is_sppat && !datos.is_sppat) {
         datos.is_sppat = true;
+        modified = true;
+      } else if (!is_sppat && datos.is_sppat) {
+        datos.is_sppat = false;
         modified = true;
       }
 
@@ -383,6 +391,9 @@ export class AtencionService {
         targetPaciente.segundoNombre
       ].filter(Boolean).join(' ');
 
+      const targetTipo = (targetPaciente.tipoPaciente || 'PARTICULAR').toUpperCase();
+      const is_sppat = targetTipo === 'SPPAT';
+
       const newValues: any = {
         primer_nombre: targetPaciente.primerNombre ?? '',
         segundo_nombre: targetPaciente.segundoNombre ?? '',
@@ -392,7 +403,8 @@ export class AtencionService {
         numero_historia_clinica: targetPaciente.cedula ?? '',
         edad: targetPaciente.edad ? String(targetPaciente.edad) : '',
         sexo: targetPaciente.sexo ? (targetPaciente.sexo.toUpperCase().startsWith('F') ? 'F' : 'M') : '',
-        institucion: targetPaciente.tipoPaciente ?? 'PARTICULAR',
+        institucion: targetTipo,
+        is_sppat: is_sppat,
         // Alias usados en Receta, Certificado y otros forms
         nombre_paciente: fullName,
         cedula_paciente: targetPaciente.cedula ?? '',
@@ -426,6 +438,11 @@ export class AtencionService {
         for (const [key, value] of Object.entries(obj)) {
           if (newValues.hasOwnProperty(key)) {
             obj[key] = newValues[key as keyof typeof newValues];
+          } else if (key === 'notas_evolucion' && typeof value === 'string') {
+            obj[key] = value.replace(
+              /<strong>SEGURO:<\/strong>\s*(SPPAT|PARTICULAR|IESS)/gi,
+              `<strong>SEGURO:</strong> ${targetTipo}`
+            );
           } else if (typeof value === 'object') {
             traverse(value);
           }

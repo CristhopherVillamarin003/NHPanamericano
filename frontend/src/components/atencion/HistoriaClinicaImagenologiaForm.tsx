@@ -510,7 +510,7 @@ function crearBloqueVacio(paciente?: Props["paciente"]): BloqueImagenologia {
   const today = new Date().toISOString().split("T")[0];
   const nowTime = new Date().toTimeString().slice(0, 5);
   return {
-    institucion: paciente?.tipoPaciente ?? "PARTICULAR",
+    institucion: paciente?.tipoPaciente ? paciente.tipoPaciente.toUpperCase() : "PARTICULAR",
     unicodigo: "35865",
     establecimiento: "NUEVO HOSPITAL PANAMERICANO",
     numero_historia_clinica: paciente?.numero_historia_clinica ?? paciente?.cedula ?? "",

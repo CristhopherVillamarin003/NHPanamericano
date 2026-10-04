@@ -988,7 +988,7 @@ function crearBloqueVacio(paciente?: Props["paciente"], tipoNota: TipoNota = "IN
   const [y, m, d] = today.split('-');
   const formattedDate = `${d}/${m}/${y}`;
   
-  const seguroStr = paciente?.tipoPaciente?.toUpperCase() === "SPPAT" ? "SPPAT" : "PARTICULAR";
+  const seguroStr = paciente?.tipoPaciente ? paciente.tipoPaciente.toUpperCase() : "PARTICULAR";
   const rawNotas = getPlantillaNota(tipoNota);
   const notas_evolucion = rawNotas.replace(
     /<p><strong>INGRESO:<\/strong>&nbsp;<\/p>/gi,
@@ -1005,7 +1005,7 @@ function crearBloqueVacio(paciente?: Props["paciente"], tipoNota: TipoNota = "IN
   );
 
   return {
-    institucion: paciente?.tipoPaciente ?? "PARTICULAR",
+    institucion: paciente?.tipoPaciente ? paciente.tipoPaciente.toUpperCase() : "PARTICULAR",
     unicodigo: "35865",
     establecimiento: "NUEVO HOSPITAL PANAMERICANO",
     numero_historia_clinica: paciente?.numero_historia_clinica ?? paciente?.cedula ?? "",
@@ -1035,7 +1035,7 @@ function crearBloquePersonalizado(paciente: Props["paciente"] | undefined, notas
   const [y, m, d] = today.split('-');
   const formattedDate = `${d}/${m}/${y}`;
   
-  const seguroStr = paciente?.tipoPaciente?.toUpperCase() === "SPPAT" ? "SPPAT" : "PARTICULAR";
+  const seguroStr = paciente?.tipoPaciente ? paciente.tipoPaciente.toUpperCase() : "PARTICULAR";
   bloque.notas_evolucion = notasHtml.replace(
     /<p><strong>INGRESO:<\/strong>&nbsp;<\/p>/gi,
     `<p><strong>INGRESO:</strong> ${formattedDate}</p>`

@@ -401,7 +401,7 @@ const EmergenciaForm008 = React.forwardRef<HistoriaClinicaEmergenciaHandle, Prop
   const hora = new Date().toTimeString().slice(0, 5);
 
   const [d, setD] = useState<DatosEmergencia>({
-    institucion: paciente?.tipoPaciente ?? "PARTICULAR", unicodigo: "35865", establecimiento: "NUEVO HOSPITAL PANAMERICANO",
+    institucion: paciente?.tipoPaciente ? paciente.tipoPaciente.toUpperCase() : "PARTICULAR", unicodigo: "35865", establecimiento: "NUEVO HOSPITAL PANAMERICANO",
     numero_historia_clinica: paciente?.cedula ?? "", numero_archivo: "",
     fecha_admision: hoy, nombre_admisionista: "", hc_establecimiento: "",
     primer_apellido: paciente?.primer_apellido ?? "", segundo_apellido: paciente?.segundo_apellido ?? "",

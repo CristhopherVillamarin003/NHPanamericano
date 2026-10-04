@@ -123,6 +123,7 @@ export function VincularPacienteModal({
           type="button"
           onClick={() => {
             setSelectedPaciente(row);
+            setTipoPaciente(row.tipoPaciente || 'Particular');
             setError('');
           }}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-sky-500 rounded-md hover:bg-sky-600 transition-colors"
@@ -196,6 +197,7 @@ export function VincularPacienteModal({
               >
                 <option value="SPPAT">SPPAT</option>
                 <option value="Particular">Particular</option>
+                <option value="IESS">IESS</option>
               </select>
             </div>
 

@@ -346,7 +346,7 @@ const AnamnesisForm = React.forwardRef<HistoriaClinicaAnamnesisHandle, Props>(
   const nowTime = new Date().toTimeString().slice(0, 5);
 
   const [initialState] = useState<DatosAnamnesis>(() => ({
-    institucion: paciente?.tipoPaciente ?? "PARTICULAR",
+    institucion: paciente?.tipoPaciente ? paciente.tipoPaciente.toUpperCase() : "PARTICULAR",
     unicodigo: "35865",
     establecimiento: "NUEVO HOSPITAL PANAMERICANO",
     numero_historia_clinica: paciente?.numero_historia_clinica ?? paciente?.cedula ?? "",

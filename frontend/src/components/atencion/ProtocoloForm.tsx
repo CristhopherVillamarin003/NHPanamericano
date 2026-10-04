@@ -207,7 +207,7 @@ const ProtocoloQuirurgicoForm = React.forwardRef<ProtocoloQuirurgicoFormHandle, 
 
   const [d, setD, saveSnapshot] = useFormHistory<DatosProtocolo>(() => {
     const base: DatosProtocolo = {
-      institucion: isTemplateMode ? "" : (paciente?.tipoPaciente ?? "PARTICULAR"),
+      institucion: isTemplateMode ? "" : (paciente?.tipoPaciente ? paciente.tipoPaciente.toUpperCase() : "PARTICULAR"),
       unicodigo: isTemplateMode ? "" : "35865",
       establecimiento: isTemplateMode ? "" : "NUEVO HOSPITAL PANAMERICANO",
       numero_historia_clinica: paciente?.numero_historia_clinica ?? paciente?.cedula ?? "",

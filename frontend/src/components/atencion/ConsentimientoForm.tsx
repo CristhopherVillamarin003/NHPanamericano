@@ -218,7 +218,7 @@ const ConsentimientoForm024 = React.forwardRef<ConsentimientoFormHandle, Props>(
   const [hoja, setHoja] = useState<"ANVERSO" | "REVERSO">("ANVERSO");
 
   const [anverso, setAnverso] = useState<DatosAnverso>({
-    institucion: isTemplateMode ? "" : ((initialData?.anverso?.institucion) || paciente?.tipoPaciente || "PARTICULAR"),
+    institucion: isTemplateMode ? "" : ((initialData?.anverso?.institucion) || (paciente?.tipoPaciente ? paciente.tipoPaciente.toUpperCase() : "PARTICULAR")),
     establecimiento: isTemplateMode ? "" : (initialData?.anverso?.establecimiento || "NUEVO HOSPITAL PANAMERICANO"),
     numero_historia_clinica: (initialData?.anverso?.numero_historia_clinica) || paciente?.numero_historia_clinica || paciente?.cedula || "",
     numero_archivo: initialData?.anverso?.numero_archivo || "",
