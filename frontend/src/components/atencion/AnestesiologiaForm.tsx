@@ -410,7 +410,7 @@ const AnestesiologiaForm = forwardRef<{ getDatos: () => DatosAnestesia; clearAut
   const nowTime = new Date().toTimeString().slice(0, 5);
 
   const [d, setD] = useState<DatosAnestesia>({
-    institucion: paciente?.tipoPaciente ? paciente.tipoPaciente.toUpperCase() : "PARTICULAR", unicodigo: "35865", establecimiento: "NUEVO HOSPITAL PANAMERICANO",
+    institucion: paciente?.tipoPaciente ? paciente.tipoPaciente.toUpperCase() : "PARTICULAR", unicodigo: "62858", establecimiento: "NUEVO HOSPITAL PANAMERICANO",
     numero_historia_clinica: paciente?.numero_historia_clinica ?? paciente?.cedula ?? "",
     numero_archivo: "",
     primer_apellido: paciente?.primerApellido ?? "", segundo_apellido: paciente?.segundoApellido ?? "",

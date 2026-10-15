@@ -262,7 +262,7 @@ const ConsultaExternaForm = forwardRef<ConsultaExternaFormHandle, Props>(({
 
   const [d, setD] = useState<DatosConsultaExterna>({
     institucion: paciente?.tipoPaciente ? paciente.tipoPaciente.toUpperCase() : "PARTICULAR",
-    unicodigo: "35865",
+    unicodigo: "62858",
     establecimiento: "NUEVO HOSPITAL PANAMERICANO",
     numero_historia_clinica: paciente?.cedula ?? "",
     numero_archivo: "",

@@ -404,6 +404,7 @@ export class AtencionService {
         edad: targetPaciente.edad ? String(targetPaciente.edad) : '',
         sexo: targetPaciente.sexo ? (targetPaciente.sexo.toUpperCase().startsWith('F') ? 'F' : 'M') : '',
         institucion: targetTipo,
+        unicodigo: '62858',
         is_sppat: is_sppat,
         // Alias usados en Receta, Certificado y otros forms
         nombre_paciente: fullName,
@@ -438,6 +439,8 @@ export class AtencionService {
         for (const [key, value] of Object.entries(obj)) {
           if (newValues.hasOwnProperty(key)) {
             obj[key] = newValues[key as keyof typeof newValues];
+          } else if (key === 'unicodigo' || key.endsWith('_unicodigo')) {
+            obj[key] = '62858';
           } else if (key === 'notas_evolucion' && typeof value === 'string') {
             obj[key] = value.replace(
               /<strong>SEGURO:<\/strong>\s*(SPPAT|PARTICULAR|IESS)/gi,

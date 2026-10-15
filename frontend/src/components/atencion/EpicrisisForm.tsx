@@ -259,7 +259,7 @@ const EpicrisisForm = React.forwardRef<EpicrisisFormHandle, Props>(({
   const [d, setD] = useState<DatosEpicrisis>({
     // A — auto desde paciente
     institucion: paciente?.tipoPaciente ? paciente.tipoPaciente.toUpperCase() : "PARTICULAR",
-    unicodigo: "35865",
+    unicodigo: "62858",
     establecimiento: "NUEVO HOSPITAL PANAMERICANO",
     numero_historia_clinica: paciente?.cedula ?? "",
     numero_archivo: "",
