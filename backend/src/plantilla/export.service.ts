@@ -818,12 +818,46 @@ function injectEnfermeriaMatematica(workbook: ExcelJS.Workbook, bloques: any[]) 
 
   const START_ROW = 21; // Comienza en la fila 21
   const ROW_OFFSET = 7; // Cada bloque toma 7 filas (21, 28, 35...)
-  const MAX_BLOQUES = 30; // Máximo de bloques en la plantilla
+  const TEMPLATE_BLOQUES = 30; // Bloques pre-creados en la plantilla física (hasta fila 230)
 
+  // 1. Inyectar o crear bloques dinámicos
   bloques.forEach((bloque, index) => {
-    if (index >= MAX_BLOQUES) return;
     const row1 = START_ROW + (index * ROW_OFFSET);
     const row2 = START_ROW + 1 + (index * ROW_OFFSET);
+
+    // Si excede los 30 bloques de la plantilla, clonar el formato del bloque patrón (filas 21 a 27)
+    if (index >= TEMPLATE_BLOQUES) {
+      const patternStart = START_ROW;
+      for (let r = 0; r < ROW_OFFSET; r++) {
+        const patRow = sheet.getRow(patternStart + r);
+        const newRow = sheet.getRow(row1 + r);
+        newRow.height = patRow.height;
+        for (let c = 1; c <= 9; c++) {
+          const patCell = patRow.getCell(c);
+          const newCell = newRow.getCell(c);
+          if (patCell.border) newCell.border = JSON.parse(JSON.stringify(patCell.border));
+          if (patCell.fill) newCell.fill = JSON.parse(JSON.stringify(patCell.fill));
+          if (patCell.font) newCell.font = JSON.parse(JSON.stringify(patCell.font));
+          if (patCell.alignment) newCell.alignment = JSON.parse(JSON.stringify(patCell.alignment));
+        }
+      }
+
+      // Combinar celdas correspondientes al bloque
+      sheet.mergeCells(`A${row1}:I${row1}`);
+      sheet.mergeCells(`A${row2}:A${row1 + 6}`);
+      sheet.mergeCells(`B${row2}:B${row1 + 6}`);
+      sheet.mergeCells(`C${row2}:C${row1 + 6}`);
+      sheet.mergeCells(`D${row2}:I${row1 + 6}`);
+
+      // Re-aplicar estilos y bordes originales tras la combinación de celdas
+      for (let r = 0; r < ROW_OFFSET; r++) {
+        for (let c = 1; c <= 9; c++) {
+          const patCell = sheet.getCell(patternStart + r, c);
+          const newCell = sheet.getCell(row1 + r, c);
+          if (patCell.border) newCell.border = JSON.parse(JSON.stringify(patCell.border));
+        }
+      }
+    }
 
     setCell(sheet, `A${row1}`, bloque.nota_evolucion);
     setCell(sheet, `A${row2}`, bloque.nota_fecha);
@@ -831,10 +865,9 @@ function injectEnfermeriaMatematica(workbook: ExcelJS.Workbook, bloques: any[]) 
     setCell(sheet, `D${row2}`, bloque.nota_descripcion);
   });
 
-  // Ocultar los bloques no utilizados
-  for (let i = bloques.length; i < MAX_BLOQUES; i++) {
+  // 2. Ocultar los bloques pre-creados no utilizados (solo si hay menos de 30)
+  for (let i = bloques.length; i < TEMPLATE_BLOQUES; i++) {
     const startRow = START_ROW + (i * ROW_OFFSET);
-    // Cada bloque consta de 7 filas (ej. de la 21 a la 27 inclusive)
     const endRow = startRow + ROW_OFFSET - 1;
     for (let r = startRow; r <= endRow; r++) {
       const rowObj = sheet.getRow(r);

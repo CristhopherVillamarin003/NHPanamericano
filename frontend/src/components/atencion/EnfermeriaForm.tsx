@@ -448,7 +448,7 @@ function CompactBlock({ b, onFecha, onHora, onContenido, onTipo, onEliminar, isR
 
 // ─── Componente Principal ─────────────────────────────────────────────────────
 
-const MAX_BLOQUES = 30;
+// Sin límite fijo de notas
 
 const EnfermeriaForm = forwardRef<EnfermeriaFormRef, Props>(({ paciente, initialData, isReadOnly }, ref) => {
   const today = new Date().toISOString().split("T")[0];
@@ -543,7 +543,6 @@ const EnfermeriaForm = forwardRef<EnfermeriaFormRef, Props>(({ paciente, initial
   const s = (k: keyof EnfermeriaData) => (v: string) => setFormData(p => ({ ...p, [k]: v }));
 
   const agregarBloque = (tipo: TipoNota) => {
-    if ((formData.bloques || []).length >= MAX_BLOQUES) return;
     setFormData(p => ({ ...p, bloques: [...(p.bloques || []), bloqueVacio(tipo)] }));
   };
 
@@ -655,7 +654,7 @@ const EnfermeriaForm = forwardRef<EnfermeriaFormRef, Props>(({ paciente, initial
               {TIPOS.map(tipo => (
                 <button key={tipo}
                   onClick={() => agregarBloque(tipo)}
-                  disabled={(formData.bloques || []).length >= MAX_BLOQUES}
+                  
                   style={{
                     ...btnStyle(
                       tipo === "NOTA POSTQUIRURGICA" ? "#6c757d"
@@ -665,14 +664,14 @@ const EnfermeriaForm = forwardRef<EnfermeriaFormRef, Props>(({ paciente, initial
                       : "#084298",
                       true
                     ),
-                    opacity: (formData.bloques || []).length >= MAX_BLOQUES ? 0.4 : 1,
+                    
                   }}>
                   {tipo === "NOTA POSTQUIRURGICA" ? "⚕️" : tipo === "NOTA DE LA MAÑANA" ? "🌅" : tipo === "NOTA DE LA TARDE" ? "☀️" : tipo === "NOTA DE ALTA" ? "📝" : "🌙"} {tipo}
                 </button>
               ))}
               {(formData.bloques || []).length > 0 && (
                 <span style={{ fontSize: "9px", color: "#888", fontFamily: "Arial, sans-serif", marginLeft: 6 }}>
-                  ({(formData.bloques || []).length}/{MAX_BLOQUES} notas adicionales)
+                  ({(formData.bloques || []).length} notas adicionales)
                 </span>
               )}
             </div>
