@@ -679,14 +679,69 @@ function injectEvolucionMatematica(workbook: ExcelJS.Workbook, bloques: any[]) {
 
   if (!Array.isArray(bloques)) bloques = [];
 
-  const MAX_BLOQUES = 35;
-  const ROW_OFFSET = 66;
+  const TEMPLATE_BLOQUES = 35; // Bloques pre-diseñados en la plantilla física
+  const ROW_OFFSET = 66; // Cada bloque abarca exactamente 66 filas
 
-  // 1. Llenar los bloques activos
-  for (let i = 0; i < bloques.length && i < MAX_BLOQUES; i++) {
+  // Extraer las combinaciones de celdas del bloque patrón (bloque 1, filas 1 a 66)
+  const b1Merges: { col1: string; r1: number; col2: string; r2: number }[] = [];
+  if (sheet.model && sheet.model.merges) {
+    sheet.model.merges.forEach(m => {
+      const match = m.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
+      if (match) {
+        const r1 = parseInt(match[2], 10);
+        const r2 = parseInt(match[4], 10);
+        if (r1 >= 1 && r2 <= ROW_OFFSET) {
+          b1Merges.push({ col1: match[1], r1, col2: match[3], r2 });
+        }
+      }
+    });
+  }
+
+  // 1. Llenar los bloques activos (con clonación dinámica para bloques > 35)
+  for (let i = 0; i < bloques.length; i++) {
     const b = bloques[i];
     if (!b) continue;
     const bOffset = i * ROW_OFFSET;
+
+    // Si excede los 35 bloques pre-diseñados, clonar el formato del bloque patrón (filas 1 a 66)
+    if (i >= TEMPLATE_BLOQUES) {
+      const maxCols = 67; // Columnas A hasta BO (67 columnas)
+      for (let r = 1; r <= ROW_OFFSET; r++) {
+        const srcRow = sheet.getRow(r);
+        const destRow = sheet.getRow(r + bOffset);
+        if (srcRow.height) destRow.height = srcRow.height;
+
+        for (let c = 1; c <= maxCols; c++) {
+          const srcCell = srcRow.getCell(c);
+          const destCell = destRow.getCell(c);
+
+          if (srcCell.value !== undefined && srcCell.value !== null && (!srcCell.isMerged || srcCell.master === srcCell)) {
+            destCell.value = srcCell.value;
+          }
+          if (srcCell.border) destCell.border = JSON.parse(JSON.stringify(srcCell.border));
+          if (srcCell.fill) destCell.fill = JSON.parse(JSON.stringify(srcCell.fill));
+          if (srcCell.font) destCell.font = JSON.parse(JSON.stringify(srcCell.font));
+          if (srcCell.alignment) destCell.alignment = JSON.parse(JSON.stringify(srcCell.alignment));
+          if (srcCell.numFmt) destCell.numFmt = srcCell.numFmt;
+        }
+      }
+
+      // Replicar las combinaciones de celdas para el nuevo bloque
+      b1Merges.forEach(m => {
+        sheet.mergeCells(`${m.col1}${m.r1 + bOffset}:${m.col2}${m.r2 + bOffset}`);
+      });
+
+      // Re-aplicar bordes en las celdas combinadas para evitar pérdida de estilo
+      for (let r = 1; r <= ROW_OFFSET; r++) {
+        for (let c = 1; c <= maxCols; c++) {
+          const srcCell = sheet.getCell(r, c);
+          const destCell = sheet.getCell(r + bOffset, c);
+          if (srcCell.border) {
+            destCell.border = JSON.parse(JSON.stringify(srcCell.border));
+          }
+        }
+      }
+    }
 
     const setCell = (cellRef: string, val: any) => {
       const match = cellRef.match(/^([A-Z]+)(\d+)$/);
@@ -777,8 +832,8 @@ function injectEvolucionMatematica(workbook: ExcelJS.Workbook, bloques: any[]) {
     }
   }
 
-  // 2. Ocultar los bloques no utilizados
-  for (let i = bloques.length; i < MAX_BLOQUES; i++) {
+  // 2. Ocultar los bloques pre-diseñados no utilizados (solo si hay menos de 35)
+  for (let i = bloques.length; i < TEMPLATE_BLOQUES; i++) {
     const startRow = 1 + (i * ROW_OFFSET);
     const endRow = 66 + (i * ROW_OFFSET);
     for (let r = startRow; r <= endRow; r++) {
