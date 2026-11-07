@@ -1072,6 +1072,30 @@ const EvolucionForm = React.forwardRef<HistoriaClinicaEvolucionHandle, Props>(
       };
     });
 
+    useEffect(() => {
+      if (paciente) {
+        setDatos(prev => {
+          let changed = false;
+          const newBloques = prev.bloques.map(b => {
+            const up: any = {};
+            if (paciente.primer_nombre && b.primer_nombre !== paciente.primer_nombre) { up.primer_nombre = paciente.primer_nombre; changed = true; }
+            if (paciente.segundo_nombre !== undefined && b.segundo_nombre !== paciente.segundo_nombre) { up.segundo_nombre = paciente.segundo_nombre; changed = true; }
+            if (paciente.primer_apellido && b.primer_apellido !== paciente.primer_apellido) { up.primer_apellido = paciente.primer_apellido; changed = true; }
+            if (paciente.segundo_apellido !== undefined && b.segundo_apellido !== paciente.segundo_apellido) { up.segundo_apellido = paciente.segundo_apellido; changed = true; }
+            if (paciente.cedula && b.numero_historia_clinica !== paciente.cedula) { up.numero_historia_clinica = paciente.cedula; changed = true; }
+            if (paciente.edad !== undefined && b.edad !== String(paciente.edad)) { up.edad = String(paciente.edad); changed = true; }
+            if (paciente.sexo) {
+              const s = paciente.sexo.toUpperCase().startsWith('F') ? 'F' : 'M';
+              if (b.sexo !== s) { up.sexo = s; changed = true; }
+            }
+            if (paciente.tipoPaciente && b.institucion !== paciente.tipoPaciente) { up.institucion = paciente.tipoPaciente; changed = true; }
+            return Object.keys(up).length > 0 ? { ...b, ...up } : b;
+          });
+          return changed ? { ...prev, bloques: newBloques } : prev;
+        });
+      }
+    }, [paciente?.primer_nombre, paciente?.segundo_nombre, paciente?.primer_apellido, paciente?.segundo_apellido, paciente?.cedula, paciente?.edad, paciente?.sexo, paciente?.tipoPaciente]);
+
     const { isDirty, clearAutosave } = useFormAutosaveAndWarn({
       formId: `hc_evolucion_${atencionId || 'new'}_${paciente?.cedula || 'new'}`,
       initialData: initialData || { bloques: [crearBloqueVacio(paciente)] },

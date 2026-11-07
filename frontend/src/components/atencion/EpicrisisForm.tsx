@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useImperativeHandle } from "react";
+import React, { useState, useImperativeHandle, useEffect } from "react";
 import { useFormAutosaveAndWarn } from "@/hooks/useFormAutosaveAndWarn";
 import { Cie10DescInput, Cie10CieInput } from "./Cie10Input";
 import { MedicoInput } from "./MedicoInput";
@@ -315,6 +315,26 @@ const EpicrisisForm = React.forwardRef<EpicrisisFormHandle, Props>(({
     revisado_por: "",
     ...initialData,
   });
+
+  useEffect(() => {
+    if (paciente) {
+      const pNombre = paciente.primerNombre || (paciente as any).primer_nombre;
+      const sNombre = paciente.segundoNombre || (paciente as any).segundo_nombre;
+      const pApellido = paciente.primerApellido || (paciente as any).primer_apellido;
+      const sApellido = paciente.segundoApellido || (paciente as any).segundo_apellido;
+      setD(p => ({
+        ...p,
+        ...(pNombre ? { primer_nombre: pNombre } : {}),
+        ...(sNombre !== undefined ? { segundo_nombre: sNombre } : {}),
+        ...(pApellido ? { primer_apellido: pApellido } : {}),
+        ...(sApellido !== undefined ? { segundo_apellido: sApellido } : {}),
+        ...(paciente.cedula ? { cedula: paciente.cedula, numero_historia_clinica: paciente.cedula } : {}),
+        ...(paciente.edad !== undefined ? { edad: String(paciente.edad) } : {}),
+        ...(paciente.sexo ? { sexo: paciente.sexo.toUpperCase().startsWith('F') ? 'F' : 'M' } : {}),
+        ...(paciente.tipoPaciente ? { institucion: paciente.tipoPaciente } : {}),
+      }));
+    }
+  }, [paciente?.primerNombre, paciente?.segundoNombre, paciente?.primerApellido, paciente?.segundoApellido, paciente?.cedula, paciente?.edad, paciente?.sexo, paciente?.tipoPaciente]);
 
   const { isDirty, clearAutosave } = useFormAutosaveAndWarn({
     formId: `epicrisis_${atencionId || 'new'}_${paciente?.cedula || 'new'}`,

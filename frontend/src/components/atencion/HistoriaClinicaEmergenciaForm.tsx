@@ -449,6 +449,22 @@ const EmergenciaForm008 = React.forwardRef<HistoriaClinicaEmergenciaHandle, Prop
     ...initialData,
   });
 
+  useEffect(() => {
+    if (paciente) {
+      setD(p => ({
+        ...p,
+        ...(paciente.primer_nombre ? { primer_nombre: paciente.primer_nombre } : {}),
+        ...(paciente.segundo_nombre !== undefined ? { segundo_nombre: paciente.segundo_nombre } : {}),
+        ...(paciente.primer_apellido ? { primer_apellido: paciente.primer_apellido } : {}),
+        ...(paciente.segundo_apellido !== undefined ? { segundo_apellido: paciente.segundo_apellido } : {}),
+        ...(paciente.cedula ? { numero_historia_clinica: paciente.cedula } : {}),
+        ...(paciente.edad !== undefined ? { edad: String(paciente.edad) } : {}),
+        ...(paciente.sexo ? { sexo: paciente.sexo.toUpperCase().startsWith('F') ? 'F' : 'M' } : {}),
+        ...(paciente.tipoPaciente ? { institucion: paciente.tipoPaciente } : {}),
+      }));
+    }
+  }, [paciente?.primer_nombre, paciente?.segundo_nombre, paciente?.primer_apellido, paciente?.segundo_apellido, paciente?.cedula, paciente?.edad, paciente?.sexo, paciente?.tipoPaciente]);
+
   const { isDirty, clearAutosave } = useFormAutosaveAndWarn({
     formId: `hc_emergencia_${atencionId || 'new'}_${paciente?.cedula || 'new'}`,
     initialData: initialData || {},

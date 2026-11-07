@@ -1,9 +1,14 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AtencionService } from '../atencion/atencion.service';
 
 @Injectable()
 export class PacientesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => AtencionService))
+    private readonly atencionService: AtencionService,
+  ) {}
 
   async create(input: {
     primerNombre: string;
@@ -95,13 +100,21 @@ export class PacientesService {
     },
   ) {
     await this.findOne(id);
-    return this.prisma.paciente.update({
+    const updated = await this.prisma.paciente.update({
       where: { id },
       data: {
         ...input,
         fechaNacimiento: input.fechaNacimiento ? new Date(input.fechaNacimiento) : undefined,
       },
     });
+
+    try {
+      await this.atencionService.syncAllExpedientesForPaciente(id);
+    } catch (error) {
+      console.error('Error sincronizando datos del paciente en sus expedientes:', error);
+    }
+
+    return updated;
   }
 
   async remove(id: number) {

@@ -26,87 +26,169 @@ export class AtencionService {
   };
 
   
-  async syncPacienteData(categoriaPacienteId: number) {
-    const atencion = await this.prisma.atencion.findUnique({
-      where: { categoriaPacienteId },
-      include: {
-        categoriaPaciente: { include: { paciente: true } },
-        historiaClinica: true,
-        protocolos: true,
-        cuidado: true,
-        epicrisis: true,
-        receta: true,
-        certificado: true,
-        liquidacion: true,
-        enfermeria: true,
-        escalaRiesgo: true,
-        consulta: true,
-        examenes: true,
-        anestesiologia: true,
-        recetaMedica: true,
-      }
-    });
+  /**
+   * Reemplaza de forma recursiva los datos personales del paciente en cualquier JSON de formulario
+   */
+  overwritePersonalData(datos: any, targetPaciente: any, targetTipoInput?: string | null, seccionName?: string) {
+    if (!datos || typeof datos !== 'object') return datos;
+    const result = JSON.parse(JSON.stringify(datos));
+    
+    const fullName = [
+      targetPaciente.primerApellido,
+      targetPaciente.segundoApellido,
+      targetPaciente.primerNombre,
+      targetPaciente.segundoNombre
+    ].filter(Boolean).join(' ').trim().toUpperCase();
 
-    if (!atencion || !atencion.categoriaPaciente?.paciente) return;
+    const targetTipo = (targetTipoInput || targetPaciente.tipoPaciente || 'PARTICULAR').toUpperCase();
+    const is_sppat = targetTipo === 'SPPAT';
 
-    const paciente = atencion.categoriaPaciente.paciente;
-    const nombres_completos = [
-      paciente.primerNombre,
-      paciente.segundoNombre,
-      paciente.primerApellido,
-      paciente.segundoApellido
-    ].filter(Boolean).join(" ").toUpperCase();
-    const dni = paciente.cedula || '';
-    const currentTipo = (atencion.categoriaPaciente.tipoPaciente || paciente.tipoPaciente || 'PARTICULAR').toUpperCase();
-    const is_sppat = currentTipo === 'SPPAT';
+    const newValues: any = {
+      primer_nombre: targetPaciente.primerNombre ? String(targetPaciente.primerNombre).toUpperCase() : '',
+      segundo_nombre: targetPaciente.segundoNombre ? String(targetPaciente.segundoNombre).toUpperCase() : '',
+      primer_apellido: targetPaciente.primerApellido ? String(targetPaciente.primerApellido).toUpperCase() : '',
+      segundo_apellido: targetPaciente.segundoApellido ? String(targetPaciente.segundoApellido).toUpperCase() : '',
+      cedula: targetPaciente.cedula ?? '',
+      numero_historia_clinica: targetPaciente.cedula ?? '',
+      edad: targetPaciente.edad !== undefined && targetPaciente.edad !== null ? String(targetPaciente.edad) : '',
+      sexo: targetPaciente.sexo ? (targetPaciente.sexo.toUpperCase().startsWith('F') ? 'F' : 'M') : '',
+      institucion: targetTipo,
+      unicodigo: '62858',
+      is_sppat: is_sppat,
+      nombre_paciente: fullName,
+      cedula_paciente: targetPaciente.cedula ?? '',
+      edad_paciente: targetPaciente.edad !== undefined && targetPaciente.edad !== null ? String(targetPaciente.edad) : '',
+      nombre_paciente_firma: fullName,
+      cedula_paciente_firma: targetPaciente.cedula ?? '',
+      nombre_paciente_negativa: fullName,
+      cedula_paciente_negativa: targetPaciente.cedula ?? '',
+      nombre_paciente_rev: fullName,
+      cedula_paciente_rev: targetPaciente.cedula ?? '',
+      nombres_completos: fullName,
+      paciente: fullName,
+      dni: targetPaciente.cedula ?? '',
+    };
 
-    const updateForm = async (model: any, form: any) => {
-      if (!form) return;
-      const datos = typeof form.datos === 'string' ? JSON.parse(form.datos) : form.datos;
-      if (!datos) return;
+    if (targetPaciente.telefono) newValues.telefono = targetPaciente.telefono;
+    if (targetPaciente.direccion) newValues.direccion = targetPaciente.direccion;
+
+    if (targetPaciente.edad !== undefined && targetPaciente.edad !== null && Number(targetPaciente.edad) >= 1) {
+      newValues.condicion_edad = 'A';
+    }
+
+    if (seccionName !== 'consentimiento' && seccionName !== 'protocolo') {
+      newValues.nombre = fullName;
+      newValues.nombres = fullName;
+    }
+
+    const traverse = (obj: any) => {
+      if (!obj || typeof obj !== 'object') return;
       
-      let modified = false;
-      if (datos.nombres_completos !== undefined && datos.nombres_completos !== nombres_completos) {
-        datos.nombres_completos = nombres_completos;
-        modified = true;
-      }
-      if (datos.dni !== undefined && datos.dni !== dni) {
-        datos.dni = dni;
-        modified = true;
-      }
-      if (datos.institucion !== undefined && datos.institucion !== currentTipo) {
-        datos.institucion = currentTipo;
-        modified = true;
-      }
-      if (is_sppat && !datos.is_sppat) {
-        datos.is_sppat = true;
-        modified = true;
-      } else if (!is_sppat && datos.is_sppat) {
-        datos.is_sppat = false;
-        modified = true;
+      if (Array.isArray(obj)) {
+        obj.forEach(traverse);
+        return;
       }
 
-      if (modified) {
-        await model.update({
-          where: { id: form.id },
-          data: { datos }
-        });
+      for (const [key, value] of Object.entries(obj)) {
+        if (newValues.hasOwnProperty(key)) {
+          obj[key] = newValues[key as keyof typeof newValues];
+        } else if (key === 'unicodigo' || key.endsWith('_unicodigo')) {
+          obj[key] = '62858';
+        } else if (key === 'notas_evolucion' && typeof value === 'string') {
+          obj[key] = value.replace(
+            /<strong>SEGURO:<\/strong>\s*(SPPAT|PARTICULAR|IESS)/gi,
+            `<strong>SEGURO:</strong> ${targetTipo}`
+          );
+        } else if (typeof value === 'object') {
+          traverse(value);
+        }
       }
     };
 
-    if (atencion.historiaClinica) await updateForm(this.prisma.historiaClinica, atencion.historiaClinica);
-    if (atencion.cuidado) await updateForm(this.prisma.cuidado, atencion.cuidado);
-    if (atencion.epicrisis) await updateForm(this.prisma.epicrisis, atencion.epicrisis);
-    if (atencion.receta) await updateForm(this.prisma.receta, atencion.receta);
-    if (atencion.certificado) await updateForm(this.prisma.certificado, atencion.certificado);
-    if (atencion.liquidacion) await updateForm(this.prisma.liquidacion, atencion.liquidacion);
-    if (atencion.enfermeria) await updateForm(this.prisma.enfermeria, atencion.enfermeria);
-    if (atencion.escalaRiesgo) await updateForm(this.prisma.escalaRiesgo, atencion.escalaRiesgo);
-    if (atencion.consulta) await updateForm(this.prisma.consulta, atencion.consulta);
-    if (atencion.examenes) await updateForm(this.prisma.examenes, atencion.examenes);
-    if (atencion.anestesiologia) await updateForm(this.prisma.anestesiologia, atencion.anestesiologia);
-    if (atencion.recetaMedica) await updateForm(this.prisma.recetaMedica, atencion.recetaMedica);
-    
+    traverse(result);
+    return result;
+  }
+
+  /**
+   * Sincroniza todos los formularios de una atención médica con los datos actuales del paciente
+   */
+  async syncAtencionPersonalData(atencion: any, paciente: any, tipoPaciente?: string | null) {
+    if (!atencion || !paciente) return;
+    const currentTipo = tipoPaciente || atencion.categoriaPaciente?.tipoPaciente || paciente.tipoPaciente || 'PARTICULAR';
+
+    const updateSingleForm = async (model: any, form: any, seccionName: string) => {
+      if (!form || !form.datos) return;
+      const rawDatos = typeof form.datos === 'string' ? JSON.parse(form.datos) : form.datos;
+      const updatedDatos = this.overwritePersonalData(rawDatos, paciente, currentTipo, seccionName);
+      await model.update({
+        where: { id: form.id },
+        data: { datos: updatedDatos },
+      });
+    };
+
+    if (atencion.historiaClinica) await updateSingleForm(this.prisma.historiaClinica, atencion.historiaClinica, 'historia-clinica');
+    if (atencion.cuidado) await updateSingleForm(this.prisma.cuidado, atencion.cuidado, 'cuidado');
+    if (atencion.epicrisis) await updateSingleForm(this.prisma.epicrisis, atencion.epicrisis, 'epicrisis');
+    if (atencion.receta) await updateSingleForm(this.prisma.receta, atencion.receta, 'receta');
+    if (atencion.recetaMedica) await updateSingleForm(this.prisma.recetaMedica, atencion.recetaMedica, 'receta-medica');
+    if (atencion.certificado) await updateSingleForm(this.prisma.certificado, atencion.certificado, 'certificado');
+    if (atencion.liquidacion) await updateSingleForm(this.prisma.liquidacion, atencion.liquidacion, 'liquidacion');
+    if (atencion.enfermeria) await updateSingleForm(this.prisma.enfermeria, atencion.enfermeria, 'enfermeria');
+    if (atencion.escalaRiesgo) await updateSingleForm(this.prisma.escalaRiesgo, atencion.escalaRiesgo, 'escala-riesgo');
+    if (atencion.consulta) await updateSingleForm(this.prisma.consulta, atencion.consulta, 'consulta');
+    if (atencion.examenes) await updateSingleForm(this.prisma.examenes, atencion.examenes, 'examenes');
+    if (atencion.anestesiologia) await updateSingleForm(this.prisma.anestesiologia, atencion.anestesiologia, 'anestesiologia');
+
+    if (Array.isArray(atencion.consentimientos)) {
+      for (const consent of atencion.consentimientos) {
+        await updateSingleForm(this.prisma.consentimiento, consent, 'consentimiento');
+      }
+    }
+
+    if (Array.isArray(atencion.protocolos)) {
+      for (const prot of atencion.protocolos) {
+        await updateSingleForm(this.prisma.protocolo, prot, 'protocolo');
+      }
+    }
+  }
+
+  /**
+   * Sincroniza en cascada TODOS los expedientes (atenciones) de un paciente en todas las categorías
+   */
+  async syncAllExpedientesForPaciente(pacienteId: number) {
+    const paciente = await this.prisma.paciente.findUnique({ where: { id: pacienteId } });
+    if (!paciente) return;
+
+    const catPacs = await this.prisma.categoriaPaciente.findMany({
+      where: { pacienteId },
+      include: {
+        atencion: {
+          include: this.fullInclude,
+        },
+      },
+    });
+
+    for (const cp of catPacs) {
+      if (cp.atencion) {
+        await this.syncAtencionPersonalData(cp.atencion, paciente, cp.tipoPaciente);
+      }
+    }
+    return { success: true, count: catPacs.length };
+  }
+
+  /**
+   * Sincroniza los formularios de la atención asociada a una relación categoría-paciente
+   */
+  async syncPacienteData(categoriaPacienteId: number) {
+    const atencion = await this.prisma.atencion.findUnique({
+      where: { categoriaPacienteId },
+      include: this.fullInclude,
+    });
+
+    if (!atencion || !atencion.categoriaPaciente?.paciente) return;
+    const paciente = atencion.categoriaPaciente.paciente;
+    const currentTipo = (atencion.categoriaPaciente.tipoPaciente || paciente.tipoPaciente || 'PARTICULAR').toUpperCase();
+    await this.syncAtencionPersonalData(atencion, paciente, currentTipo);
     return { success: true };
   }
 
@@ -380,80 +462,7 @@ export class AtencionService {
 
     // Helper para reemplazar datos personales en JSONs de forma recursiva
     const overwritePersonalData = (datos: any, seccionName?: string) => {
-      if (!datos || typeof datos !== 'object') return datos;
-      // Hacer una copia profunda para evitar mutar el objeto original en memoria
-      const result = JSON.parse(JSON.stringify(datos));
-      
-      const fullName = [
-        targetPaciente.primerApellido,
-        targetPaciente.segundoApellido,
-        targetPaciente.primerNombre,
-        targetPaciente.segundoNombre
-      ].filter(Boolean).join(' ');
-
-      const targetTipo = (targetPaciente.tipoPaciente || 'PARTICULAR').toUpperCase();
-      const is_sppat = targetTipo === 'SPPAT';
-
-      const newValues: any = {
-        primer_nombre: targetPaciente.primerNombre ?? '',
-        segundo_nombre: targetPaciente.segundoNombre ?? '',
-        primer_apellido: targetPaciente.primerApellido ?? '',
-        segundo_apellido: targetPaciente.segundoApellido ?? '',
-        cedula: targetPaciente.cedula ?? '',
-        numero_historia_clinica: targetPaciente.cedula ?? '',
-        edad: targetPaciente.edad ? String(targetPaciente.edad) : '',
-        sexo: targetPaciente.sexo ? (targetPaciente.sexo.toUpperCase().startsWith('F') ? 'F' : 'M') : '',
-        institucion: targetTipo,
-        unicodigo: '62858',
-        is_sppat: is_sppat,
-        // Alias usados en Receta, Certificado y otros forms
-        nombre_paciente: fullName,
-        cedula_paciente: targetPaciente.cedula ?? '',
-        edad_paciente: targetPaciente.edad ? String(targetPaciente.edad) : '',
-        // Alias específicos del Reverso de Consentimientos
-        nombre_paciente_firma: fullName,
-        cedula_paciente_firma: targetPaciente.cedula ?? '',
-        nombre_paciente_negativa: fullName,
-        cedula_paciente_negativa: targetPaciente.cedula ?? '',
-        nombre_paciente_rev: fullName,
-        cedula_paciente_rev: targetPaciente.cedula ?? '',
-        // Alias específicos de Enfermería
-        nombres_completos: fullName,
-        dni: targetPaciente.cedula ?? '',
-      };
-
-      // Proteger el campo "nombre" en secciones donde se usa para el TÍTULO del documento (Consentimientos y Protocolos)
-      if (seccionName !== 'consentimiento' && seccionName !== 'protocolo') {
-        newValues.nombre = fullName;
-        newValues.nombres = fullName;
-      }
-
-      const traverse = (obj: any) => {
-        if (!obj || typeof obj !== 'object') return;
-        
-        if (Array.isArray(obj)) {
-          obj.forEach(traverse);
-          return;
-        }
-
-        for (const [key, value] of Object.entries(obj)) {
-          if (newValues.hasOwnProperty(key)) {
-            obj[key] = newValues[key as keyof typeof newValues];
-          } else if (key === 'unicodigo' || key.endsWith('_unicodigo')) {
-            obj[key] = '62858';
-          } else if (key === 'notas_evolucion' && typeof value === 'string') {
-            obj[key] = value.replace(
-              /<strong>SEGURO:<\/strong>\s*(SPPAT|PARTICULAR|IESS)/gi,
-              `<strong>SEGURO:</strong> ${targetTipo}`
-            );
-          } else if (typeof value === 'object') {
-            traverse(value);
-          }
-        }
-      };
-
-      traverse(result);
-      return result;
+      return this.overwritePersonalData(datos, targetPaciente, targetPaciente.tipoPaciente, seccionName);
     };
 
     // 2. Clonar Historia Clínica
